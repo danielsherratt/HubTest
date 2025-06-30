@@ -4,19 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sou'West Strummers – Songs</title>
-
-  <!-- Font Awesome (for icons) -->
   <link
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     rel="stylesheet"
   />
-
-  <!-- Your own styles -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="banner"></div>
-
   <main>
     <div id="search-container">
       <input type="text" id="searchBar" placeholder="Search for an article">
@@ -27,7 +22,9 @@
       </select>
     </div>
 
-    <div id="noResults">No articles found <i class="fa-solid fa-face-sad-tear"></i></div>
+    <div id="noResults">
+      No articles found <i class="fa-solid fa-face-sad-tear"></i>
+    </div>
     <div class="card-container"></div>
 
     <a href="mailto:danny.s13@live.com" id="contact">
@@ -40,7 +37,6 @@
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    // --- Fetch & render posts ---
     async function loadPosts() {
       const res = await fetch('/api/posts');
       const posts = await res.json();
@@ -52,7 +48,6 @@
         div.className = 'card';
         div.dataset.name = p.title.toLowerCase();
         div.dataset.category = p.category.toLowerCase();
-
         div.innerHTML = `
           <h1>${p.title}</h1>
           <i>${new Date(p.created_at).toLocaleDateString()}</i>
@@ -63,40 +58,36 @@
         `;
         container.append(div);
       });
-
       filterCards();
     }
 
-    // --- Search/filter logic (as before) ---
     function filterCards() {
-      let value = $('#searchBar').val().toLowerCase();
-      const chosenCat = $('#category-select').val().toLowerCase();
-      let visible = 0;
+      let val = $('#searchBar').val().toLowerCase();
+      const cat = $('#category-select').val().toLowerCase();
+      let shown = 0;
 
-      if (value === 'pick') {
-        value = (Math.floor(Math.random() * 250) + 1).toString();
-      }
+      if (val === 'pick') val = (Math.floor(Math.random() * 250) + 1).toString();
 
       $('.card').each(function() {
         const name = $(this).data('name');
-        const cat  = $(this).data('category');
-        const show = name.includes(value) && (!chosenCat || cat.includes(chosenCat));
-        $(this).toggle(show);
-        if (show) visible++;
+        const c    = $(this).data('category');
+        const ok   = name.includes(val) && (!cat || c.includes(cat));
+        $(this).toggle(ok);
+        if (ok) shown++;
       });
-      $('#noResults').toggle(visible === 0);
+      $('#noResults').toggle(shown === 0);
     }
 
     $(document).ready(function() {
       loadPosts();
       $('#searchBar').focus().on('keyup input', filterCards);
       $('#category-select').on('change', filterCards);
-
-      // Back-to-top & contact toggle
       $(window).on('scroll', () => {
         $('#backToTop, #contact').toggle($(window).scrollTop() > 100);
       });
-      $('#backToTop').click(() => $('html, body').animate({ scrollTop: 0 }, 'fast'));
+      $('#backToTop').click(() =>
+        $('html, body').animate({ scrollTop: 0 }, 'fast')
+      );
     });
   </script>
 </body>
