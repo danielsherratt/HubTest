@@ -114,6 +114,29 @@
     .actions button.delete {
       color: #d9534f;
     }
+
+/* add to your existing <style> */
+.star-checkbox {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+.star-checkbox input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+/* by default show the empty (regular) star, hide the solid one */
+.star-checkbox .checked  { display: none; color: #f0c420; }
+.star-checkbox .unchecked { display: inline-block; color: #bbb; }
+
+/* when the hidden checkbox is checked… */
+.star-checkbox input:checked ~ .checked   { display: inline-block; }
+.star-checkbox input:checked ~ .unchecked { display: none; }
+
+
   </style>
 </head>
 <body>
@@ -126,10 +149,19 @@
       <option value="howdoi">How Do I</option>
       <option value="general">General</option>
     </select>
-    <label>
+   <!-- <label>
       <input type="checkbox" name="pinned" />
       Pin this post
-    </label>
+    </label> -->
+
+<!-- In your form, replace the old checkbox label with this: -->
+<label class="star-checkbox">
+  <input type="checkbox" name="pinned" />
+  <i class="fa-regular fa-star unchecked"></i>
+  <i class="fa-solid  fa-star checked"></i>
+  Pin this post
+</label>
+
     <div id="editor"></div>
     <button id="new-post-button" type="submit">Create Post</button>
   </form>
