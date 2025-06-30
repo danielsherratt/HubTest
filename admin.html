@@ -168,11 +168,10 @@
       });
 
       // Pin/Unpin
-      document.querySelectorAll('.pin-btn').forEach(btn => {
+       document.querySelectorAll('.pin-btn').forEach(btn => {
         btn.onclick = async () => {
           const id = btn.dataset.id;
           const currentlyPinned = btn.classList.contains('unpin');
-          // strip any "pinned " prefix from the category
           const rawCat = btn.closest('li')
             .querySelector('span')
             .textContent
