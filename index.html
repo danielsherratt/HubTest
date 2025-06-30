@@ -1,82 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Card Library</title>
-  <style>
-    body { font-family: sans-serif; padding: 1rem; }
-    .controls { margin-bottom: 1rem; }
-    .card { width: 500px; border: 1px solid #ddd; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }
-    .card h2 { margin: 0 0 .5rem; }
-    .card video { max-width: 100%; display: block; margin-top: .5rem; }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sou'West Strummers – Songs</title>
+
+  <!-- Font Awesome (for icons) -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    rel="stylesheet"
+  />
+
+  <!-- Your own styles -->
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="controls">
-    <input id="search" placeholder="Search…" />
-    <select id="category">
-      <option value="">All Categories</option>
-      <!-- dynamically populated -->
-    </select>
-  </div>
-  <div id="cards"></div>
+  <div class="banner"></div>
 
+  <main>
+    <div id="search-container">
+      <input type="text" id="searchBar" placeholder="Search for an article">
+      <select id="category-select">
+        <option value="">All</option>
+        <option value="pinned">Pinned</option>
+        <option value="howdoi">How Do I</option>
+      </select>
+    </div>
+
+    <div id="noResults">No articles found <i class="fa-solid fa-face-sad-tear"></i></div>
+    <div class="card-container"></div>
+
+    <a href="mailto:danny.s13@live.com" id="contact">
+      <i class="fa fa-envelope"></i> Contact
+    </a>
+    <button id="backToTop">
+      <i class="fa-solid fa-angle-up"></i> Back to Top
+    </button>
+  </main>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    let allCards = [];
-    const cardsEl = document.getElementById('cards');
-    const searchEl = document.getElementById('search');
-    const categoryEl = document.getElementById('category');
+    // --- Fetch & render posts ---
+    async function loadPosts() {
+      const res = await fetch('/api/posts');
+      const posts = await res.json();
+      const container = document.querySelector('.card-container');
+      container.innerHTML = '';
 
-    // fetch & render
-    async function loadCards() {
-      allCards = await fetch('/api/cards').then(r => r.json());
-      populateCategories();
-      render();
-    }
+      posts.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.dataset.name = p.title.toLowerCase();
+        div.dataset.category = p.category.toLowerCase();
 
-    // build category dropdown
-    function populateCategories() {
-      const cats = [...new Set(allCards.map(c => c.category))];
-      cats.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-        categoryEl.appendChild(opt);
+        div.innerHTML = `
+          <h1>${p.title}</h1>
+          <i>${new Date(p.created_at).toLocaleDateString()}</i>
+          <div>${p.body}</div>
+          ${p.video_url
+            ? `<iframe src="${p.video_url}" frameborder="0" allowfullscreen></iframe>`
+            : ''}
+        `;
+        container.append(div);
       });
+
+      filterCards();
     }
 
-    // filter + display
-    function render() {
-      const q = searchEl.value.toLowerCase();
-      const cat = categoryEl.value;
-      cardsEl.innerHTML = '';
+    // --- Search/filter logic (as before) ---
+    function filterCards() {
+      let value = $('#searchBar').val().toLowerCase();
+      const chosenCat = $('#category-select').val().toLowerCase();
+      let visible = 0;
 
-      allCards
-        .filter(c =>
-          (c.title.toLowerCase().includes(q) ||
-           c.body.toLowerCase().includes(q))
-          && (!cat || c.category === cat)
-        )
-        .forEach(c => {
-          const div = document.createElement('div');
-          div.className = 'card';
-          div.innerHTML = `
-            <h2>${c.title}</h2>
-            <p><strong>Category:</strong> ${c.category}</p>
-            <div>${c.body}</div>
-            ${c.video_url 
-               ? `<video controls src="${c.video_url}"></video>` 
-               : ''}
-          `;
-          cardsEl.appendChild(div);
-        });
+      if (value === 'pick') {
+        value = (Math.floor(Math.random() * 250) + 1).toString();
+      }
+
+      $('.card').each(function() {
+        const name = $(this).data('name');
+        const cat  = $(this).data('category');
+        const show = name.includes(value) && (!chosenCat || cat.includes(chosenCat));
+        $(this).toggle(show);
+        if (show) visible++;
+      });
+      $('#noResults').toggle(visible === 0);
     }
 
-    // event listeners
-    searchEl.addEventListener('input', render);
-    categoryEl.addEventListener('change', render);
+    $(document).ready(function() {
+      loadPosts();
+      $('#searchBar').focus().on('keyup input', filterCards);
+      $('#category-select').on('change', filterCards);
 
-    loadCards();
+      // Back-to-top & contact toggle
+      $(window).on('scroll', () => {
+        $('#backToTop, #contact').toggle($(window).scrollTop() > 100);
+      });
+      $('#backToTop').click(() => $('html, body').animate({ scrollTop: 0 }, 'fast'));
+    });
   </script>
 </body>
 </html>
