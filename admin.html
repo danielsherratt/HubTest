@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin – CESW Hub</title>
 
-  <!-- Silence DOMNodeInserted warning -->
+  <!-- Silence deprecated DOMNodeInserted warning -->
   <script>
     (function() {
       const orig = EventTarget.prototype.addEventListener;
@@ -33,6 +33,8 @@
       max-width: 800px;
       margin: auto;
     }
+    h1 { color: #00625f; }
+
     #new-post {
       background: #f4f6f8;
       padding: 1.5rem;
@@ -73,6 +75,7 @@
     #new-post-button:hover {
       background: #004a47;
     }
+
     #posts-list {
       list-style: none;
       padding: 0;
@@ -84,17 +87,24 @@
       padding: 0.5rem 0;
       border-bottom: 1px solid #eee;
     }
-    .actions i {
-      margin-left: 0.5rem;
+    .actions button {
+      background: none;
+      border: none;
       cursor: pointer;
+      font-size: 0.9rem;
+      margin-left: 0.5rem;
+      display: inline-flex;
+      align-items: center;
     }
-    .pin-icon {
+    .actions button .fa-star,
+    .actions button .fa-star-o {
+      margin-right: 0.25rem;
       color: #f0c420;
     }
-    .pin-icon.unpinned {
+    .actions button.unpin .fa-star-o {
       color: #bbb;
     }
-    .del-btn {
+    .actions button.delete {
       color: #d9534f;
     }
   </style>
@@ -117,19 +127,23 @@
     <button id="new-post-button" type="submit">Create Post</button>
   </form>
 
-  <h2>Existing Posts</h2>
+  <h1>Existing Posts</h1>
   <ul id="posts-list"></ul>
 
+  <!-- Quill JS -->
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
   <script>
     const quill = new Quill('#editor', {
       theme: 'snow',
-      modules: { toolbar: [
-        ['bold','italic'],
-        [{ header: [1,2,3,false] }],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['image','video']
-      ]}
+      modules: {
+        toolbar: [
+          ['bold','italic'],
+          [{ header: [1,2,3,false] }],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['image','video']
+        ]
+      }
     });
 
     async function loadAdminPosts() {
@@ -144,31 +158,38 @@
         li.innerHTML = `
           <span>${p.title} [${p.category}]</span>
           <span class="actions">
-            <i class="fa ${isPinned ? 'fa-star' : 'fa-star-o'} pin-icon"
-               data-id="${p.id}"></i>
-            <i class="fa fa-trash del-btn" data-id="${p.id}"></i>
+            <button class="pin-btn ${isPinned ? 'unpin' : ''}" data-id="${p.id}">
+              <i class="fa ${isPinned ? 'fa-star' : 'fa-star-o'}"></i>
+              ${isPinned ? 'Unpin' : 'Pin'}
+            </button>
+            <button class="delete" data-id="${p.id}">
+              <i class="fa fa-trash"></i>
+              Delete
+            </button>
           </span>
         `;
         ul.append(li);
       });
 
-      document.querySelectorAll('.pin-icon').forEach(icon => {
-        icon.onclick = async () => {
-          const id = icon.dataset.id;
-          const currentPinned = icon.classList.contains('fa-star');
+      // Pin/Unpin
+      document.querySelectorAll('.pin-btn').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          const currentlyPinned = btn.classList.contains('unpin');
           await fetch(`/api/posts/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({
-              category: icon.closest('li').querySelector('span').textContent.match(/\[(.*)\]/)[1],
-              pinned: !currentPinned
+              category: btn.closest('li').querySelector('span').textContent.match(/\[(.*)\]/)[1],
+              pinned:   !currentlyPinned
             })
           });
           loadAdminPosts();
         };
       });
 
-      document.querySelectorAll('.del-btn').forEach(btn => {
+      // Delete
+      document.querySelectorAll('.delete').forEach(btn => {
         btn.onclick = async () => {
           await fetch(`/api/posts/${btn.dataset.id}`, { method: 'DELETE' });
           loadAdminPosts();
@@ -181,7 +202,7 @@
       const form = e.target;
       await fetch('/api/posts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
           title:    form.title.value,
           category: form.category.value,
