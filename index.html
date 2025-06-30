@@ -28,7 +28,7 @@
     </div>
 
     <div id="noResults">
-      No articles found <i class="fa-solid fa-face-sad-tear"></i>
+      No article found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category
     </div>
     <div class="card-container"></div>
 
@@ -95,7 +95,7 @@
         .on('input', function() {
           clearTimeout($.data(this,'timer'));
           const self = this;
-          $.data(this,'timer', setTimeout(() => $(self).blur(), 3000));
+          $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
         })
         .on('keydown', function() {
           clearTimeout($.data(this,'timer'));
