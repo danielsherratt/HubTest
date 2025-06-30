@@ -10,13 +10,11 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     rel="stylesheet"
   />
-
-  <!-- Your custom styles -->
+  <!-- Your custom CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="banner"></div>
-
   <main>
     <div id="search-container">
       <input type="text" id="searchBar" placeholder="Search for an article">
@@ -46,24 +44,16 @@
       const res = await fetch('/api/posts');
       const posts = await res.json();
 
-      // Sort: pinned first (newest→oldest), then others
-      posts.sort((a, b) => {
-        const aPinned = a.category.toLowerCase().startsWith('pinned') ? 1 : 0;
-        const bPinned = b.category.toLowerCase().startsWith('pinned') ? 1 : 0;
-        if (bPinned !== aPinned) return bPinned - aPinned;
-        return new Date(b.created_at) - new Date(a.created_at);
-      });
-
+      // Server already ordered by pinned & date
       const container = document.querySelector('.card-container');
       container.innerHTML = '';
 
       posts.forEach(p => {
-        const displayCat = p.category.replace(/^pinned\s*/i, '').toLowerCase();
+        const displayCat = p.category.toLowerCase();
         const div = document.createElement('div');
-        div.className = 'card';
-        div.dataset.name     = p.title.toLowerCase();
-        div.dataset.category = displayCat;
-        // p.body contains all HTML, including any <iframe> embeds Quill has inserted
+        div.className         = 'card';
+        div.dataset.name      = p.title.toLowerCase();
+        div.dataset.category  = displayCat;
         div.innerHTML = `
           <h1>${p.title}</h1>
           <i>${new Date(p.created_at).toLocaleDateString()}</i>
@@ -76,47 +66,43 @@
     }
 
     function filterCards() {
-      let value = $('#searchBar').val().toLowerCase();
-      const chosenCat = $('#category-select').val().toLowerCase();
-      let visibleCards = 0;
+      let val = $('#searchBar').val().toLowerCase();
+      const cat = $('#category-select').val().toLowerCase();
+      let shown = 0;
 
-      if (value === 'pick') {
-        value = (Math.floor(Math.random() * 250) + 1).toString();
+      if (val === 'pick') {
+        val = (Math.floor(Math.random() * 250) + 1).toString();
       }
 
       $('.card').each(function() {
-        const name     = $(this).data('name');
-        const category = $(this).data('category');
-        const show     = name.includes(value) && (!chosenCat || category.includes(chosenCat));
-        $(this).toggle(show);
-        if (show) visibleCards++;
+        const name = $(this).data('name');
+        const c    = $(this).data('category');
+        const ok   = name.includes(val) && (!cat || c.includes(cat));
+        $(this).toggle(ok);
+        if (ok) shown++;
       });
 
-      $('#noResults').toggle(visibleCards === 0);
+      $('#noResults').toggle(shown === 0);
     }
 
     $(document).ready(function() {
       loadPosts();
-
       $('#searchBar')
         .focus()
         .on('keyup input', filterCards)
         .on('input', function() {
-          clearTimeout($.data(this, 'timer'));
+          clearTimeout($.data(this,'timer'));
           const self = this;
-          $.data(this, 'timer', setTimeout(() => $(self).blur(), 3000));
+          $.data(this,'timer', setTimeout(() => $(self).blur(), 3000));
         })
         .on('keydown', function() {
-          clearTimeout($.data(this, 'timer'));
+          clearTimeout($.data(this,'timer'));
         });
-
       $('#category-select').on('change', filterCards);
-
       $(window).on('scroll', () => {
         const scrolled = $(window).scrollTop() > 100;
         $('#backToTop, #contact').toggle(scrolled);
       });
-
       $('#backToTop').on('click', () =>
         $('html, body').animate({ scrollTop: 0 }, 'fast')
       );
