@@ -33,7 +33,7 @@
       max-width: 800px;
       margin: auto;
     }
-    h1 { color: #00625f; }
+    h1, h2 { color: #00625f; }
 
     /* Form */
     #new-post {
@@ -136,11 +136,21 @@
 .star-checkbox input:checked ~ .checked   { display: inline-block; }
 .star-checkbox input:checked ~ .unchecked { display: none; }
 
+.banner {
+    width: 100%;
+    height: 170px;
+    background: url('cropped-cropped-uku-to-right-sw-title-2.jpg') no-repeat center center;
+    background-size: cover;
+}
 
   </style>
 </head>
 <body>
-  <h1>Manage Posts</h1>
+    <div class="banner"></div>
+  <main>
+    <h1><i class="fa-solid fa-book-open-reader"></i> CESW Hub</h1>
+
+  <h2>Manage Posts</h2>
 
   <form id="new-post">
     <input id="new-post-input" name="title" type="text" placeholder="Title" required />
@@ -166,7 +176,7 @@
     <button id="new-post-button" type="submit">Create Post</button>
   </form>
 
-  <h1>Existing Posts</h1>
+  <h2>Existing Posts</h2>
   <ul id="posts-list"></ul>
 
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
