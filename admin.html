@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin – CESW Hub</title>
 
-  <!-- 1) Silence Quill’s deprecated warning -->
+  <!-- Silence DOMNodeInserted warning -->
   <script>
     (function() {
       const orig = EventTarget.prototype.addEventListener;
@@ -16,17 +16,16 @@
     })();
   </script>
 
-  <!-- 2) Quill CSS -->
+  <!-- Quill CSS -->
   <link href="https://cdn.quilljs.com/1.3.6/quill.core.css" rel="stylesheet"/>
   <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet"/>
 
-  <!-- 3) Font Awesome -->
+  <!-- Font Awesome 6 -->
   <link
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     rel="stylesheet"
   />
 
-  <!-- 4) Custom Styling -->
   <style>
     body {
       font-family: sans-serif;
@@ -36,6 +35,7 @@
     }
     h1 { color: #00625f; }
 
+    /* Form */
     #new-post {
       background: #f4f6f8;
       padding: 1.5rem;
@@ -53,6 +53,15 @@
     }
  
     #new-post-input {width: 40%;}
+    #new-post label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+    }
+    #new-post label input[type="checkbox"] {
+      margin-right: 0.125rem;
+    }
 
     #editor {
       height: 200px;
@@ -72,6 +81,7 @@
       background: #004a47;
     }
 
+    /* Posts list */
     #posts-list {
       list-style: none;
       padding: 0;
@@ -92,14 +102,14 @@
       display: inline-flex;
       align-items: center;
     }
-     /* star styles */
+    /* star styles */
     .actions button .fa-solid.fa-star {
       margin-right: 0.25rem;
       color: #f0c420;
     }
     .actions button .fa-regular.fa-star {
       margin-right: 0.25rem;
-      color: #000;
+      color: #bbb;
     }
     .actions button.delete {
       color: #d9534f;
@@ -127,7 +137,6 @@
   <h1>Existing Posts</h1>
   <ul id="posts-list"></ul>
 
-  <!-- 5) Quill JS -->
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
   <script>
     const quill = new Quill('#editor', {
@@ -155,7 +164,7 @@
           <span>${p.title} [${p.category}]</span>
           <span class="actions">
             <button class="pin-btn ${isPinned ? 'unpin' : ''}" data-id="${p.id}">
-              <i class="fa ${isPinned ? 'fa-star' : 'fa-star-o'}"></i>
+              <i class="${isPinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>
               ${isPinned ? 'Unpin' : 'Pin'}
             </button>
             <button class="delete" data-id="${p.id}">
@@ -167,8 +176,7 @@
         ul.append(li);
       });
 
-      // Pin/Unpin
-       document.querySelectorAll('.pin-btn').forEach(btn => {
+      document.querySelectorAll('.pin-btn').forEach(btn => {
         btn.onclick = async () => {
           const id = btn.dataset.id;
           const currentlyPinned = btn.classList.contains('unpin');
@@ -193,7 +201,6 @@
         };
       });
 
-      // Delete
       document.querySelectorAll('.delete').forEach(btn => {
         btn.onclick = async () => {
           await fetch(`/api/posts/${btn.dataset.id}`, { method: 'DELETE' });
