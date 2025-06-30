@@ -3,15 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CESW Hub</title>
+  <title>Sou'West Strummers – Songs</title>
+
+  <!-- Font Awesome -->
   <link
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     rel="stylesheet"
   />
+
+  <!-- Your custom styles -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="banner"></div>
+
   <main>
     <div id="search-container">
       <input type="text" id="searchBar" placeholder="Search for an article">
@@ -40,52 +45,79 @@
     async function loadPosts() {
       const res = await fetch('/api/posts');
       const posts = await res.json();
+
+      // Sort: pinned first (newest→oldest), then others
+      posts.sort((a, b) => {
+        const aPinned = a.category.toLowerCase().startsWith('pinned') ? 1 : 0;
+        const bPinned = b.category.toLowerCase().startsWith('pinned') ? 1 : 0;
+        if (bPinned !== aPinned) return bPinned - aPinned;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+
       const container = document.querySelector('.card-container');
       container.innerHTML = '';
 
       posts.forEach(p => {
+        const displayCat = p.category.replace(/^pinned\s*/i, '').toLowerCase();
         const div = document.createElement('div');
         div.className = 'card';
-        div.dataset.name = p.title.toLowerCase();
-        div.dataset.category = p.category.toLowerCase();
+        div.dataset.name     = p.title.toLowerCase();
+        div.dataset.category = displayCat;
+        // p.body contains all HTML, including any <iframe> embeds Quill has inserted
         div.innerHTML = `
           <h1>${p.title}</h1>
           <i>${new Date(p.created_at).toLocaleDateString()}</i>
           <div>${p.body}</div>
-          ${p.video_url
-            ? `<iframe src="${p.video_url}" frameborder="0" allowfullscreen></iframe>`
-            : ''}
         `;
         container.append(div);
       });
+
       filterCards();
     }
 
     function filterCards() {
-      let val = $('#searchBar').val().toLowerCase();
-      const cat = $('#category-select').val().toLowerCase();
-      let shown = 0;
+      let value = $('#searchBar').val().toLowerCase();
+      const chosenCat = $('#category-select').val().toLowerCase();
+      let visibleCards = 0;
 
-      if (val === 'pick') val = (Math.floor(Math.random() * 250) + 1).toString();
+      if (value === 'pick') {
+        value = (Math.floor(Math.random() * 250) + 1).toString();
+      }
 
       $('.card').each(function() {
-        const name = $(this).data('name');
-        const c    = $(this).data('category');
-        const ok   = name.includes(val) && (!cat || c.includes(cat));
-        $(this).toggle(ok);
-        if (ok) shown++;
+        const name     = $(this).data('name');
+        const category = $(this).data('category');
+        const show     = name.includes(value) && (!chosenCat || category.includes(chosenCat));
+        $(this).toggle(show);
+        if (show) visibleCards++;
       });
-      $('#noResults').toggle(shown === 0);
+
+      $('#noResults').toggle(visibleCards === 0);
     }
 
     $(document).ready(function() {
       loadPosts();
-      $('#searchBar').focus().on('keyup input', filterCards);
+
+      $('#searchBar')
+        .focus()
+        .on('keyup input', filterCards)
+        .on('input', function() {
+          clearTimeout($.data(this, 'timer'));
+          const self = this;
+          $.data(this, 'timer', setTimeout(() => $(self).blur(), 3000));
+        })
+        .on('keydown', function() {
+          clearTimeout($.data(this, 'timer'));
+        });
+
       $('#category-select').on('change', filterCards);
+
       $(window).on('scroll', () => {
-        $('#backToTop, #contact').toggle($(window).scrollTop() > 100);
+        const scrolled = $(window).scrollTop() > 100;
+        $('#backToTop, #contact').toggle(scrolled);
       });
-      $('#backToTop').click(() =>
+
+      $('#backToTop').on('click', () =>
         $('html, body').animate({ scrollTop: 0 }, 'fast')
       );
     });
