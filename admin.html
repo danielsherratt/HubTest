@@ -67,10 +67,7 @@
     #new-post label input[type="checkbox"] {
       margin-right: 0.5rem;
     }
-   
-  -->
-    <style>
- #new-post button {
+    #new-post button {
       background: #00625f;
       color: #fff;
       border: none;
@@ -87,10 +84,44 @@
       border: 1px solid #ccc;
       margin-bottom: 1rem;
     }
+  -->
+    <style>
 
+          body {
+      font-family: sans-serif;
+      padding: 2rem;
+      max-width: 800px;
+      margin: auto;
+    }
 
+    /* ─── Form Styles ─── */
+    #new-post {
+      background: #f4f6f8;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+    #new-post input[type="text"],
+    #new-post select {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    #new-post label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+    #new-post label input[type="checkbox"] {
+      margin-right: 0.5rem;
+    }
 
-
+    
     /* ─── Posts List Styles ─── */
     #posts-list {
       list-style: none;
