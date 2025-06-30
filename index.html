@@ -1,115 +1,54 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-   <link rel="icon" href="favicon.ico" type="image/x-icon">
-  <title>CESW Hub</title>
+<!-- 
+Run npx pagecrypt Source.html Output.html password
+Copy Pre from Output.html into this page at bottom of file
+-->
 
-  <!-- Font Awesome -->
-  <link
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    rel="stylesheet"
-  />
-  <!-- Your custom CSS -->
-  <link rel="stylesheet" href="style.css">
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <title>Admin Bookings Dashboard</title>  
+    <script type="module">var i={};Object.defineProperty(i,"__esModule",{value:!0});function y(r,e,t){var c;if(t===void 0&&(t={}),!e.codes){e.codes={};for(var s=0;s<e.chars.length;++s)e.codes[e.chars[s]]=s}if(!t.loose&&r.length*e.bits&7)throw new SyntaxError("Invalid padding");for(var a=r.length;r[a-1]==="=";)if(--a,!t.loose&&!((r.length-a)*e.bits&7))throw new SyntaxError("Invalid padding");for(var o=new((c=t.out)!=null?c:Uint8Array)(a*e.bits/8|0),n=0,u=0,l=0,f=0;f<a;++f){var E=e.codes[r[f]];if(E===void 0)throw new SyntaxError("Invalid character "+r[f]);u=u<<e.bits|E,n+=e.bits,n>=8&&(n-=8,o[l++]=255&u>>n)}if(n>=e.bits||255&u<<8-n)throw new SyntaxError("Unexpected end of data");return o}function h(r,e,t){t===void 0&&(t={});for(var c=t,s=c.pad,a=s===void 0?!0:s,o=(1<<e.bits)-1,n="",u=0,l=0,f=0;f<r.length;++f)for(l=l<<8|255&r[f],u+=8;u>e.bits;)u-=e.bits,n+=e.chars[o&l>>u];if(u&&(n+=e.chars[o&l<<e.bits-u]),a)for(;n.length*e.bits&7;)n+="=";return n}var L={chars:"0123456789ABCDEF",bits:4},K={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567",bits:5},O={chars:"0123456789ABCDEFGHIJKLMNOPQRSTUV",bits:5},$={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",bits:6},P={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",bits:6},F={parse:function(e,t){return y(e.toUpperCase(),L,t)},stringify:function(e,t){return h(e,L,t)}},I={parse:function(e,t){return t===void 0&&(t={}),y(t.loose?e.toUpperCase().replace(/0/g,"O").replace(/1/g,"L").replace(/8/g,"B"):e,K,t)},stringify:function(e,t){return h(e,K,t)}},k={parse:function(e,t){return y(e,O,t)},stringify:function(e,t){return h(e,O,t)}},B={parse:function(e,t){return y(e,$,t)},stringify:function(e,t){return h(e,$,t)}},G={parse:function(e,t){return y(e,P,t)},stringify:function(e,t){return h(e,P,t)}},H={parse:y,stringify:h};i.base16=F;i.base32=I;i.base32hex=k;i.base64=B;i.base64url=G;i.codec=H;i.base16;i.base32;i.base32hex;const J=i.base64;i.base64url;i.codec;function b(r){const e=document.querySelector(r);if(e)return e;throw new Error(`No element found with selector: "${r}"`)}const d=b("input"),m=b("header"),j=b("#msg"),g=b("form"),v=b("#load");let N,D,M,T;document.addEventListener("DOMContentLoaded",async()=>{const r=b("pre[data-i]");if(!r.innerText){d.disabled=!0,S("No encrypted payload.");return}T=Number(r.dataset.i);const e=J.parse(r.innerText);if(N=e.slice(0,32),D=e.slice(32,32+16),M=e.slice(32+16),location.hash){const t=new URL(window.location.href);d.value=t.hash.slice(1),t.hash="",history.replaceState(null,"",t.toString())}sessionStorage.k||d.value?await U():(w(v),x(g),m.classList.replace("hidden","flex"),d.focus())});var A,C;const p=((A=window.crypto)==null?void 0:A.subtle)||((C=window.crypto)==null?void 0:C.webkitSubtle);p||(S("Please use a modern browser."),d.disabled=!0);function x(r){r.classList.remove("hidden")}function w(r){r.classList.add("hidden")}function S(r){j.innerText=r,m.classList.add("red")}g.addEventListener("submit",async r=>{r.preventDefault(),await U()});async function R(r){return new Promise(e=>setTimeout(e,r))}async function U(){v.lastElementChild.innerText="Checking...",w(m),w(g),x(v),await R(60);try{const r=await V({salt:N,iv:D,ciphertext:M,iterations:T},d.value);document.write(r),document.close()}catch(r){w(v),x(g),m.classList.replace("hidden","flex"),sessionStorage.k?sessionStorage.removeItem("k"):S("Whoops, try again, or contact ITSupport"),d.value="",d.focus()}}async function q(r,e,t){const c=new TextEncoder,s=await p.importKey("raw",c.encode(e),"PBKDF2",!1,["deriveKey"]);return await p.deriveKey({name:"PBKDF2",salt:r,iterations:t,hash:"SHA-256"},s,{name:"AES-GCM",length:256},!0,["decrypt"])}async function Q(r){return p.importKey("jwk",r,"AES-GCM",!0,["decrypt"])}async function V({salt:r,iv:e,ciphertext:t,iterations:c},s){const a=new TextDecoder,o=sessionStorage.k?await Q(JSON.parse(sessionStorage.k)):await q(r,s,c),n=new Uint8Array(await p.decrypt({name:"AES-GCM",iv:e},o,t));if(!n)throw"Malformed data";return sessionStorage.k=JSON.stringify(await p.exportKey("jwk",o)),a.decode(n)}</script>
+    <link rel="stylesheet" href="admincss.css"/>
+   
 </head>
 <body>
-  <div class="banner"></div>
-  <main>
-    <h1 class="title"><i class="fa-solid fa-book-open-reader"></i> CESW Hub</h1>
 
-    <div id="search-container">
-      <input type="text" id="searchBar" placeholder="Search for an article">
-      <select id="category-select">
-        <option value="">All</option>
-        <option value="pinned">Pinned</option>
-        <option value="howdoi">How Do I</option>
-      </select>
-    </div>
 
-    <div id="noResults">
-      No article found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category
-    </div>
-    <div class="card-container"></div>
+<div id="dialogWrap">
+<div id="dialogWrapCell">
+<div id="mainDialog">
 
-    <a href="mailto:danny.s13@live.com" id="contact">
-      <i class="fa fa-envelope"></i> Contact
-    </a>
-    <button id="backToTop">
-      <i class="fa-solid fa-angle-up"></i> Back to Top
-    </button>
-  </main>
+<div id="load">
+<p class="spinner"></p><p>Loading...</p>
+</div>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script>
-    async function loadPosts() {
-      const res = await fetch('/api/posts');
-      const posts = await res.json();
+<header class="hidden">
 
-      // Server already ordered by pinned & date
-      const container = document.querySelector('.card-container');
-      container.innerHTML = '';
+<div style="display:grid; grid-template-columns: auto auto;">
+    <div class="logo">
+        <img src="logo.png" alt="Your Logo">
+      </div>  
+<div><h1>CESW Hub</h1></div>
+</div>
 
-      posts.forEach(p => {
-        const displayCat = p.category.toLowerCase();
-        const div = document.createElement('div');
-        div.className         = 'card';
-        div.dataset.name      = p.title.toLowerCase();
-        div.dataset.category  = displayCat;
-        div.innerHTML = `
-          <h1>${p.title}</h1>
-          <i>${new Date(p.created_at).toLocaleDateString()}</i>
-          <div>${p.body}</div>
-        `;
-        container.append(div);
-      });
+</header>
 
-      filterCards();
-    }
+<div id="passArea">
+<form class="hidden">
+<input type="password" id="pwd" name="pwd" aria-label="Password" autofocus placeholder="Password"/>
+<button type="submit id="submitPass"">Login</button>
+</form>
+<p id="msg"></p>
+</div>
+</div>
 
-    function filterCards() {
-      let val = $('#searchBar').val().toLowerCase();
-      const cat = $('#category-select').val().toLowerCase();
-      let shown = 0;
+</div>
+</div>
 
-      if (val === 'pick') {
-        val = (Math.floor(Math.random() * 250) + 1).toString();
-      }
-
-      $('.card').each(function() {
-        const name = $(this).data('name');
-        const c    = $(this).data('category');
-        const ok   = name.includes(val) && (!cat || c.includes(cat));
-        $(this).toggle(ok);
-        if (ok) shown++;
-      });
-
-      $('#noResults').toggle(shown === 0);
-    }
-
-    $(document).ready(function() {
-      loadPosts();
-      $('#searchBar')
-        .focus()
-        .on('keyup input', filterCards)
-        .on('input', function() {
-          clearTimeout($.data(this,'timer'));
-          const self = this;
-          $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
-        })
-        .on('keydown', function() {
-          clearTimeout($.data(this,'timer'));
-        });
-      $('#category-select').on('change', filterCards);
-      $(window).on('scroll', () => {
-        const scrolled = $(window).scrollTop() > 100;
-        $('#backToTop, #contact').toggle(scrolled);
-      });
-      $('#backToTop').on('click', () =>
-        $('html, body').animate({ scrollTop: 0 }, 'fast')
-      );
-    });
-  </script>
-</body>
+<!-- Pre from Output.html goes below -->
+    <pre class="hidden" data-i="2e+6">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</pre>/body>
 </html>

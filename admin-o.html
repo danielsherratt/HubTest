@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CESW Hub: Admin</title>
+   <link rel="icon" href="favicon.ico" type="image/x-icon">
+
+  <!-- Silence DOMNodeInserted warning -->
+  <script>
+    (function() {
+      const orig = EventTarget.prototype.addEventListener;
+      EventTarget.prototype.addEventListener = function(type, fn, opts) {
+        if (type === 'DOMNodeInserted' || type === 'DOMNodeRemoved') return;
+        return orig.call(this, type, fn, opts);
+      };
+    })();
+  </script>
+
+  <!-- Quill CSS -->
+  <link href="https://cdn.quilljs.com/1.3.6/quill.core.css" rel="stylesheet"/>
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet"/>
+
+  <!-- Font Awesome 6 -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    rel="stylesheet"
+  />
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      max-width: 800px;
+      margin: auto;
+    }
+    h1, h2 { color: #00625f; text-align: center;}
+
+
+    /* Form */
+    #new-post {
+      background: #f4f6f8;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+    #new-post-input,
+    #new-post-select {
+      padding: 0.5rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+ 
+    #new-post-input {width: 40%;}
+    #new-post label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+    }
+    #new-post label input[type="checkbox"] {
+      margin-right: 0.125rem;
+    }
+
+    #editor {
+      height: 200px;
+      border: 1px solid #ccc;
+      margin-bottom: 1rem;
+    }
+    #new-post-button {
+      background: #00625f;
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #new-post-button:hover {
+      background: #004a47;
+    }
+
+    /* Posts list */
+    #posts-list {
+      list-style: none;
+      padding: 0;
+    }
+    #posts-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #eee;
+    }
+    .actions button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-left: 0.5rem;
+      display: inline-flex;
+      align-items: center;
+    }
+    /* star styles */
+    .actions button .fa-solid.fa-star {
+      margin-right: 0.25rem;
+      color: #f0c420;
+    }
+    .actions button .fa-regular.fa-star {
+      margin-right: 0.25rem;
+      color: #bbb;
+    }
+    .actions button.delete {
+      color: #d9534f;
+    }
+
+/* add to your existing <style> */
+.star-checkbox {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+.star-checkbox input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+/* by default show the empty (regular) star, hide the solid one */
+.star-checkbox .checked  { display: none; color: #f0c420; }
+.star-checkbox .unchecked { display: inline-block; color: #bbb; }
+
+/* when the hidden checkbox is checked… */
+.star-checkbox input:checked ~ .checked   { display: inline-block; }
+.star-checkbox input:checked ~ .unchecked { display: none; }
+
+.banner {
+    width: 100%;
+    height: 170px;
+    background: url('cropped-cropped-uku-to-right-sw-title-2.jpg') no-repeat center center;
+    background-size: cover;
+}
+
+  </style>
+</head>
+<body>
+    <div class="banner"></div>
+  <main>
+    <h1><i class="fa-solid fa-book-open-reader"></i> CESW Hub: Admin</h1>
+
+  <h2>Add Post</h2>
+
+  <form id="new-post">
+    <input id="new-post-input" name="title" type="text" placeholder="Title" required />
+    <select id="new-post-input" name="category" required>
+      <option value="" disabled selected>Select category</option>
+      <option value="howdoi">How Do I</option>
+      <option value="general">General</option>
+    </select>
+
+<label class="star-checkbox">
+  <input type="checkbox" name="pinned" />
+  <i class="fa-regular fa-star unchecked"></i>
+  <i class="fa-solid  fa-star checked"></i>
+     Pin this post
+</label>
+
+    <div id="editor"></div>
+    <button id="new-post-button" type="submit">Create Post</button>
+  </form>
+
+  <h2>Manage Posts</h2>
+  <ul id="posts-list"></ul>
+
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script>
+    const quill = new Quill('#editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          ['bold','italic'],
+          [{ header: [1,2,3,false] }],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['image','video']
+        ]
+      }
+    });
+
+    async function loadAdminPosts() {
+      const res   = await fetch('/api/posts');
+      const posts = await res.json();
+      const ul    = document.getElementById('posts-list');
+      ul.innerHTML = '';
+
+      posts.forEach(p => {
+        const isPinned = p.pinned === 1;
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span>${p.title} [${p.category}]</span>
+          <span class="actions">
+            <button class="pin-btn ${isPinned ? 'unpin' : ''}" data-id="${p.id}">
+              <i class="${isPinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>
+              ${isPinned ? 'Unpin' : 'Pin'}
+            </button>
+            <button class="delete" data-id="${p.id}">
+              <i class="fa fa-trash"></i>
+              Delete
+            </button>
+          </span>
+        `;
+        ul.append(li);
+      });
+
+      document.querySelectorAll('.pin-btn').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          const currentlyPinned = btn.classList.contains('unpin');
+          const rawCat = btn.closest('li')
+            .querySelector('span')
+            .textContent
+            .match(/\[(.*)\]/)[1];
+          const baseCat = rawCat.replace(/^pinned\s*/i, '');
+          const newCat  = currentlyPinned
+            ? baseCat
+            : `pinned ${baseCat}`;
+
+          await fetch(`/api/posts/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+              category: newCat,
+              pinned:   !currentlyPinned
+            })
+          });
+          loadAdminPosts();
+        };
+      });
+
+      document.querySelectorAll('.delete').forEach(btn => {
+        btn.onclick = async () => {
+          await fetch(`/api/posts/${btn.dataset.id}`, { method: 'DELETE' });
+          loadAdminPosts();
+        };
+      });
+    }
+
+    document.getElementById('new-post').onsubmit = async e => {
+      e.preventDefault();
+      const form = e.target;
+      let category = form.category.value;
+      if (form.pinned.checked) category = `pinned ${category}`;
+
+      await fetch('/api/posts', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          title:    form.title.value,
+          category,
+          body:     quill.root.innerHTML,
+          pinned:   form.pinned.checked
+        })
+      });
+
+      form.reset();
+      quill.setContents([]);
+      loadAdminPosts();
+    };
+
+    loadAdminPosts();
+  </script>
+</body>
+</html>
