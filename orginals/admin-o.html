@@ -26,8 +26,8 @@
 
     <h2 class="title">Add Post</h2>
     <form id="new-post">
-      <input id="title" name="title" type="text" placeholder="Title" required />
-      <select id="category" name="category" required>
+      <input  id="new-post-input" name="title" type="text" placeholder="Title" required />
+      <select id="new-post-input" name="category" required>
         <option value="" disabled selected>Select category</option>
         <option value="howdoi">How Do I</option>
         <option value="general">General</option>
@@ -69,7 +69,7 @@
           ],
           handlers: {
             video: function() {
-              const input = prompt('Enter Microsoft Stream embed HTML:');
+              const input = prompt('Microsoft Stream (Share > Emded Code > Copy embed code):');
               if (!input) return;
               let url = input.trim();
               // If raw iframe snippet, extract src
