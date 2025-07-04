@@ -119,3 +119,40 @@
     background: url('banner.jpg') no-repeat center center;
     background-size: cover;
 }
+
+
+#backToTop {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #00625f;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px;
+}
+
+#backToTop:hover {
+    background: #6bbaae;
+}
+
+#contact {
+    display: none;
+    position: fixed;
+    bottom: 70px;
+    right: 20px;
+    background: #00625f;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px;
+}
+
+#contact:hover {
+    background: #6bbaae;
+}

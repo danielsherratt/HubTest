@@ -47,6 +47,17 @@
   <h2 class="title">Manage Posts</h2>
   <ul id="posts-list"></ul>
 
+
+<a href="https://cesw.danieltesting.space" id="contact">
+      <i class="fa fa-home"></i> CESW Hub
+    </a>
+    <button id="backToTop">
+      <i class="fa-solid fa-angle-up"></i> Back to Top
+    </button>
+
+
+
+
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
   <script>
     const quill = new Quill('#editor', {
@@ -140,6 +151,16 @@
       quill.setContents([]);
       loadAdminPosts();
     };
+
+    $(document).ready(function() {
+      $(window).on('scroll', () => {
+        const scrolled = $(window).scrollTop() > 100;
+        $('#backToTop, #contact').toggle(scrolled);
+      });
+      $('#backToTop').on('click', () =>
+        $('html, body').animate({ scrollTop: 0 }, 'fast')
+      );
+    });
 
     loadAdminPosts();
   </script>
