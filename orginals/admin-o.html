@@ -16,11 +16,15 @@
       };
     })();
   </script>
- <link rel="stylesheet" href="https://cesw.danieltesting.space/assets/admin.css">
+ <link rel="stylesheet" href="admin.css">
 </head>
 <body>
     <div class="banner"></div>
   <main>
+
+
+
+
     <h1 class="title"><i class="fa-solid fa-book-open-reader"></i> CESW Hub: Admin</h1>
 
   <h2 class="title">Add Post</h2>
@@ -47,13 +51,12 @@
   <h2 class="title">Manage Posts</h2>
   <ul id="posts-list"></ul>
 
-
-<a href="mailto:danny.s13@live.com" id="contact">
+    <a href="http://cesw.danieltesting.hub" id="one" class="link-nochange">
+      <i class="fa fa-home"></i> CESW Hub
+    </a>
+      <a href="mailto:itsupport@kotakureo.school.nz" id="two" class="link-nochange">
       <i class="fa fa-envelope"></i> Contact
     </a>
-    <button id="backToTop">
-      <i class="fa-solid fa-angle-up"></i> Back to Top
-    </button>
 
 
 
@@ -153,16 +156,6 @@
     };
 
     loadAdminPosts();
-
-     $(document).ready(function() {
-          $(window).on('scroll', () => {
-        const scrolled = $(window).scrollTop() > 100;
-        $('#backToTop, #contact').toggle(scrolled);
-      });
-      $('#backToTop').on('click', () =>
-        $('html, body').animate({ scrollTop: 0 }, 'fast')
-      );
-    });
 
 
   </script>

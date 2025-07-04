@@ -11,6 +11,13 @@
     }
    .title { color: #00625f; text-align: center;}
 
+a.link-nochange,
+a.link-nochange:hover {
+    font-weight: normal;
+    text-decoration: none;
+    color: #000;
+}
+
 
     /* Form */
     #new-post {
@@ -120,27 +127,7 @@
     background-size: cover;
 }
 
-
-#backToTop {
-    display: none;
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #00625f;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    border-radius: 5px;
-}
-
-#backToTop:hover {
-    background: #6bbaae;
-}
-
-#contact {
-    display: none;
+#one {
     position: fixed;
     bottom: 70px;
     right: 20px;
@@ -153,6 +140,24 @@
     border-radius: 5px;
 }
 
-#contact:hover {
+#one:hover {
+    background: #6bbaae;
+}
+
+#two {
+    
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #00625f;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px;
+}
+
+#two:hover {
     background: #6bbaae;
 }
