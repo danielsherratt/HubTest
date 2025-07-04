@@ -60,7 +60,7 @@
         div.innerHTML = `
           <h1>${p.title}</h1>
           <div>${p.body}</div>
-          <i>${new Date(p.created_at).toLocaleDateString()}</i>
+          <i>${new Date(p.created_at).toLocaleDateString()} ${p.category}</i>
         `;
         container.append(div);
       });
