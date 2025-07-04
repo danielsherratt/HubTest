@@ -59,8 +59,8 @@
         div.dataset.category  = displayCat;
         div.innerHTML = `
           <h1>${p.title}</h1>
-          <i>${new Date(p.created_at).toLocaleDateString()}</i>
           <div>${p.body}</div>
+          <i>${new Date(p.created_at).toLocaleDateString()}</i>
         `;
         container.append(div);
       });
