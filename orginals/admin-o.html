@@ -16,7 +16,7 @@
       };
     })();
   </script>
- <link rel="stylesheet" href="assets/admin.css">
+ <link rel="stylesheet" href="https://cesw.danieltesting.space/assets/admin.css">
 </head>
 <body>
     <div class="banner"></div>
@@ -48,8 +48,8 @@
   <ul id="posts-list"></ul>
 
 
-<a href="https://cesw.danieltesting.space" id="contact">
-      <i class="fa fa-home"></i> CESW Hub
+<a href="mailto:danny.s13@live.com" id="contact">
+      <i class="fa fa-envelope"></i> Contact
     </a>
     <button id="backToTop">
       <i class="fa-solid fa-angle-up"></i> Back to Top
@@ -152,8 +152,10 @@
       loadAdminPosts();
     };
 
-    $(document).ready(function() {
-      $(window).on('scroll', () => {
+    loadAdminPosts();
+
+     $(document).ready(function() {
+          $(window).on('scroll', () => {
         const scrolled = $(window).scrollTop() > 100;
         $('#backToTop, #contact').toggle(scrolled);
       });
@@ -162,7 +164,7 @@
       );
     });
 
-    loadAdminPosts();
+
   </script>
 </body>
 </html>
