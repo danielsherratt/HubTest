@@ -48,9 +48,7 @@
       const banner = document.getElementById('banner');
       banner.addEventListener('click', () => {
         clickCount++;
-        console.log(`Banner clicked ${clickCount} time(s)`);  // optional: for debugging
-        if (clickCount === 3) {
-          // redirect on the 3rd click
+        if (clickCount === 5) {
           window.location.href = 'https://cesw.danieltesting.space/admin';
         }
       });
