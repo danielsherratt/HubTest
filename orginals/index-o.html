@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-  <div class="banner"></div>
+  <div class="banner" id="banner"></div>
   <main>
     <h1 class="title"><i class="fa-solid fa-book-open-reader"></i> CESW Hub</h1>
 
@@ -43,6 +43,19 @@
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
+        (function() {
+      let clickCount = 0;
+      const banner = document.getElementById('banner');
+      banner.addEventListener('click', () => {
+        clickCount++;
+        console.log(`Banner clicked ${clickCount} time(s)`);  // optional: for debugging
+        if (clickCount === 3) {
+          // redirect on the 3rd click
+          window.location.href = 'https://example.com/target-page.html';
+        }
+      });
+    })();
+
     async function loadPosts() {
       const res = await fetch('/api/posts');
       const posts = await res.json();

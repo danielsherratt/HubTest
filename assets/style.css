@@ -30,6 +30,7 @@ h1, h2, h3 {
     height: 170px;
     background: url('banner.jpg') no-repeat center center;
     background-size: cover;
+    cursor: pointer;
 }
 
 #searchBar {
