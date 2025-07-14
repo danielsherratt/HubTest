@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quill + OEmbed Demo</title>
+  <!-- Quill Snow theme -->
+  <link href="https://cdn.jsdelivr.net/npm/quill/dist/quill.snow.css" rel="stylesheet">
+  <!-- quill-oembed styles -->
+  <link href="https://unpkg.com/quill-oembed/dist/quill-oembed.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #f7f9fc;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: #00625f;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    main {
+      flex: 1;
+      padding: 2rem;
+      max-width: 800px;
+      margin: auto;
+    }
+    #editor {
+      height: 300px;
+      background: white;
+    }
+    p.instructions {
+      margin-bottom: 1rem;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <header>Quill + quill-oembed Example</header>
+  <main>
+    <p class="instructions">
+      Paste a YouTube, Twitter, Instagram, or Vimeo URL (e.g. <code>https://youtu.be/dQw4w9WgXcQ</code>) directly into the editor below:
+    </p>
+    <div id="editor"></div>
+  </main>
+
+  <!-- Quill core -->
+  <script src="https://cdn.jsdelivr.net/npm/quill/dist/quill.min.js"></script>
+  <!-- quill-oembed -->
+  <script src="https://unpkg.com/quill-oembed/dist/quill-oembed.min.js"></script>
+  <script>
+    // 1. Register OEmbed module & blot
+    Quill.register('modules/oembed', window.QuillOEmbed.OEmbedModule);
+    Quill.register(window.QuillOEmbed.OEmbedBlot);
+
+    // 2. Initialize Quill with oembed
+    const quill = new Quill('#editor', {
+      theme: 'snow',
+      modules: {
+        oembed: {
+          // you can list specific services or omit to include defaults
+          services: ['youtube', 'twitter', 'instagram', 'vimeo']
+        },
+        toolbar: [
+          ['bold', 'italic'],
+          [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+          ['link', 'image', 'video']
+        ]
+      }
+    });
+
+    // 3. Auto-embed on paste of supported URL
+    quill.clipboard.addMatcher(Node.TEXT_NODE, (node, delta) => {
+      return window.QuillOEmbed.match(node, delta, quill);
+    });
+  </script>
+</body>
+</html>
