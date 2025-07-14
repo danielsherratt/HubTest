@@ -159,3 +159,5 @@ a.link-nochange:hover {
 #two:hover {
     background: #6bbaae;
 }
+
+.delete-btn:hover {color:red;}
