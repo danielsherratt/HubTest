@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CESW Hub: Admin</title>
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-
+  <link rel="stylesheet" href="assets/admin.css">
   <!-- Silence DOMNodeInserted warning -->
   <script>
     (function() {
@@ -16,8 +16,6 @@
       };
     })();
   </script>
-
-  <link rel="stylesheet" href="assets/admin.css">
 </head>
 <body>
   <div class="banner"></div>
@@ -26,8 +24,8 @@
 
     <h2 class="title">Add Post</h2>
     <form id="new-post">
-      <input  id="new-post-input" name="title" type="text" placeholder="Title" required />
-      <select id="new-post-input" name="category" required>
+      <input name="title" type="text" placeholder="Title" required />
+      <select name="category" required>
         <option value="" disabled selected>Select category</option>
         <option value="howdoi">How Do I</option>
         <option value="general">General</option>
@@ -40,27 +38,26 @@
       </label>
 
       <div id="editor"></div>
-      <button id="new-post-button" type="submit">Create Post</button>
+      <button type="submit">Create Post</button>
     </form>
 
     <h2 class="title">Manage Posts</h2>
     <ul id="posts-list"></ul>
 
-    <a href="http://cesw.danieltesting.space" id="one" class="link-nochange">
+    <a href="http://cesw.danieltesting.space" class="link-nochange">
       <i class="fa fa-home"></i> CESW Hub
     </a>
-    <a href="mailto:itsupport@kotakureo.school.nz" id="two" class="link-nochange">
+    <a href="mailto:itsupport@kotakureo.school.nz" class="link-nochange">
       <i class="fa fa-envelope"></i> Contact
     </a>
   </main>
 
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
   <script>
-    const AUTH_HEADER = {
-      'Authorization': 'Bearer Effect-Confidence-After-Private-7'
-    };
+    // Constant for Authorization
+    const AUTH_HEADER = { 'Authorization': 'Bearer Effect-Confidence-After-Private-7' };
 
-    // Initialize Quill with a custom video handler for MS Stream
+    // Init Quill editor
     const quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
@@ -73,20 +70,17 @@
           ],
           handlers: {
             video: function() {
-              const input = prompt('Microsoft Stream (Share > Embed Code > Copy embed code):');
+              const input = prompt('Microsoft Stream embed code or share link:');
               if (!input) return;
               let url = input.trim();
               if (url.startsWith('<iframe')) {
                 const div = document.createElement('div');
                 div.innerHTML = url;
                 const iframe = div.querySelector('iframe');
-                if (iframe && iframe.src) url = iframe.src;
+                if (iframe?.src) url = iframe.src;
               } else {
-                const match = url.match(/https?:\/\/[^\/]+\/video\/([^?\/]+)/i);
-                if (match && match[1]) {
-                  const id = match[1];
-                  url = `https://web.microsoftstream.com/embed/video/${id}?autoplay=false`;
-                }
+                const m = url.match(/\/video\/([^?\/]+)/i);
+                if (m?.[1]) url = `https://web.microsoftstream.com/embed/video/${m[1]}?autoplay=false`;
               }
               const range = this.quill.getSelection(true);
               this.quill.insertEmbed(range.index, 'video', url, Quill.sources.USER);
@@ -97,11 +91,11 @@
       }
     });
 
-    // Load existing posts
+    // Load and render posts
     async function loadAdminPosts() {
-      const res   = await fetch('/api/posts');      // GET remains public
+      const res = await fetch('/api/posts');
       const posts = await res.json();
-      const ul    = document.getElementById('posts-list');
+      const ul = document.getElementById('posts-list');
       ul.innerHTML = '';
 
       posts.forEach(p => {
@@ -114,55 +108,46 @@
               <i class="${isPinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>
               ${isPinned ? 'Unpin' : 'Pin'}
             </button>
-            <button class="delete" data-id="${p.id}">
-              <i class="fa fa-trash"></i>
-              Delete
+            <button class="delete-btn" data-id="${p.id}">
+              <i class="fa fa-trash"></i> Delete
             </button>
           </span>
         `;
-        ul.append(li);
+        ul.appendChild(li);
       });
 
-      // Pin/Unpin
-      document.querySelectorAll('.pin-btn').forEach(btn => {
-        btn.onclick = async () => {
+      // Pin/Unpin handlers
+      ul.querySelectorAll('.pin-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
           const id = btn.dataset.id;
           const currentlyPinned = btn.classList.contains('unpin');
-          const rawCat = btn.closest('li')
-            .querySelector('span')
-            .textContent
-            .match(/\[(.*)\]/)[1];
+          const rawCat = btn.closest('li').querySelector('span').textContent.match(/\[(.*)\]/)[1];
           const baseCat = rawCat.replace(/^pinned\s*/i, '');
-          const newCat  = currentlyPinned
-            ? baseCat
-            : `pinned ${baseCat}`;
+          const newCat = currentlyPinned ? baseCat : `pinned ${baseCat}`;
 
           await fetch(`/api/posts/${id}`, {
             method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              ...AUTH_HEADER
-            },
+            headers: { 'Content-Type': 'application/json', ...AUTH_HEADER },
             body: JSON.stringify({ category: newCat, pinned: !currentlyPinned })
           });
           loadAdminPosts();
-        };
+        });
       });
 
-      // Delete
-      document.querySelectorAll('.delete').forEach(btn => {
-        btn.onclick = async () => {
+      // Delete handlers
+      ul.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
           await fetch(`/api/posts/${btn.dataset.id}`, {
             method: 'DELETE',
             headers: AUTH_HEADER
           });
           loadAdminPosts();
-        };
+        });
       });
     }
 
-    // Create new post
-    document.getElementById('new-post').onsubmit = async e => {
+    // New-post form handler
+    document.getElementById('new-post').addEventListener('submit', async e => {
       e.preventDefault();
       const form = e.target;
       let category = form.category.value;
@@ -170,14 +155,11 @@
 
       await fetch('/api/posts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...AUTH_HEADER
-        },
+        headers: { 'Content-Type': 'application/json', ...AUTH_HEADER },
         body: JSON.stringify({
-          title:  form.title.value,
+          title: form.title.value,
           category,
-          body:   quill.root.innerHTML,
+          body: quill.root.innerHTML,
           pinned: form.pinned.checked
         })
       });
@@ -185,9 +167,10 @@
       form.reset();
       quill.setContents([]);
       loadAdminPosts();
-    };
+    });
 
-    loadAdminPosts();
+    // Initial load
+    document.addEventListener('DOMContentLoaded', loadAdminPosts);
   </script>
 </body>
 </html>

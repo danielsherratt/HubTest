@@ -1,7 +1,6 @@
 // functions/api/posts.js
 
 export async function GET(request, env) {
-  // Public read
   const { results } = await env.CARDS.prepare(`
     SELECT id, title, body, category, pinned
       FROM posts
@@ -14,29 +13,21 @@ export async function GET(request, env) {
 }
 
 export async function POST(request, env) {
-  // Auth check
   const auth = request.headers.get('authorization') || '';
   if (auth !== `Bearer ${env.API_TOKEN}`) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  // Body validation
   const { title, category, body, pinned } = await request.json();
   if (!title || !category || !body) {
     return new Response('Missing fields', { status: 400 });
   }
 
-  // Insert new post
   const stmt = env.CARDS.prepare(`
     INSERT INTO posts (title, category, body, pinned)
          VALUES (?, ?, ?, ?)
   `);
-  const info = await stmt.bind(
-    title,
-    category,
-    body,
-    pinned ? 1 : 0
-  ).run();
+  const info = await stmt.bind(title, category, body, pinned ? 1 : 0).run();
 
   return new Response(JSON.stringify({ id: info.lastInsertRowid }), {
     headers: { 'Content-Type': 'application/json' }
@@ -44,20 +35,15 @@ export async function POST(request, env) {
 }
 
 export async function PUT(request, env) {
-  // Auth check
   const auth = request.headers.get('authorization') || '';
   if (auth !== `Bearer ${env.API_TOKEN}`) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  // Extract ID from URL
   const url = new URL(request.url);
   const id = url.pathname.split('/').pop();
-
-  // Payload
   const { category, pinned } = await request.json();
 
-  // Update post
   const stmt = env.CARDS.prepare(`
     UPDATE posts
        SET category = ?, pinned = ?
@@ -69,17 +55,14 @@ export async function PUT(request, env) {
 }
 
 export async function DELETE(request, env) {
-  // Auth check
   const auth = request.headers.get('authorization') || '';
   if (auth !== `Bearer ${env.API_TOKEN}`) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  // Extract ID from URL
   const url = new URL(request.url);
   const id = url.pathname.split('/').pop();
 
-  // Delete post
   const stmt = env.CARDS.prepare(`
     DELETE FROM posts
      WHERE id = ?
