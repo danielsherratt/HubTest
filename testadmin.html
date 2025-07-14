@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CESW Hub: Admin</title>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+
+  <!-- Silence DOMNodeInserted warning -->
+  <script>
+    (function() {
+      const orig = EventTarget.prototype.addEventListener;
+      EventTarget.prototype.addEventListener = function(type, fn, opts) {
+        if (type === 'DOMNodeInserted' || type === 'DOMNodeRemoved') return;
+        return orig.call(this, type, fn, opts);
+      };
+    })();
+  </script>
+
+  <link rel="stylesheet" href="assets/admin.css">
+</head>
+<body>
+  <div class="banner"></div>
+  <main>
+    <h1 class="title"><i class="fa-solid fa-book-open-reader"></i> CESW Hub: Admin</h1>
+
+    <h2 class="title">Add Post</h2>
+    <form id="new-post">
+      <input  id="new-post-input" name="title" type="text" placeholder="Title" required />
+      <select id="new-post-input" name="category" required>
+        <option value="" disabled selected>Select category</option>
+        <option value="howdoi">How Do I</option>
+        <option value="general">General</option>
+      </select>
+      <label class="star-checkbox">
+        <input type="checkbox" id="pinned" name="pinned" />
+        <i class="fa-regular fa-star unchecked"></i>
+        <i class="fa-solid fa-star checked"></i>
+        Pin this post
+      </label>
+
+      <div id="editor"></div>
+      <button id="new-post-button" type="submit">Create Post</button>
+    </form>
+
+    <h2 class="title">Manage Posts</h2>
+    <ul id="posts-list"></ul>
+
+    <a href="http://cesw.danieltesting.space" id="one" class="link-nochange">
+      <i class="fa fa-home"></i> CESW Hub
+    </a>
+    <a href="mailto:itsupport@kotakureo.school.nz" id="two" class="link-nochange">
+      <i class="fa fa-envelope"></i> Contact
+    </a>
+  </main>
+
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script>
+    // Initialize Quill with a custom video handler for MS Stream
+    const quill = new Quill('#editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: {
+          container: [
+            ['bold', 'italic'],
+            [{ header: [1, 2, 3, false] }],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            ['image', 'video']
+          ],
+          handlers: {
+            video: function() {
+              const input = prompt('Microsoft Stream (Share > Emded Code > Copy embed code):');
+              if (!input) return;
+              let url = input.trim();
+              // If raw iframe snippet, extract src
+              if (url.startsWith('<iframe')) {
+                const div = document.createElement('div');
+                div.innerHTML = url;
+                const iframe = div.querySelector('iframe');
+                if (iframe && iframe.src) url = iframe.src;
+              } else {
+                // If Stream share link, convert to embed format
+                const match = url.match(/https?:\/\/[^\/]+\/video\/([^?\/]+)/i);
+                if (match && match[1]) {
+                  const id = match[1];
+                  url = `https://web.microsoftstream.com/embed/video/${id}?autoplay=false`;
+                }
+              }
+              const range = this.quill.getSelection(true);
+              this.quill.insertEmbed(range.index, 'video', url, Quill.sources.USER);
+              this.quill.setSelection(range.index + 1, Quill.sources.SILENT);
+            }
+          }
+        }
+      }
+    });
+
+    async function loadAdminPosts() {
+      const res   = await fetch('/api/posts');
+      const posts = await res.json();
+      const ul    = document.getElementById('posts-list');
+      ul.innerHTML = '';
+
+      posts.forEach(p => {
+        const isPinned = p.pinned === 1;
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span>${p.title} [${p.category}]</span>
+          <span class="actions">
+            <button class="pin-btn ${isPinned ? 'unpin' : ''}" data-id="${p.id}">
+              <i class="${isPinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>
+              ${isPinned ? 'Unpin' : 'Pin'}
+            </button>
+            <button class="delete" data-id="${p.id}">
+              <i class="fa fa-trash"></i>
+              Delete
+            </button>
+          </span>
+        `;
+        ul.append(li);
+      });
+
+      document.querySelectorAll('.pin-btn').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          const currentlyPinned = btn.classList.contains('unpin');
+          const rawCat = btn.closest('li')
+            .querySelector('span')
+            .textContent
+            .match(/\[(.*)\]/)[1];
+          const baseCat = rawCat.replace(/^pinned\s*/i, '');
+          const newCat  = currentlyPinned
+            ? baseCat
+            : `pinned ${baseCat}`;
+
+          await fetch(`/api/posts/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ category: newCat, pinned: !currentlyPinned })
+          });
+          loadAdminPosts();
+        };
+      });
+
+      document.querySelectorAll('.delete').forEach(btn => {
+        btn.onclick = async () => {
+          await fetch(`/api/posts/${btn.dataset.id}`, { method: 'DELETE' });
+          loadAdminPosts();
+        };
+      });
+    }
+
+    document.getElementById('new-post').onsubmit = async e => {
+      e.preventDefault();
+      const form = e.target;
+      let category = form.category.value;
+      if (form.pinned.checked) category = `pinned ${category}`;
+
+      await fetch('/api/posts', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          title:  form.title.value,
+          category,
+          body:   quill.root.innerHTML,
+          pinned: form.pinned.checked
+        })
+      });
+
+      form.reset();
+      quill.setContents([]);
+      loadAdminPosts();
+    };
+
+    loadAdminPosts();
+  </script>
+</body>
+</html>
