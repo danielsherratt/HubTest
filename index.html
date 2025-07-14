@@ -1,142 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <title>CESW Hub</title>
-
-  <!-- Font Awesome -->
-  <link
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    rel="stylesheet"
-  />
-  <!-- Your custom CSS -->
-  <link rel="stylesheet" href="assets/style.css">
-  <style>/* Scroll Bar Styles */
-::-webkit-scrollbar {
-    width: 4px;
-}
-
-::-webkit-scrollbar-track {
-    background: white;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #ababab;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #ababab;
-}</style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <title>CESW Hub</title>  
+    <script type="module">var i={};Object.defineProperty(i,"__esModule",{value:!0});function y(r,e,t){var c;if(t===void 0&&(t={}),!e.codes){e.codes={};for(var s=0;s<e.chars.length;++s)e.codes[e.chars[s]]=s}if(!t.loose&&r.length*e.bits&7)throw new SyntaxError("Invalid padding");for(var a=r.length;r[a-1]==="=";)if(--a,!t.loose&&!((r.length-a)*e.bits&7))throw new SyntaxError("Invalid padding");for(var o=new((c=t.out)!=null?c:Uint8Array)(a*e.bits/8|0),n=0,u=0,l=0,f=0;f<a;++f){var E=e.codes[r[f]];if(E===void 0)throw new SyntaxError("Invalid character "+r[f]);u=u<<e.bits|E,n+=e.bits,n>=8&&(n-=8,o[l++]=255&u>>n)}if(n>=e.bits||255&u<<8-n)throw new SyntaxError("Unexpected end of data");return o}function h(r,e,t){t===void 0&&(t={});for(var c=t,s=c.pad,a=s===void 0?!0:s,o=(1<<e.bits)-1,n="",u=0,l=0,f=0;f<r.length;++f)for(l=l<<8|255&r[f],u+=8;u>e.bits;)u-=e.bits,n+=e.chars[o&l>>u];if(u&&(n+=e.chars[o&l<<e.bits-u]),a)for(;n.length*e.bits&7;)n+="=";return n}var L={chars:"0123456789ABCDEF",bits:4},K={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567",bits:5},O={chars:"0123456789ABCDEFGHIJKLMNOPQRSTUV",bits:5},$={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",bits:6},P={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",bits:6},F={parse:function(e,t){return y(e.toUpperCase(),L,t)},stringify:function(e,t){return h(e,L,t)}},I={parse:function(e,t){return t===void 0&&(t={}),y(t.loose?e.toUpperCase().replace(/0/g,"O").replace(/1/g,"L").replace(/8/g,"B"):e,K,t)},stringify:function(e,t){return h(e,K,t)}},k={parse:function(e,t){return y(e,O,t)},stringify:function(e,t){return h(e,O,t)}},B={parse:function(e,t){return y(e,$,t)},stringify:function(e,t){return h(e,$,t)}},G={parse:function(e,t){return y(e,P,t)},stringify:function(e,t){return h(e,P,t)}},H={parse:y,stringify:h};i.base16=F;i.base32=I;i.base32hex=k;i.base64=B;i.base64url=G;i.codec=H;i.base16;i.base32;i.base32hex;const J=i.base64;i.base64url;i.codec;function b(r){const e=document.querySelector(r);if(e)return e;throw new Error(`No element found with selector: "${r}"`)}const d=b("input"),m=b("header"),j=b("#msg"),g=b("form"),v=b("#load");let N,D,M,T;document.addEventListener("DOMContentLoaded",async()=>{const r=b("pre[data-i]");if(!r.innerText){d.disabled=!0,S("No encrypted payload.");return}T=Number(r.dataset.i);const e=J.parse(r.innerText);if(N=e.slice(0,32),D=e.slice(32,32+16),M=e.slice(32+16),location.hash){const t=new URL(window.location.href);d.value=t.hash.slice(1),t.hash="",history.replaceState(null,"",t.toString())}sessionStorage.k||d.value?await U():(w(v),x(g),m.classList.replace("hidden","flex"),d.focus())});var A,C;const p=((A=window.crypto)==null?void 0:A.subtle)||((C=window.crypto)==null?void 0:C.webkitSubtle);p||(S("Please use a modern browser."),d.disabled=!0);function x(r){r.classList.remove("hidden")}function w(r){r.classList.add("hidden")}function S(r){j.innerText=r,m.classList.add("red")}g.addEventListener("submit",async r=>{r.preventDefault(),await U()});async function R(r){return new Promise(e=>setTimeout(e,r))}async function U(){v.lastElementChild.innerText="Checking...",w(m),w(g),x(v),await R(60);try{const r=await V({salt:N,iv:D,ciphertext:M,iterations:T},d.value);document.write(r),document.close()}catch(r){w(v),x(g),m.classList.replace("hidden","flex"),sessionStorage.k?sessionStorage.removeItem("k"):S("Whoops, try again, or contact ITSupport"),d.value="",d.focus()}}async function q(r,e,t){const c=new TextEncoder,s=await p.importKey("raw",c.encode(e),"PBKDF2",!1,["deriveKey"]);return await p.deriveKey({name:"PBKDF2",salt:r,iterations:t,hash:"SHA-256"},s,{name:"AES-GCM",length:256},!0,["decrypt"])}async function Q(r){return p.importKey("jwk",r,"AES-GCM",!0,["decrypt"])}async function V({salt:r,iv:e,ciphertext:t,iterations:c},s){const a=new TextDecoder,o=sessionStorage.k?await Q(JSON.parse(sessionStorage.k)):await q(r,s,c),n=new Uint8Array(await p.decrypt({name:"AES-GCM",iv:e},o,t));if(!n)throw"Malformed data";return sessionStorage.k=JSON.stringify(await p.exportKey("jwk",o)),a.decode(n)}</script>
+    <link rel="stylesheet" href="assets/login.css"/>
+   
 </head>
 <body>
-  <div class="banner" id="banner"></div>
-  <main>
-    <h1 class="title"><i class="fa-solid fa-book-open-reader"></i> CESW Hub</h1>
 
-    <div id="search-container">
-      <input type="text" id="searchBar" placeholder="Search for an article">
-      <select id="category-select">
-        <option value="">All</option>
-        <option value="pinned">Pinned</option>
-        <option value="howdoi">How Do I</option>
-      </select>
-    </div>
 
-    <div id="noResults">
-      No article found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category
-    </div>
-    <div class="card-container"></div>
+<div id="dialogWrap">
+<div id="dialogWrapCell">
+<div id="mainDialog">
 
-    <a href="mailto:danny.s13@live.com" id="contact" class="link-nochange">
-      <i class="fa fa-envelope"></i> Contact
-    </a>
-    <button id="backToTop">
-      <i class="fa-solid fa-angle-up"></i> Back to Top
-    </button>
-  </main>
+<div id="load">
+<p class="spinner"></p><p>Loading...</p>
+</div>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script>
-        (function() {
-      let clickCount = 0;
-      const banner = document.getElementById('banner');
-      banner.addEventListener('click', () => {
-        clickCount++;
-        if (clickCount === 5) {
-          window.location.href = 'https://cesw.danieltesting.space/admin';
-        }
-      });
-    })();
+<header class="hidden">
 
-    async function loadPosts() {
-      const res = await fetch('/api/posts');
-      const posts = await res.json();
+<div style="display:grid; grid-template-columns: auto auto;">
+    <div class="logo">
+        <img src="assets/logo.png" alt="Your Logo">
+      </div>  
+<div><h1>CESW Hub</h1></div>
+</div>
 
-      // Server already ordered by pinned & date
-      const container = document.querySelector('.card-container');
-      container.innerHTML = '';
+</header>
 
-      posts.forEach(p => {
-        const displayCat = p.category.toLowerCase();
-        const div = document.createElement('div');
-        div.className         = 'card';
-        div.dataset.name      = p.title.toLowerCase();
-        div.dataset.category  = displayCat;
-        div.innerHTML = `
-          <h1>${p.title}</h1>
-          <div>${p.body}</div>
-          <br><i>${new Date(p.created_at).toLocaleDateString()} ${p.category}</i>
-        `;
-        container.append(div);
-      });
+<div id="passArea">
+<form class="hidden">
+<input type="password" id="pwd" name="pwd" aria-label="Password" autofocus placeholder="Password"/>
+<button type="submit id="submitPass"">Login</button>
+</form>
+<p id="msg"></p>
+</div>
+</div>
 
-      filterCards();
-    }
+</div>
+</div>
 
-    function filterCards() {
-      let val = $('#searchBar').val().toLowerCase();
-      const cat = $('#category-select').val().toLowerCase();
-      let shown = 0;
+<!-- Pre from Output.html goes below -->
+       <pre class="hidden" data-i="2e+6">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</pre>
 
-      if (val === 'pick') {
-        val = (Math.floor(Math.random() * 250) + 1).toString();
-      }
-
-      $('.card').each(function() {
-        const name = $(this).data('name');
-        const c    = $(this).data('category');
-        const ok   = name.includes(val) && (!cat || c.includes(cat));
-        $(this).toggle(ok);
-        if (ok) shown++;
-      });
-
-      $('#noResults').toggle(shown === 0);
-    }
-
-    $(document).ready(function() {
-      loadPosts();
-      $('#searchBar')
-        .focus()
-        .on('keyup input', filterCards)
-        .on('input', function() {
-          clearTimeout($.data(this,'timer'));
-          const self = this;
-          $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
-        })
-        .on('keydown', function() {
-          clearTimeout($.data(this,'timer'));
-        });
-      $('#category-select').on('change', filterCards);
-      $(window).on('scroll', () => {
-        const scrolled = $(window).scrollTop() > 100;
-        $('#backToTop, #contact').toggle(scrolled);
-      });
-      $('#backToTop').on('click', () =>
-        $('html, body').animate({ scrollTop: 0 }, 'fast')
-      );
-    });
-  </script>
-</body>
-</html>
+    </body></html>

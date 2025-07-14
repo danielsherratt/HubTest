@@ -63,7 +63,7 @@
             ['bold', 'italic'],
             [{ header: [1, 2, 3, false] }],
             [{ list: 'ordered' }, { list: 'bullet' }],
-            ['image', 'video']
+            ['image']
           ],
           handlers: {
             video() {
@@ -145,15 +145,19 @@
       });
 
       // Delete
-      ul.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          await fetch(`/api/posts/${btn.dataset.id}`, {
-            method: 'DELETE',
-            credentials: 'include'
-          });
-          loadAdminPosts();
-        });
-      });
+      // After: ask for confirmation
+ul.querySelectorAll('.delete-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    if (!window.confirm('Are you sure you want to delete this post?')) {
+      return; // user cancelled
+    }
+    await fetch(`/api/posts/${btn.dataset.id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    loadAdminPosts();
+  });
+});
     }
 
     // Create new post

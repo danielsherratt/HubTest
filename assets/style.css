@@ -148,3 +148,20 @@ a.link-nochange:hover {
     text-decoration: none;
     color: #000;
 }
+
+/* Scroll Bar Styles */
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: white;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ababab;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #ababab;
+}

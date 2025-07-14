@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <title>CESW Hub</title>
+
+  <!-- Font Awesome -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    rel="stylesheet"
+  />
+  <!-- Your custom CSS -->
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="banner"></div>
+  <main>
+    <h1 class="title"><i class="fa-solid fa-book-open-reader"></i> CESW Hub</h1>
+
+    <div id="search-container">
+      <input type="text" id="searchBar" placeholder="Search for an article">
+      <select id="category-select">
+        <option value="">All</option>
+        <option value="pinned">Pinned</option>
+        <option value="howdoi">How Do I</option>
+      </select>
+    </div>
+
+    <div id="noResults">
+      No article found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category
+    </div>
+    <div class="card-container"></div>
+
+    <a href="mailto:danny.s13@live.com" id="contact" class="link-nochange">
+      <i class="fa fa-envelope"></i> Contact
+    </a>
+    <button id="backToTop">
+      <i class="fa-solid fa-angle-up"></i> Back to Top
+    </button>
+  </main>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    async function loadPosts() {
+      const res = await fetch('/api/posts');
+      const posts = await res.json();
+
+      // Server already ordered by pinned & date
+      const container = document.querySelector('.card-container');
+      container.innerHTML = '';
+
+      posts.forEach(p => {
+        const displayCat = p.category.toLowerCase();
+        const div = document.createElement('div');
+        div.className         = 'card';
+        div.dataset.name      = p.title.toLowerCase();
+        div.dataset.category  = displayCat;
+        div.innerHTML = `
+          <h1>${p.title}</h1>
+          <div>${p.body}</div>
+          <br><i>${new Date(p.created_at).toLocaleDateString()} ${p.category}</i>
+        `;
+        container.append(div);
+      });
+
+      filterCards();
+    }
+
+    function filterCards() {
+      let val = $('#searchBar').val().toLowerCase();
+      const cat = $('#category-select').val().toLowerCase();
+      let shown = 0;
+
+      if (val === 'pick') {
+        val = (Math.floor(Math.random() * 250) + 1).toString();
+      }
+
+      $('.card').each(function() {
+        const name = $(this).data('name');
+        const c    = $(this).data('category');
+        const ok   = name.includes(val) && (!cat || c.includes(cat));
+        $(this).toggle(ok);
+        if (ok) shown++;
+      });
+
+      $('#noResults').toggle(shown === 0);
+    }
+
+    $(document).ready(function() {
+      loadPosts();
+      $('#searchBar')
+        .focus()
+        .on('keyup input', filterCards)
+        .on('input', function() {
+          clearTimeout($.data(this,'timer'));
+          const self = this;
+          $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
+        })
+        .on('keydown', function() {
+          clearTimeout($.data(this,'timer'));
+        });
+      $('#category-select').on('change', filterCards);
+      $(window).on('scroll', () => {
+        const scrolled = $(window).scrollTop() > 100;
+        $('#backToTop, #contact').toggle(scrolled);
+      });
+      $('#backToTop').on('click', () =>
+        $('html, body').animate({ scrollTop: 0 }, 'fast')
+      );
+    });
+  </script>
+</body>
+</html>
