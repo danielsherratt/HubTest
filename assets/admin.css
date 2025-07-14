@@ -3,11 +3,36 @@
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
 
+  /* Page reset */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Background & font */
     body {
-      font-family: sans-serif;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #333;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Banner */
+.banner {
+    width: 100%;
+    height: 170px;
+    background: url('banner.jpg') no-repeat center center;
+    background-size: cover;
+}
+
+    /* Centered card */
+    .login-card {
+      background: white;
+      max-width: 360px;
+      margin: 2rem auto;
       padding: 2rem;
- 
-      margin: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
     }
    .title { color: #00625f; text-align: center;}
 
@@ -99,7 +124,6 @@ a.link-nochange:hover {
       color: #d9534f;
     }
 
-/* add to your existing <style> */
 .star-checkbox {
   display: inline-flex;
   align-items: center;
@@ -119,13 +143,6 @@ a.link-nochange:hover {
 /* when the hidden checkbox is checked… */
 .star-checkbox input:checked ~ .checked   { display: inline-block; }
 .star-checkbox input:checked ~ .unchecked { display: none; }
-
-.banner {
-    width: 100%;
-    height: 170px;
-    background: url('banner.jpg') no-repeat center center;
-    background-size: cover;
-}
 
 #one {
     position: fixed;
