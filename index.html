@@ -1,50 +1,126 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex, nofollow">
-    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-    <title>CESW Hub</title>  
-    <script type="module">var i={};Object.defineProperty(i,"__esModule",{value:!0});function y(r,e,t){var c;if(t===void 0&&(t={}),!e.codes){e.codes={};for(var s=0;s<e.chars.length;++s)e.codes[e.chars[s]]=s}if(!t.loose&&r.length*e.bits&7)throw new SyntaxError("Invalid padding");for(var a=r.length;r[a-1]==="=";)if(--a,!t.loose&&!((r.length-a)*e.bits&7))throw new SyntaxError("Invalid padding");for(var o=new((c=t.out)!=null?c:Uint8Array)(a*e.bits/8|0),n=0,u=0,l=0,f=0;f<a;++f){var E=e.codes[r[f]];if(E===void 0)throw new SyntaxError("Invalid character "+r[f]);u=u<<e.bits|E,n+=e.bits,n>=8&&(n-=8,o[l++]=255&u>>n)}if(n>=e.bits||255&u<<8-n)throw new SyntaxError("Unexpected end of data");return o}function h(r,e,t){t===void 0&&(t={});for(var c=t,s=c.pad,a=s===void 0?!0:s,o=(1<<e.bits)-1,n="",u=0,l=0,f=0;f<r.length;++f)for(l=l<<8|255&r[f],u+=8;u>e.bits;)u-=e.bits,n+=e.chars[o&l>>u];if(u&&(n+=e.chars[o&l<<e.bits-u]),a)for(;n.length*e.bits&7;)n+="=";return n}var L={chars:"0123456789ABCDEF",bits:4},K={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567",bits:5},O={chars:"0123456789ABCDEFGHIJKLMNOPQRSTUV",bits:5},$={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",bits:6},P={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",bits:6},F={parse:function(e,t){return y(e.toUpperCase(),L,t)},stringify:function(e,t){return h(e,L,t)}},I={parse:function(e,t){return t===void 0&&(t={}),y(t.loose?e.toUpperCase().replace(/0/g,"O").replace(/1/g,"L").replace(/8/g,"B"):e,K,t)},stringify:function(e,t){return h(e,K,t)}},k={parse:function(e,t){return y(e,O,t)},stringify:function(e,t){return h(e,O,t)}},B={parse:function(e,t){return y(e,$,t)},stringify:function(e,t){return h(e,$,t)}},G={parse:function(e,t){return y(e,P,t)},stringify:function(e,t){return h(e,P,t)}},H={parse:y,stringify:h};i.base16=F;i.base32=I;i.base32hex=k;i.base64=B;i.base64url=G;i.codec=H;i.base16;i.base32;i.base32hex;const J=i.base64;i.base64url;i.codec;function b(r){const e=document.querySelector(r);if(e)return e;throw new Error(`No element found with selector: "${r}"`)}const d=b("input"),m=b("header"),j=b("#msg"),g=b("form"),v=b("#load");let N,D,M,T;document.addEventListener("DOMContentLoaded",async()=>{const r=b("pre[data-i]");if(!r.innerText){d.disabled=!0,S("No encrypted payload.");return}T=Number(r.dataset.i);const e=J.parse(r.innerText);if(N=e.slice(0,32),D=e.slice(32,32+16),M=e.slice(32+16),location.hash){const t=new URL(window.location.href);d.value=t.hash.slice(1),t.hash="",history.replaceState(null,"",t.toString())}sessionStorage.k||d.value?await U():(w(v),x(g),m.classList.replace("hidden","flex"),d.focus())});var A,C;const p=((A=window.crypto)==null?void 0:A.subtle)||((C=window.crypto)==null?void 0:C.webkitSubtle);p||(S("Please use a modern browser."),d.disabled=!0);function x(r){r.classList.remove("hidden")}function w(r){r.classList.add("hidden")}function S(r){j.innerText=r,m.classList.add("red")}g.addEventListener("submit",async r=>{r.preventDefault(),await U()});async function R(r){return new Promise(e=>setTimeout(e,r))}async function U(){v.lastElementChild.innerText="Checking...",w(m),w(g),x(v),await R(60);try{const r=await V({salt:N,iv:D,ciphertext:M,iterations:T},d.value);document.write(r),document.close()}catch(r){w(v),x(g),m.classList.replace("hidden","flex"),sessionStorage.k?sessionStorage.removeItem("k"):S("Whoops, try again, or contact ITSupport"),d.value="",d.focus()}}async function q(r,e,t){const c=new TextEncoder,s=await p.importKey("raw",c.encode(e),"PBKDF2",!1,["deriveKey"]);return await p.deriveKey({name:"PBKDF2",salt:r,iterations:t,hash:"SHA-256"},s,{name:"AES-GCM",length:256},!0,["decrypt"])}async function Q(r){return p.importKey("jwk",r,"AES-GCM",!0,["decrypt"])}async function V({salt:r,iv:e,ciphertext:t,iterations:c},s){const a=new TextDecoder,o=sessionStorage.k?await Q(JSON.parse(sessionStorage.k)):await q(r,s,c),n=new Uint8Array(await p.decrypt({name:"AES-GCM",iv:e},o,t));if(!n)throw"Malformed data";return sessionStorage.k=JSON.stringify(await p.exportKey("jwk",o)),a.decode(n)}</script>
-    <link rel="stylesheet" href="assets/login.css"/>
-   
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <title>CESW Hub</title>
+
+  <!-- Font Awesome -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    rel="stylesheet"
+  />
+  <!-- Your custom CSS -->
+  <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
+  <div class="banner" id="banner"></div>
+  <main>
+    <h1 class="title"><i class="fa-solid fa-book-open-reader"></i> CESW Hub</h1>
 
+    <div id="search-container">
+      <input type="text" id="searchBar" placeholder="Search for an article">
+      <select id="category-select">
+        <option value="">All</option>
+        <option value="pinned">Pinned</option>
+        <option value="howdoi">How Do I</option>
+      </select>
+    </div>
 
-<div id="dialogWrap">
-<div id="dialogWrapCell">
-<div id="mainDialog">
+    <div id="noResults">
+      No article found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category
+    </div>
+    <div class="card-container"></div>
 
-<div id="load">
-<p class="spinner"></p><p>Loading...</p>
-</div>
+    <a href="mailto:danny.s13@live.com" id="contact" class="link-nochange">
+      <i class="fa fa-envelope"></i> Contact
+    </a>
+    <button id="backToTop">
+      <i class="fa-solid fa-angle-up"></i> Back to Top
+    </button>
+  </main>
 
-<header class="hidden">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+        (function() {
+      let clickCount = 0;
+      const banner = document.getElementById('banner');
+      banner.addEventListener('click', () => {
+        clickCount++;
+        if (clickCount === 5) {
+          window.location.href = 'https://cesw.danieltesting.space/admin';
+        }
+      });
+    })();
 
-<div style="display:grid; grid-template-columns: auto auto;">
-    <div class="logo">
-        <img src="assets/logo.png" alt="Your Logo">
-      </div>  
-<div><h1>CESW Hub</h1></div>
-</div>
+    async function loadPosts() {
+      const res = await fetch('/api/posts');
+      const posts = await res.json();
 
-</header>
+      // Server already ordered by pinned & date
+      const container = document.querySelector('.card-container');
+      container.innerHTML = '';
 
-<div id="passArea">
-<form class="hidden">
-<input type="password" id="pwd" name="pwd" aria-label="Password" autofocus placeholder="Password"/>
-<button type="submit id="submitPass"">Login</button>
-</form>
-<p id="msg"></p>
-</div>
-</div>
+      posts.forEach(p => {
+        const displayCat = p.category.toLowerCase();
+        const div = document.createElement('div');
+        div.className         = 'card';
+        div.dataset.name      = p.title.toLowerCase();
+        div.dataset.category  = displayCat;
+        div.innerHTML = `
+          <h1>${p.title}</h1>
+          <div>${p.body}</div>
+          <br><i>${new Date(p.created_at).toLocaleDateString()} ${p.category}</i>
+        `;
+        container.append(div);
+      });
 
-</div>
-</div>
+      filterCards();
+    }
 
-<!-- Pre from Output.html goes below -->
-        <pre class="hidden" data-i="2e+6">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</pre>
+    function filterCards() {
+      let val = $('#searchBar').val().toLowerCase();
+      const cat = $('#category-select').val().toLowerCase();
+      let shown = 0;
 
-    </body></html>
+      if (val === 'pick') {
+        val = (Math.floor(Math.random() * 250) + 1).toString();
+      }
+
+      $('.card').each(function() {
+        const name = $(this).data('name');
+        const c    = $(this).data('category');
+        const ok   = name.includes(val) && (!cat || c.includes(cat));
+        $(this).toggle(ok);
+        if (ok) shown++;
+      });
+
+      $('#noResults').toggle(shown === 0);
+    }
+
+    $(document).ready(function() {
+      loadPosts();
+      $('#searchBar')
+        .focus()
+        .on('keyup input', filterCards)
+        .on('input', function() {
+          clearTimeout($.data(this,'timer'));
+          const self = this;
+          $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
+        })
+        .on('keydown', function() {
+          clearTimeout($.data(this,'timer'));
+        });
+      $('#category-select').on('change', filterCards);
+      $(window).on('scroll', () => {
+        const scrolled = $(window).scrollTop() > 100;
+        $('#backToTop, #contact').toggle(scrolled);
+      });
+      $('#backToTop').on('click', () =>
+        $('html, body').animate({ scrollTop: 0 }, 'fast')
+      );
+    });
+  </script>
+</body>
+</html>
