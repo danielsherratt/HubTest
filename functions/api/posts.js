@@ -1,33 +1,90 @@
-export async function onRequest({ request, env }) {
-  const db = env.POSTS_DB;
+// functions/api/posts.js
 
-  if (request.method === 'GET') {
-    const { results } = await db
-      .prepare(`
-        SELECT id, title, category, body, pinned, created_at
-          FROM posts
-         ORDER BY pinned DESC, created_at DESC
-      `)
-      .all();
-    return new Response(JSON.stringify(results), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+export async function GET(request, env) {
+  // Public read
+  const { results } = await env.CARDS.prepare(`
+    SELECT id, title, body, category, pinned
+      FROM posts
+     ORDER BY created_at DESC
+  `).all();
+
+  return new Response(JSON.stringify(results), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+export async function POST(request, env) {
+  // Auth check
+  const auth = request.headers.get('authorization') || '';
+  if (auth !== `Bearer ${env.API_TOKEN}`) {
+    return new Response('Unauthorized', { status: 401 });
   }
 
-  if (request.method === 'POST') {
-    const { title, category, body, pinned } = await request.json();
-    const { lastInsertRowId } = await db
-      .prepare(`
-        INSERT INTO posts (title, category, body, pinned)
-        VALUES (?, ?, ?, ?)
-      `)
-      .bind(title, category, body, pinned ? 1 : 0)
-      .run();
-    return new Response(JSON.stringify({ id: lastInsertRowId }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
+  // Body validation
+  const { title, category, body, pinned } = await request.json();
+  if (!title || !category || !body) {
+    return new Response('Missing fields', { status: 400 });
   }
 
-  return new Response('Method Not Allowed', { status: 405 });
+  // Insert new post
+  const stmt = env.CARDS.prepare(`
+    INSERT INTO posts (title, category, body, pinned)
+         VALUES (?, ?, ?, ?)
+  `);
+  const info = await stmt.bind(
+    title,
+    category,
+    body,
+    pinned ? 1 : 0
+  ).run();
+
+  return new Response(JSON.stringify({ id: info.lastInsertRowid }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+export async function PUT(request, env) {
+  // Auth check
+  const auth = request.headers.get('authorization') || '';
+  if (auth !== `Bearer ${env.API_TOKEN}`) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  // Extract ID from URL
+  const url = new URL(request.url);
+  const id = url.pathname.split('/').pop();
+
+  // Payload
+  const { category, pinned } = await request.json();
+
+  // Update post
+  const stmt = env.CARDS.prepare(`
+    UPDATE posts
+       SET category = ?, pinned = ?
+     WHERE id = ?
+  `);
+  await stmt.bind(category, pinned ? 1 : 0, id).run();
+
+  return new Response(null, { status: 204 });
+}
+
+export async function DELETE(request, env) {
+  // Auth check
+  const auth = request.headers.get('authorization') || '';
+  if (auth !== `Bearer ${env.API_TOKEN}`) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  // Extract ID from URL
+  const url = new URL(request.url);
+  const id = url.pathname.split('/').pop();
+
+  // Delete post
+  const stmt = env.CARDS.prepare(`
+    DELETE FROM posts
+     WHERE id = ?
+  `);
+  await stmt.bind(id).run();
+
+  return new Response(null, { status: 204 });
 }

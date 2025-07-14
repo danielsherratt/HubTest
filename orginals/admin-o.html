@@ -56,6 +56,10 @@
 
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
   <script>
+    const AUTH_HEADER = {
+      'Authorization': 'Bearer Effect-Confidence-After-Private-7'
+    };
+
     // Initialize Quill with a custom video handler for MS Stream
     const quill = new Quill('#editor', {
       theme: 'snow',
@@ -69,17 +73,15 @@
           ],
           handlers: {
             video: function() {
-              const input = prompt('Microsoft Stream (Share > Emded Code > Copy embed code):');
+              const input = prompt('Microsoft Stream (Share > Embed Code > Copy embed code):');
               if (!input) return;
               let url = input.trim();
-              // If raw iframe snippet, extract src
               if (url.startsWith('<iframe')) {
                 const div = document.createElement('div');
                 div.innerHTML = url;
                 const iframe = div.querySelector('iframe');
                 if (iframe && iframe.src) url = iframe.src;
               } else {
-                // If Stream share link, convert to embed format
                 const match = url.match(/https?:\/\/[^\/]+\/video\/([^?\/]+)/i);
                 if (match && match[1]) {
                   const id = match[1];
@@ -95,8 +97,9 @@
       }
     });
 
+    // Load existing posts
     async function loadAdminPosts() {
-      const res   = await fetch('/api/posts');
+      const res   = await fetch('/api/posts');      // GET remains public
       const posts = await res.json();
       const ul    = document.getElementById('posts-list');
       ul.innerHTML = '';
@@ -120,6 +123,7 @@
         ul.append(li);
       });
 
+      // Pin/Unpin
       document.querySelectorAll('.pin-btn').forEach(btn => {
         btn.onclick = async () => {
           const id = btn.dataset.id;
@@ -135,21 +139,29 @@
 
           await fetch(`/api/posts/${id}`, {
             method: 'PUT',
-            headers: {'Content-Type':'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              ...AUTH_HEADER
+            },
             body: JSON.stringify({ category: newCat, pinned: !currentlyPinned })
           });
           loadAdminPosts();
         };
       });
 
+      // Delete
       document.querySelectorAll('.delete').forEach(btn => {
         btn.onclick = async () => {
-          await fetch(`/api/posts/${btn.dataset.id}`, { method: 'DELETE' });
+          await fetch(`/api/posts/${btn.dataset.id}`, {
+            method: 'DELETE',
+            headers: AUTH_HEADER
+          });
           loadAdminPosts();
         };
       });
     }
 
+    // Create new post
     document.getElementById('new-post').onsubmit = async e => {
       e.preventDefault();
       const form = e.target;
@@ -158,7 +170,10 @@
 
       await fetch('/api/posts', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          ...AUTH_HEADER
+        },
         body: JSON.stringify({
           title:  form.title.value,
           category,
