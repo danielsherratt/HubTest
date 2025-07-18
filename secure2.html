@@ -252,12 +252,52 @@
         li.innerHTML = `
           <span>
             <a href="${r.url}" target="_blank">${r.title}</a>
-            (${new Date(r.created_date).toLocaleDateString()})
-            ${r.pinned ? '📌' : ''}
+          <span class="actions">
+            <button class="pin-btn ${isPinned ? 'unpin' : ''}" data-id="${p.id}">
+              <i class="${isPinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>
+              ${isPinned ? 'Unpin' : 'Pin'}
+            </button>
+            <button class="deleteresource-btn" data-id="${p.id}">
+              <i class="fa fa-trash"></i> Delete
+            </button>
           </span>
         `;
         list.appendChild(li);
       });
+
+      ul.querySelectorAll('.pinresource-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const currentlyPinned = btn.classList.contains('unpin');
+          const rawCat = btn.closest('li')
+                          .querySelector('span')
+                          .textContent
+                          .match(/\[(.*)\]/)[1];
+          const baseCat = rawCat.replace(/^pinned\s*/i, '');
+          const newCat  = currentlyPinned ? baseCat : `pinned ${baseCat}`;
+
+          await fetch(`/api/resources/${id}`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category: newCat, pinned: !currentlyPinned })
+          });
+          loadAdminPosts();
+        });
+      });
+
+            ul.querySelectorAll('.deleteresource-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!window.confirm('Are you sure you want to delete this post?')) return;
+          await fetch(`/api/resources/${btn.dataset.id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
+          loadAdminPosts();
+        });
+      });
+
+
     }
 
     document.addEventListener('DOMContentLoaded', () => {
