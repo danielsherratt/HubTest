@@ -33,7 +33,10 @@
 <main>	
     <div id="search-container">
       <input type="text" id="searchBar" placeholder="Search for a post">
-        <i id="pinToggle" class="fas fa-thumbtack pin-icon"></i>
+      <select id="category-select">
+        <option value="">All</option>
+        <option value="pinned">Pinned</option>
+      </select>
     </div>
 
     <div id="noResults">
@@ -77,64 +80,50 @@
     }
 
     function filterCards() {
-    const val = $('#searchBar').val().toLowerCase();
-    const isPinned = $('#pinToggle').hasClass('active');
-    let shown = 0;
+      let val = $('#searchBar').val().toLowerCase();
+      const cat = $('#category-select').val().toLowerCase();
+      let shown = 0;
 
-    $('.card').each(function () {
-      const name = $(this).data('name')?.toLowerCase() || '';
-      const category = $(this).data('category')?.toLowerCase() || '';
 
-      const matchesSearch = name.includes(val);
-      const matchesPin = !isPinned || category === 'pinned';
 
-      const shouldShow = matchesSearch && matchesPin;
-
-      $(this).toggle(shouldShow);
-      if (shouldShow) shown++;
-    });
-
-    $('#noResults').toggle(shown === 0);
-  }
-
-  $(document).ready(function () {
-    // Load posts initially
-    loadPosts();
-
-    // Pin toggle click
-    $('#pinToggle').on('click', function () {
-      $(this).toggleClass('active');
-      filterCards();
-    });
-
-    // Search bar filtering
-    $('#searchBar')
-      .focus()
-      .on('keyup input', filterCards)
-      .on('input', function () {
-        clearTimeout($.data(this, 'timer'));
-        const self = this;
-        $.data(this, 'timer', setTimeout(() => $(self).blur(), 10000));
-      })
-      .on('keydown', function () {
-        clearTimeout($.data(this, 'timer'));
+      $('.card').each(function() {
+        const name = $(this).data('name');
+        const c    = $(this).data('category');
+        const ok   = name.includes(val) && (!cat || c.includes(cat));
+        $(this).toggle(ok);
+        if (ok) shown++;
       });
 
-    // Menu toggle
+      $('#noResults').toggle(shown === 0);
+    }
+        // Toggle menu
     $('.menu-icon').click(function () {
-      $('.nav-links').toggleClass('active');
+        $('.nav-links').toggleClass('active');
     });
 
-    // Scroll behavior
-    $(window).on('scroll', function () {
-      const scrolled = $(window).scrollTop() > 100;
-      $('#backToTop, #contact').toggle(scrolled);
-    });
+    $(document).ready(function() {
+      loadPosts();
+      $('#searchBar')
+        .focus()
+        .on('keyup input', filterCards)
+        .on('input', function() {
+          clearTimeout($.data(this,'timer'));
+          const self = this;
+          $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
+        })
+        .on('keydown', function() {
+          clearTimeout($.data(this,'timer'));
+        });
+      $('#category-select').on('change', filterCards);
 
-    $('#backToTop').on('click', function () {
-      $('html, body').animate({ scrollTop: 0 }, 'fast');
+      $(window).on('scroll', () => {
+        const scrolled = $(window).scrollTop() > 100;
+        $('#backToTop, #contact').toggle(scrolled);
+      });
+      $('#backToTop').on('click', () =>
+        $('html, body').animate({ scrollTop: 0 }, 'fast')
+      );
     });
-  });
   </script>
 </body>
 </html>
