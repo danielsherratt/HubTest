@@ -245,3 +245,21 @@ background-color: #00625f;
         padding-bottom: 10px;
     }
 }
+
+
+
+
+.pin-icon {
+      font-size: 24px;
+      cursor: pointer;
+      color: grey;
+      transition: color 0.3s ease;
+    }
+
+    .pin-icon:hover {
+      color: #6bbaae;
+    }
+
+    .pin-icon.active {
+      color: #00625f;
+    }

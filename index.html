@@ -33,10 +33,7 @@
 <main>	
     <div id="search-container">
       <input type="text" id="searchBar" placeholder="Search for a post">
-      <select id="category-select">
-        <option value="">All</option>
-        <option value="pinned">Pinned</option>
-      </select>
+        <i id="pinToggle" class="fas fa-thumbtack pin-icon"></i>
     </div>
 
     <div id="noResults">
@@ -79,14 +76,18 @@
       filterCards();
     }
 
+    const pin = document.getElementById('pinToggle');
+
+    pin.addEventListener('click', () => {
+      pin.classList.toggle('active');
+      const isPinned = pin.classList.contains('active');
+      console.log(`Pinned: ${isPinned}`); // you can act on this as needed
+    });
+
     function filterCards() {
       let val = $('#searchBar').val().toLowerCase();
       const cat = $('#category-select').val().toLowerCase();
       let shown = 0;
-
-      if (val === 'pick') {
-        val = (Math.floor(Math.random() * 250) + 1).toString();
-      }
 
       $('.card').each(function() {
         const name = $(this).data('name');
