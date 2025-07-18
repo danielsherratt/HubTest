@@ -76,33 +76,38 @@
       filterCards();
     }
 
-      function filterCards() {
-    let val = $('#searchBar').val().toLowerCase();
+    function filterCards() {
+    const val = $('#searchBar').val().toLowerCase();
     const isPinned = $('#pinToggle').hasClass('active');
     let shown = 0;
 
-    $('.card').each(function() {
-      const name = $(this).data('name');
-      const c    = $(this).data('category');
-      const ok   = name.includes(val) && (!isPinned || c === 'pinned');
+    $('.card').each(function () {
+      const name = $(this).data('name')?.toLowerCase() || '';
+      const category = $(this).data('category')?.toLowerCase() || '';
 
-      $(this).toggle(ok);
-      if (ok) shown++;
+      const matchesSearch = name.includes(val);
+      const matchesPin = !isPinned || category === 'pinned';
+
+      const shouldShow = matchesSearch && matchesPin;
+
+      $(this).toggle(shouldShow);
+      if (shouldShow) shown++;
     });
 
     $('#noResults').toggle(shown === 0);
   }
 
   $(document).ready(function () {
-    const pin = document.getElementById('pinToggle');
+    // Load posts initially
+    loadPosts();
 
-    pin.addEventListener('click', () => {
-      pin.classList.toggle('active');
+    // Pin toggle click
+    $('#pinToggle').on('click', function () {
+      $(this).toggleClass('active');
       filterCards();
     });
 
-    loadPosts();
-
+    // Search bar filtering
     $('#searchBar')
       .focus()
       .on('keyup input', filterCards)
@@ -115,19 +120,20 @@
         clearTimeout($.data(this, 'timer'));
       });
 
-    // Toggle menu
+    // Menu toggle
     $('.menu-icon').click(function () {
       $('.nav-links').toggleClass('active');
     });
 
-    $(window).on('scroll', () => {
+    // Scroll behavior
+    $(window).on('scroll', function () {
       const scrolled = $(window).scrollTop() > 100;
       $('#backToTop, #contact').toggle(scrolled);
     });
 
-    $('#backToTop').on('click', () =>
-      $('html, body').animate({ scrollTop: 0 }, 'fast')
-    );
+    $('#backToTop').on('click', function () {
+      $('html, body').animate({ scrollTop: 0 }, 'fast');
+    });
   });
   </script>
 </body>
