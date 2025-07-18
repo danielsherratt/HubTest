@@ -48,9 +48,9 @@ export async function onRequest({ request, env }) {
     }
     const { results } = await db
       .prepare(`
-        SELECT id, title, url, pinned, created_at
+        SELECT id, title, url, pinned, created_date
           FROM resources
-         ORDER BY pinned DESC, created_at DESC
+         ORDER BY pinned DESC, created_date DESC
       `)
       .all();
     return new Response(JSON.stringify(results), {
