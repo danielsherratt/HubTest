@@ -48,7 +48,7 @@
    <script>
 
     async function loadPosts() {
-      const res = await fetch('/api/resources');
+      const res = await fetch('/api/resourcespull');
       const posts = await res.json();
 
       // Server already ordered by pinned & date
