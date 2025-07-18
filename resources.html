@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <title>Songs - Sou'West Strummers</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<link rel="stylesheet" href="assets/resources.css">
+
+</head>
+<body>
+<div class="navbar">
+	<span class="menu-icon">&#9776;</span>
+<div class="nav-links">
+		<div class="nav-links">
+        <a class="nav-item" href="index.html">Feed</a>
+        <a class="nav-item" href="resources.html">Resources</a>
+
+		</div>
+		</div>
+    </div>
+    <div class="banner"></div>
+	
+<h1 class="title"><i class="fa-solid fa-book-open-reader"></i> CESW Hub</h1>
+    <h2 class="title"><i class="fa-solid fa-book-open-reader"></i> Resources</h2>  
+    
+<main>		
+    <input type="text" id="searchBar" placeholder="Type the resource name">
+	<button id="clearSearch">Clear</button>
+
+    <div id="noResults">No resource found <i class="fa fa-meh-o"></i>, please check your spelling</div>
+    <div class="card-container">
+	<button id="backToTop">Back to Top</button>
+
+<!-- Add new songs below, please put them in numbered order -->
+
+<a class="link-nochange" href="pdfs/1-All-I-Have-to-Do-Is-Dream.pdf">
+ <div class="card" data-name="1. All I Have to Do Is Dream">
+ <p>1. All I Have to Do Is Dream</p> 
+ <img src="covers/art.jpg">
+ </div>
+</a>
+<a class="link-nochange" href="pdfs/2-All-Of-Me-.pdf">
+ <div class="card" data-name="2. All Of Me ">
+ <p>2. All Of Me </p> 
+ <img src="covers/art.jpg">
+ </div>
+</a>
+<a class="link-nochange" href="pdfs/3-Another-Somebody-Done-Somebody-Wrong-Song.pdf">
+ <div class="card" data-name="3. Another Somebody Done Somebody Wrong Song">
+ <p>3. Another Somebody Done Somebody Wrong Song</p> 
+ <img src="covers/art.jpg">
+ </div>
+</a>
+
+
+    <a href="mailto:ITSupport@kotakureo.school.nz" id="contact" class="link-nochange">
+      <i class="fa fa-envelope"></i> Contact
+    </a>
+    <button id="backToTop">
+      <i class="fa-solid fa-angle-up"></i> Back to Top
+    </button>
+
+</main>
+
+   <script>
+$(document).ready(function () {
+    // Focus on search bar when page loads
+    $('#searchBar').focus();
+
+    // Search functionality
+    $('#searchBar').on('keyup', function () {
+        var value = $(this).val().toLowerCase();
+        var visibleCards = 0;
+		
+		 
+
+        $('.card').each(function () {
+            var match = $(this).data('name').toLowerCase().includes(value);
+            $(this).toggle(match);
+            if (match) visibleCards++;
+        });
+
+        $('#noResults').toggle(visibleCards === 0);
+    });
+	
+
+    // Hide keyboard after 3s of inactivity
+    let typingTimer;
+    const doneTypingInterval = 3000;
+
+    $('#searchBar').on('input', function () {
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => $('#searchBar').blur(), doneTypingInterval);
+    }).on('keydown', function () {
+        clearTimeout(typingTimer);
+    });
+
+    // Toggle menu
+    $('.menu-icon').click(function () {
+        $('.nav-links').toggleClass('active');
+    });
+
+    // Clear search bar when clicking clear button
+    $('#clearSearch').click(function () {
+        location.reload();
+    });
+
+    // Show/hide back-to-top button
+    $(window).scroll(function () {
+        $('#backToTop, #contact').toggle($(this).scrollTop() > 100);
+    });
+
+    // Scroll to top when button is clicked
+    $('#backToTop').click(function () {
+        $('html, body').animate({ scrollTop: 0 }, 'fast');
+    });
+});
+  </script>
+	
+</body>
+</html>

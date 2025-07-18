@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <title>CESW Hub</title>  
+    <script type="module">var i={};Object.defineProperty(i,"__esModule",{value:!0});function y(r,e,t){var c;if(t===void 0&&(t={}),!e.codes){e.codes={};for(var s=0;s<e.chars.length;++s)e.codes[e.chars[s]]=s}if(!t.loose&&r.length*e.bits&7)throw new SyntaxError("Invalid padding");for(var a=r.length;r[a-1]==="=";)if(--a,!t.loose&&!((r.length-a)*e.bits&7))throw new SyntaxError("Invalid padding");for(var o=new((c=t.out)!=null?c:Uint8Array)(a*e.bits/8|0),n=0,u=0,l=0,f=0;f<a;++f){var E=e.codes[r[f]];if(E===void 0)throw new SyntaxError("Invalid character "+r[f]);u=u<<e.bits|E,n+=e.bits,n>=8&&(n-=8,o[l++]=255&u>>n)}if(n>=e.bits||255&u<<8-n)throw new SyntaxError("Unexpected end of data");return o}function h(r,e,t){t===void 0&&(t={});for(var c=t,s=c.pad,a=s===void 0?!0:s,o=(1<<e.bits)-1,n="",u=0,l=0,f=0;f<r.length;++f)for(l=l<<8|255&r[f],u+=8;u>e.bits;)u-=e.bits,n+=e.chars[o&l>>u];if(u&&(n+=e.chars[o&l<<e.bits-u]),a)for(;n.length*e.bits&7;)n+="=";return n}var L={chars:"0123456789ABCDEF",bits:4},K={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567",bits:5},O={chars:"0123456789ABCDEFGHIJKLMNOPQRSTUV",bits:5},$={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",bits:6},P={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",bits:6},F={parse:function(e,t){return y(e.toUpperCase(),L,t)},stringify:function(e,t){return h(e,L,t)}},I={parse:function(e,t){return t===void 0&&(t={}),y(t.loose?e.toUpperCase().replace(/0/g,"O").replace(/1/g,"L").replace(/8/g,"B"):e,K,t)},stringify:function(e,t){return h(e,K,t)}},k={parse:function(e,t){return y(e,O,t)},stringify:function(e,t){return h(e,O,t)}},B={parse:function(e,t){return y(e,$,t)},stringify:function(e,t){return h(e,$,t)}},G={parse:function(e,t){return y(e,P,t)},stringify:function(e,t){return h(e,P,t)}},H={parse:y,stringify:h};i.base16=F;i.base32=I;i.base32hex=k;i.base64=B;i.base64url=G;i.codec=H;i.base16;i.base32;i.base32hex;const J=i.base64;i.base64url;i.codec;function b(r){const e=document.querySelector(r);if(e)return e;throw new Error(`No element found with selector: "${r}"`)}const d=b("input"),m=b("header"),j=b("#msg"),g=b("form"),v=b("#load");let N,D,M,T;document.addEventListener("DOMContentLoaded",async()=>{const r=b("pre[data-i]");if(!r.innerText){d.disabled=!0,S("No encrypted payload.");return}T=Number(r.dataset.i);const e=J.parse(r.innerText);if(N=e.slice(0,32),D=e.slice(32,32+16),M=e.slice(32+16),location.hash){const t=new URL(window.location.href);d.value=t.hash.slice(1),t.hash="",history.replaceState(null,"",t.toString())}sessionStorage.k||d.value?await U():(w(v),x(g),m.classList.replace("hidden","flex"),d.focus())});var A,C;const p=((A=window.crypto)==null?void 0:A.subtle)||((C=window.crypto)==null?void 0:C.webkitSubtle);p||(S("Please use a modern browser."),d.disabled=!0);function x(r){r.classList.remove("hidden")}function w(r){r.classList.add("hidden")}function S(r){j.innerText=r,m.classList.add("red")}g.addEventListener("submit",async r=>{r.preventDefault(),await U()});async function R(r){return new Promise(e=>setTimeout(e,r))}async function U(){v.lastElementChild.innerText="Checking...",w(m),w(g),x(v),await R(60);try{const r=await V({salt:N,iv:D,ciphertext:M,iterations:T},d.value);document.write(r),document.close()}catch(r){w(v),x(g),m.classList.replace("hidden","flex"),sessionStorage.k?sessionStorage.removeItem("k"):S("Whoops, try again, or contact ITSupport"),d.value="",d.focus()}}async function q(r,e,t){const c=new TextEncoder,s=await p.importKey("raw",c.encode(e),"PBKDF2",!1,["deriveKey"]);return await p.deriveKey({name:"PBKDF2",salt:r,iterations:t,hash:"SHA-256"},s,{name:"AES-GCM",length:256},!0,["decrypt"])}async function Q(r){return p.importKey("jwk",r,"AES-GCM",!0,["decrypt"])}async function V({salt:r,iv:e,ciphertext:t,iterations:c},s){const a=new TextDecoder,o=sessionStorage.k?await Q(JSON.parse(sessionStorage.k)):await q(r,s,c),n=new Uint8Array(await p.decrypt({name:"AES-GCM",iv:e},o,t));if(!n)throw"Malformed data";return sessionStorage.k=JSON.stringify(await p.exportKey("jwk",o)),a.decode(n)}</script>
+    <link rel="stylesheet" href="assets/login.css"/>
+   
+</head>
+<body>
+
+
+<div id="dialogWrap">
+<div id="dialogWrapCell">
+<div id="mainDialog">
+
+<div id="load">
+<p class="spinner"></p><p>Loading...</p>
+</div>
+
+<header class="hidden">
+
+<div style="display:grid; grid-template-columns: auto auto;">
+    <div class="logo">
+        <img src="assets/logo.png" alt="Your Logo">
+      </div>  
+<div><h1>CESW Hub</h1></div>
+</div>
+
+</header>
+
+<div id="passArea">
+<form class="hidden">
+<input type="password" id="pwd" name="pwd" aria-label="Password" autofocus placeholder="Password"/>
+<button type="submit id="submitPass"">Login</button>
+</form>
+<p id="msg"></p>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- Pre from Output.html goes below -->
+        <pre class="hidden" data-i="2e+6">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</pre>    
+    
+    
+    
+    
+    </body></html>
