@@ -76,57 +76,59 @@
       filterCards();
     }
 
+      function filterCards() {
+    let val = $('#searchBar').val().toLowerCase();
+    const isPinned = $('#pinToggle').hasClass('active');
+    let shown = 0;
+
+    $('.card').each(function() {
+      const name = $(this).data('name');
+      const c    = $(this).data('category');
+      const ok   = name.includes(val) && (!isPinned || c === 'pinned');
+
+      $(this).toggle(ok);
+      if (ok) shown++;
+    });
+
+    $('#noResults').toggle(shown === 0);
+  }
+
+  $(document).ready(function () {
     const pin = document.getElementById('pinToggle');
 
     pin.addEventListener('click', () => {
       pin.classList.toggle('active');
-      const isPinned = pin.classList.contains('active');
-      console.log(`Pinned: ${isPinned}`); // you can act on this as needed
+      filterCards();
     });
 
-    function filterCards() {
-      let val = $('#searchBar').val().toLowerCase();
-      const cat = $('#category-select').val().toLowerCase();
-      let shown = 0;
+    loadPosts();
 
-      $('.card').each(function() {
-        const name = $(this).data('name');
-        const c    = $(this).data('category');
-        const ok   = name.includes(val) && (!cat || c.includes(cat));
-        $(this).toggle(ok);
-        if (ok) shown++;
+    $('#searchBar')
+      .focus()
+      .on('keyup input', filterCards)
+      .on('input', function () {
+        clearTimeout($.data(this, 'timer'));
+        const self = this;
+        $.data(this, 'timer', setTimeout(() => $(self).blur(), 10000));
+      })
+      .on('keydown', function () {
+        clearTimeout($.data(this, 'timer'));
       });
 
-      $('#noResults').toggle(shown === 0);
-    }
-        // Toggle menu
+    // Toggle menu
     $('.menu-icon').click(function () {
-        $('.nav-links').toggleClass('active');
+      $('.nav-links').toggleClass('active');
     });
 
-    $(document).ready(function() {
-      loadPosts();
-      $('#searchBar')
-        .focus()
-        .on('keyup input', filterCards)
-        .on('input', function() {
-          clearTimeout($.data(this,'timer'));
-          const self = this;
-          $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
-        })
-        .on('keydown', function() {
-          clearTimeout($.data(this,'timer'));
-        });
-      $('#category-select').on('change', filterCards);
-
-      $(window).on('scroll', () => {
-        const scrolled = $(window).scrollTop() > 100;
-        $('#backToTop, #contact').toggle(scrolled);
-      });
-      $('#backToTop').on('click', () =>
-        $('html, body').animate({ scrollTop: 0 }, 'fast')
-      );
+    $(window).on('scroll', () => {
+      const scrolled = $(window).scrollTop() > 100;
+      $('#backToTop, #contact').toggle(scrolled);
     });
+
+    $('#backToTop').on('click', () =>
+      $('html, body').animate({ scrollTop: 0 }, 'fast')
+    );
+  });
   </script>
 </body>
 </html>
