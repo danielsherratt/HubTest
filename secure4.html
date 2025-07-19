@@ -127,6 +127,13 @@ const quill = new Quill('#editor', {
       }
     });
 
+    document.getElementById('resource-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    document.getElementById('resource-type').value = 'file';
+  }
+});
+
     let posts = [];
     let resources = [];
     let postSort = { key: 'created_at', asc: false };
