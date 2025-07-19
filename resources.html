@@ -7,7 +7,41 @@
     <title>CESW Hub - Resources</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 	<link rel="stylesheet" href="assets/resources.css">
+<script>
+async function getUserRole() {
+  const token = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('token='))
+    ?.split('=')[1];
 
+  if (!token) {
+    window.location.href = '/login.html';
+    return;
+  }
+
+  try {
+    const payloadBase64 = token.split('.')[1];
+    const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
+    const payload = JSON.parse(payloadJson);
+
+    if (payload.exp < Math.floor(Date.now() / 1000)) {
+      window.location.href = '/login.html';
+      return;
+    }
+
+    // Now you have the role
+    const role = payload.sub;
+
+    // Continue loading the page
+    console.log('User role is:', role);
+  } catch (err) {
+    console.error('Token parse error:', err);
+    window.location.href = '/login.html';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', getUserRole);
+</script>
 </head>
 <body>
 <div class="navbar">
