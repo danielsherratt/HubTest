@@ -24,7 +24,7 @@ export async function onRequestPost({ request, env }) {
     });
 
     // Insert to D1
-    await env.DB.prepare(`
+    await env.POSTS_DB.prepare(`
       INSERT INTO resources (title, created_date, url, pinned)
       VALUES (?, datetime('now'), ?, ?)
     `)

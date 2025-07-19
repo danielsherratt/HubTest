@@ -47,7 +47,7 @@ export async function onRequest({ request, env, params }) {
 
   try {
     if (method === 'DELETE') {
-      const { results } = await env.DB.prepare(`
+      const { results } = await env.POSTS_DB.prepare(`
         SELECT url FROM resources WHERE id = ?
       `).bind(id).all();
 
@@ -57,14 +57,14 @@ export async function onRequest({ request, env, params }) {
 
       const key = results[0].url.replace('https://files.danieltesting.space/', '');
       await env.MY_BUCKET.delete(key);
-      await env.DB.prepare(`DELETE FROM resources WHERE id = ?`).bind(id).run();
+      await env.POSTS_DB.prepare(`DELETE FROM resources WHERE id = ?`).bind(id).run();
 
       return new Response(null, { status: 204 });
     }
 
     if (method === 'PUT') {
       const { pinned } = await request.json();
-      await env.DB.prepare(`
+      await env.POSTS_DB.prepare(`
         UPDATE resources
            SET pinned = ?
          WHERE id = ?
