@@ -9,7 +9,7 @@ export async function onRequestPost({ request, env }) {
     const file = formData.get('file');
     const title = formData.get('title');
     const pinned = formData.get('pinned') === 'true';
-    const thumbnail = formData.get('thumbnail'); // May be null
+    const thumbnail = formData.get('thumbnail') || url;
 
     if (!file || !(file instanceof File) || !title) {
       return new Response('Missing file or title', { status: 400 });
@@ -23,8 +23,6 @@ export async function onRequestPost({ request, env }) {
     await env.MY_BUCKET.put(key, file.stream(), {
       httpMetadata: { contentType: file.type }
     });
-
-    if (!thumbnail){thumbnail=url}
 
     // Insert into D1
     await env.POSTS_DB.prepare(`
