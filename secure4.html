@@ -109,6 +109,10 @@
     };
   })();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+</script>
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
   <script>
 const quill = new Quill('#editor', {
@@ -249,7 +253,8 @@ const quill = new Quill('#editor', {
       });
       form.reset(); quill.setContents([]); fetchPosts();
     });
-//Form UPLOAD
+
+    
 document.getElementById('upload-form').addEventListener('submit', async e => {
   e.preventDefault();
 
@@ -269,7 +274,26 @@ document.getElementById('upload-form').addEventListener('submit', async e => {
 
   if (file) {
     formData.append('file', file);
-    // If it's a PDF, generate thumbnail as usual (you already handle this)
+
+    const fileType = file.type;
+
+    if (fileType === 'application/pdf') {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 1.5 });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      const context = canvas.getContext('2d');
+      await page.render({ canvasContext: context, viewport }).promise;
+
+      const base64 = canvas.toDataURL('image/jpeg');
+      formData.append('thumbnail', base64);
+    }
+
   } else {
     formData.append('url', urlInput);
   }
@@ -287,6 +311,7 @@ document.getElementById('upload-form').addEventListener('submit', async e => {
     alert('Upload failed');
   }
 });
+
 
     document.getElementById('search-posts').addEventListener('input', renderPosts);
     document.getElementById('search-resources').addEventListener('input', renderResources);
