@@ -74,7 +74,16 @@
       <tbody></tbody>
     </table>
   </main>
-
+  
+<script>
+  (function() {
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener = function(type, listener, options) {
+      if (type === 'DOMNodeInserted' || type === 'DOMNodeRemoved') return;
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  })();
+</script>
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
   <script>
 const quill = new Quill('#editor', {
