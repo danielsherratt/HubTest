@@ -34,7 +34,7 @@
 
     <!-- Manage Posts -->
     <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Posts</h2>
-    <a href="index.html" target="_blank"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
+    <a href="resources.html" target="_blank"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
     <input type="text" id="search-posts" class="search-bar" placeholder="Search posts...">
     <table id="posts-table">
       <thead>
@@ -157,53 +157,6 @@ const quill = new Quill('#editor', {
       renderResources();
     }
 
-    /* function renderPosts() {
-      const tbody = document.querySelector('#posts-table tbody');
-      const search = document.getElementById('search-posts').value.toLowerCase();
-      const filtered = posts
-        .filter(p => p.title.toLowerCase().includes(search))
-        .sort(sortBy(postSort.key, postSort.asc))
-        .slice(0, 10);
-
-      tbody.innerHTML = '';
-      for (const p of filtered) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${p.title}</td>
-          <td>${new Date(p.created_at).toLocaleDateString()}</td>
-          <td>${p.category}</td>
-          <td>
-        <button class="pin-btn" onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
-              <i class="${p.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${p.pinned ? 'Unpin' : 'Pin'}</button>
-            </button>
-            <button class="delete-btn" onclick="deletePost(${p.id})"><i class="fa fa-trash"></i> Delete</button>
-          </td>`;
-        tbody.appendChild(row);
-      }
-    }
-
-    function renderResources() {
-      const tbody = document.querySelector('#resources-table tbody');
-      const search = document.getElementById('search-resources').value.toLowerCase();
-      const filtered = resources
-        .filter(r => r.title.toLowerCase().includes(search))
-        .sort(sortBy(resourceSort.key, resourceSort.asc))
-        .slice(0, 10);
-
-      tbody.innerHTML = '';
-      for (const r of filtered) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td><a href="${r.url}" class="link-nochange" target="_blank">${r.title}</a></td>
-          <td>${new Date(r.created_date).toLocaleDateString()}</td>
-          <td>
-           <button class="pinresource-btn" onclick="togglePinResource(${r.id}, ${r.pinned})">
-            <i class="${r.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${r.pinned ? 'Unpin' : 'Pin'}</button>
-            <button class="deleteresource-btn" onclick="deleteResource(${r.id})"><i class="fa fa-trash"></i> Delete</button>
-          </td>`;
-        tbody.appendChild(row);
-      }
-    }*/
 function renderPosts() {
   const tbody = document.querySelector('#posts-table tbody');
   const emptyMsg = document.getElementById('posts-empty');
