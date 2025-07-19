@@ -144,6 +144,11 @@ a.link-nochange:hover {
     height: 170px;
     background: url('banner.jpg') no-repeat center center;
     background-size: cover;
+    opacity: 0.5;
+}
+.banner-text {
+  margin:auto;
+  color:white;
 }
 
 #one {
