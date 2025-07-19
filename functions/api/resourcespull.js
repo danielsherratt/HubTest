@@ -48,7 +48,7 @@ export async function onRequest({ request, env }) {
     }
     const { results } = await db
       .prepare(`
-        SELECT id, title, url, pinned, created_date, thumbnail
+        SELECT id, title, url, pinned, created_date
           FROM resources
          ORDER BY pinned DESC, created_date DESC
       `)
@@ -58,44 +58,7 @@ export async function onRequest({ request, env }) {
     });
   }
 
-  // 2) All mutating methods require a valid JWT
-  if (['POST', 'PUT', 'DELETE'].includes(method)) {
-    const user = token && await verifyJWT(token, env.JWT_SECRET);
-    if (!user) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-  }
-
-  // 3) POST → create
-  if (method === 'POST') {
-    const { title, category, body, pinned } = await request.json();
-    if (!title || !category || !body) {
-      return new Response('Missing fields', { status: 400 });
-    }
-    const { lastInsertRowId } = await db
-      .prepare(`
-        INSERT INTO resources (title, url, pinned)
-        VALUES (?, ?, ?)
-      `)
-      .bind(title, url, pinned ? 1 : 0)
-      .run();
-    return new Response(JSON.stringify({ id: lastInsertRowId }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-
-
-  // 5) DELETE → remove
-  if (method === 'DELETE') {
-    const id = url.pathname.split('/').pop();
-    await db
-      .prepare(`DELETE FROM resources WHERE id = ?`)
-      .bind(id)
-      .run();
-    return new Response(null, { status: 204 });
-  }
-
+  
   // 6) Fallback
   return new Response('Method Not Allowed', { status: 405 });
 }
