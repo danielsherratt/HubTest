@@ -1,120 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CESW Hub Login</title>
-  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <title>CESW Hub - Resources</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<link rel="stylesheet" href="assets/resources.css">
 
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f0f4f8;
-      color: #333;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .banner {
-      width: 100%;
-      height: 170px;
-      background: url('assets/banner.jpg') no-repeat center center;
-      background-size: cover;
-    }
-
-    .login-card {
-      background: white;
-      max-width: 360px;
-      margin: 2rem auto;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .login-card h1 {
-      margin-bottom: 1.5rem;
-      font-size: 1.25rem;
-      text-align: center;
-      color: #00625f;
-    }
-
-    .login-card form > * + * {
-      margin-top: 1rem;
-    }
-
-    .login-card input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #ccd0d5;
-      border-radius: 4px;
-      font-size: 1rem;
-    }
-
-    .login-card button {
-      width: 100%;
-      padding: 0.75rem;
-      background: #00625f;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .login-card button:hover {
-      background: #004c48;
-    }
-
-    .login-card .error {
-      margin-top: 0.5rem;
-      color: #c00;
-      font-size: 0.875rem;
-      text-align: center;
-    }
-  </style>
 </head>
 <body>
+<div class="navbar">
+	<span class="menu-icon">&#9776;</span>
+<div class="nav-links">
+		<div class="nav-links">
+        <a class="nav-item" href="feed.html">Feed</a>
+        <a class="nav-item" href="index.html">Resources</a>
 
-  <div class="banner"></div>
+		</div>
+		</div>
+    </div>
+    <div class="banner"></div>
+      
+    <h1 class="title"><i class="fa-solid fa-people-group"></i> CESW Hub</h1>
+	
+    <h2 class="title"><i class="fa-solid fa-file"></i> Resources</h2>  
+    
+<main>		
+<div id="search-container">
+      <input type="text" id="searchBar" placeholder="Find a resource">
+ 
+    </div>
 
-  <div class="login-card">
-    <h1>CESW Hub Login</h1>
-    <form id="login-form">
-      <input name="pass" type="password" placeholder="Enter Password" required autocomplete="current-password" />
-      <button type="submit">Log In</button>
-      <div class="error" id="error-msg" style="display:none;"></div>
-    </form>
-  </div>
+    <div id="noResults">
+      Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search
+    </div>
+    <div class="card-container"></div>
 
-  <script>
-    document.getElementById('login-form').addEventListener('submit', async e => {
-      e.preventDefault();
-      const form = e.target;
-      const error = document.getElementById('error-msg');
-      error.style.display = 'none';
+    <a href="mailto:ITSupport@kotakureo.school.nz" id="contact" class="link-nochange">
+      <i class="fa fa-envelope"></i> Contact
+    </a>
+    <button id="backToTop">
+      <i class="fa-solid fa-angle-up"></i> Back to Top
+    </button>
 
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ pass: form.pass.value })
+</main>
+
+   <script>
+
+    async function loadPosts() {
+      const res = await fetch('/api/resourcespull');
+      const posts = await res.json();
+
+      // Server already ordered by pinned & date
+      const container = document.querySelector('.card-container');
+      container.innerHTML = '';
+
+      posts.forEach(p => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          
+<a class="link-nochange" href="${p.url}">
+ <div class="card" data-name="${p.title.toLowerCase()}">
+ <p>${p.title}</p> 
+ <img src="${p.thumbnail}">
+ </div>
+</a>
+        `;
+        container.append(div);
       });
 
-      if (res.ok) {
-        const { role } = await res.json();
-        if (role === 'admin') {
-          window.location.href = '/secure.html';
-        } else {
-          window.location.href = '/resources.html';
-        }
-      } else {
-        error.textContent = 'Invalid password.';
-        error.style.display = 'block';
-      }
+      filterCards();
+    }
+
+    function filterCards() {
+      let val = $('#searchBar').val().toLowerCase();
+      let shown = 0;
+
+
+
+      $('.card').each(function() {
+        const name = $(this).data('name');
+
+        const ok   = name.includes(val);
+        $(this).toggle(ok);
+        if (ok) shown++;
+      });
+
+      $('#noResults').toggle(shown === 0);
+    }
+        // Toggle menu
+    $('.menu-icon').click(function () {
+        $('.nav-links').toggleClass('active');
+    });
+
+    $(document).ready(function() {
+      loadPosts();
+      $('#searchBar')
+        .focus()
+        .on('keyup input', filterCards)
+        .on('input', function() {
+          clearTimeout($.data(this,'timer'));
+          const self = this;
+          $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
+        })
+        .on('keydown', function() {
+          clearTimeout($.data(this,'timer'));
+        });
+
+      $(window).on('scroll', () => {
+        const scrolled = $(window).scrollTop() > 100;
+        $('#backToTop, #contact').toggle(scrolled);
+      });
+      $('#backToTop').on('click', () =>
+        $('html, body').animate({ scrollTop: 0 }, 'fast')
+      );
+       // Clear search bar when clicking clear button
+    $('#clearSearch').click(function () {
+        location.reload();
+    });
     });
   </script>
+	
 </body>
 </html>
+   

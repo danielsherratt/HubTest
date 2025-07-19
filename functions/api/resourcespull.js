@@ -1,4 +1,4 @@
-// functions/api/posts.js
+// functions/api/resourcespull.js
 
 // Helpers for JWT verification via Web Crypto
 function base64urlToUint8Array(str) {
