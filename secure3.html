@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Dashboard - CESW Hub</title>
   <link rel="stylesheet" href="assets/admin.css">
+
 </head>
 <body>
   <div class="banner"></div>
@@ -50,9 +51,11 @@
     <form id="upload-form" class="upload-section" enctype="multipart/form-data">
       <input type="text" id="resource-title" placeholder="Resource title" required />
       <br><input type="file" id="resource-file" required />
-      <br><br><label>
+      <br><br><label class="star-checkbox">
         <input type="checkbox" id="resource-pinned" />
-        <span class="star">★</span> Pin this resource
+        <i class="fa-regular fa-star unchecked"></i>
+        <i class="fa-solid fa-star checked"></i>
+        Pin this resource
       </label>
       <br><button type="submit" id="new-upload-button">Add Resource</button>
     </form>
@@ -122,9 +125,12 @@ const quill = new Quill('#editor', {
           <td>${new Date(p.created_at).toLocaleDateString()}</td>
           <td>
             <button onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
-              ${p.pinned ? 'Unpin' : 'Pin'}
+               <i class="${isPinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>
+                ${p.pinned ? 'Unpin' : 'Pin'}
             </button>
-            <button onclick="deletePost(${p.id})">Delete</button>
+             <button class="delete-btn" data-id="${p.id}">
+              <i class="fa fa-trash"></i> Delete
+            </button>
           </td>`;
         tbody.appendChild(row);
       }
@@ -145,8 +151,10 @@ const quill = new Quill('#editor', {
           <td><a href="${r.url}" target="_blank">${r.title}</a></td>
           <td>${new Date(r.created_date).toLocaleDateString()}</td>
           <td>
-            <button onclick="togglePinResource(${r.id}, ${r.pinned})">${r.pinned ? 'Unpin' : 'Pin'}</button>
-            <button onclick="deleteResource(${r.id})">Delete</button>
+            <button onclick="togglePinResource(${r.id}, ${r.pinned})"><i class="${isPinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>${r.pinned ? 'Unpin' : 'Pin'}</button>
+                        <button class="deleteresource-btn" data-id="${r.id}">
+              <i class="fa fa-trash"></i> Delete
+            </button>
           </td>`;
         tbody.appendChild(row);
       }

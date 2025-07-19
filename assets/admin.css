@@ -27,7 +27,9 @@ a.link-nochange:hover {
     }
     #new-post-input,
     #new-post-select,
-    #resource-title {
+    #resource-title,
+    #search-resources,
+    #search-posts {
       padding: 0.5rem;
       margin-bottom: 0.75rem;
       border: 1px solid #ccc;
@@ -36,7 +38,9 @@ a.link-nochange:hover {
     }
  
     #new-post-input,
-    #resource-title
+    #resource-title,
+    #search-resources,
+    #search-posts,
     #new-post label {
       display: flex;
       align-items: center;
