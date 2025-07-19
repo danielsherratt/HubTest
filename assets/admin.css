@@ -75,9 +75,7 @@ a.link-nochange:hover {
       padding: 0.5rem 0;
       border-bottom: 1px solid #eee;
     }
-
-
-   /*  .actions button {
+    .actions button {
       background: none;
       border: none;
       cursor: pointer;
@@ -86,7 +84,7 @@ a.link-nochange:hover {
       display: inline-flex;
       align-items: center;
     }
-    star styles
+    /* star styles */
     .actions button .fa-solid.fa-star {
       margin-right: 0.25rem;
       color: #f0c420;
@@ -99,7 +97,7 @@ a.link-nochange:hover {
       color: #d9534f;
     }
 
-/* add to your existing <style> *
+/* add to your existing <style> */
 .star-checkbox {
   display: inline-flex;
   align-items: center;
@@ -112,13 +110,13 @@ a.link-nochange:hover {
   width: 0;
   height: 0;
 }
-/* by default show the empty (regular) star, hide the solid one *
+/* by default show the empty (regular) star, hide the solid one */
 .star-checkbox .checked  { display: none; color: #f0c420; }
 .star-checkbox .unchecked { display: inline-block; color: #bbb; }
 
-/* when the hidden checkbox is checked… 
+/* when the hidden checkbox is checked… */
 .star-checkbox input:checked ~ .checked   { display: inline-block; }
-.star-checkbox input:checked ~ .unchecked { display: none; }*/
+.star-checkbox input:checked ~ .unchecked { display: none; }
 
 .banner {
     width: 100%;
@@ -161,36 +159,3 @@ a.link-nochange:hover {
 #two:hover {
     background: #6bbaae;
 }
-
-  .delete-btn:hover, .deleteresource-btn:hover { color: red; }
-    .pin-btn:hover, .pinresource-btn:hover { color: gold; }
-    .star-checkbox {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      cursor: pointer;
-    }
-    .star-checkbox input { display: none; }
-    .star-checkbox .checked { display: none; color: gold; }
-    .star-checkbox input:checked ~ .unchecked { display: none; }
-    .star-checkbox input:checked ~ .checked { display: inline; }
-    .upload-section {
-      background: #f9f9f9;
-      padding: 1em;
-      border-radius: 8px;
-      margin-bottom: 2em;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1em;
-    }
-    th, td {
-      padding: 0.5em;
-      border: 1px solid #ccc;
-      text-align: left;
-    }
-    th {
-      background: #f0f0f0;
-    }
