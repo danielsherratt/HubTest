@@ -124,10 +124,10 @@ const quill = new Quill('#editor', {
           <td>${p.category}</td>
           <td>${new Date(p.created_at).toLocaleDateString()}</td>
           <td>
-        <button onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
+        <button class="pin-btn" onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
               <i class="${p.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${p.pinned ? 'Unpin' : 'Pin'}</button>
             </button>
-            <button onclick="deleteResource(${r.id})"><i class="fa fa-trash"></i> Delete</button>
+            <button class="delete-btn" onclick="deleteResource(${p.id})"><i class="fa fa-trash"></i> Delete</button>
           </td>`;
         tbody.appendChild(row);
       }
@@ -148,9 +148,9 @@ const quill = new Quill('#editor', {
           <td><a href="${r.url}" class="link-nochange" target="_blank">${r.title}</a></td>
           <td>${new Date(r.created_date).toLocaleDateString()}</td>
           <td>
-           <button onclick="togglePinResource(${r.id}, ${r.pinned})">
+           <button class="pinresource-btn onclick="togglePinResource(${r.id}, ${r.pinned})">
             <i class="${r.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${r.pinned ? 'Unpin' : 'Pin'}</button>
-            <button onclick="deleteResource(${r.id})"><i class="fa fa-trash"></i> Delete</button>
+            <button class="deleteresource-btn onclick="deleteResource(${r.id})"><i class="fa fa-trash"></i> Delete</button>
           </td>`;
         tbody.appendChild(row);
       }
