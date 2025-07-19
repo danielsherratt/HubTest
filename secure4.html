@@ -128,6 +128,13 @@ const quill = new Quill('#editor', {
       }
     });
 
+    document.getElementById('resource-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    document.getElementById('resource-type').value = 'file';
+  }
+});
+
     let posts = [];
     let resources = [];
     let postSort = { key: 'created_at', asc: false };
@@ -255,8 +262,6 @@ const quill = new Quill('#editor', {
       form.reset(); quill.setContents([]); fetchPosts();
     });
 
-// Form
-
   document.getElementById('upload-form').addEventListener('submit', async e => {
     e.preventDefault();
 
@@ -276,54 +281,30 @@ const quill = new Quill('#editor', {
 
     if (file) {
       formData.append('file', file);
-
-      if (file.type === "application/pdf") {
-        // Generate PDF thumbnail
-        const pdfThumb = await generatePdfThumbnail(file);
-        if (pdfThumb) formData.append('thumbnail', pdfThumb);
-      }
+      // Optionally add thumbnail generation for PDFs/images
     } else {
       formData.append('url', urlInput);
 
-      // Use Microlink to generate website/video preview
-      const apiUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
-      try {
-        const response = await fetch(apiUrl);
-        const json = await response.json();
-        const imgUrl = json?.data?.screenshot?.url;
-        if (imgUrl) {
-          const imageBlob = await fetch(imgUrl).then(r => r.blob());
-          const base64 = await blobToBase64(imageBlob);
-          formData.append('thumbnail', base64);
-        }
-      } catch (err) {
-        console.warn("Thumbnail fetch failed", err);
+      // Generate thumbnail using Microlink
+      const thumbnailUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
+      const response = await fetch(thumbnailUrl);
+      const data = await response.json();
+      const imgUrl = data?.data?.screenshot?.url;
+      if (imgUrl) {
+        const imageBlob = await fetch(imgUrl).then(r => r.blob());
+        const base64 = await blobToBase64(imageBlob);
+        formData.append('thumbnail', base64);
       }
     }
 
-    // Send the form data
+    // Now submit formData via fetch or XHR to your server
     await fetch('/api/upload', {
       method: 'POST',
       body: formData
     });
 
-    alert('Upload successful!');
+    alert('Uploaded successfully!');
   });
-
-  async function generatePdfThumbnail(file) {
-    const pdfData = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-    const page = await pdf.getPage(1);
-
-    const viewport = page.getViewport({ scale: 1 });
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-
-    await page.render({ canvasContext: context, viewport }).promise;
-    return canvas.toDataURL("image/png");
-  }
 
   function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
