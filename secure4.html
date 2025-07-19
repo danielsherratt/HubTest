@@ -257,13 +257,13 @@ const quill = new Quill('#editor', {
 
 // Form Upload
 
-    document.getElementById('upload-form').addEventListener('submit', async e => {
+  document.getElementById('upload-form').addEventListener('submit', async e => {
     e.preventDefault();
 
-    const file = document.getElementById('resource-file').files[0];
+    const file     = document.getElementById('resource-file').files[0];
     const urlInput = document.getElementById('resource-url').value.trim();
-    const title = document.getElementById('resource-title').value.trim();
-    const pinned = document.getElementById('resource-pinned').checked;
+    const title    = document.getElementById('resource-title').value.trim();
+    const pinned   = document.getElementById('resource-pinned').checked;
 
     if (!file && !urlInput) return alert("Please provide a file or a URL.");
     if (!title) return alert("Title is required.");
@@ -272,7 +272,6 @@ const quill = new Quill('#editor', {
     formData.append('title', title);
     formData.append('pinned', pinned);
 
-    // Determine type
     let type = "unknown";
 
     if (file) {
@@ -284,43 +283,53 @@ const quill = new Quill('#editor', {
         if (pdfThumb) formData.append('thumbnail', pdfThumb);
       } else if (file.type.startsWith("image/")) {
         type = "image";
-        // Optionally add an image preview here
+        // Optional: Add image preview/thumbnail
       }
+
     } else if (urlInput) {
       formData.append('url', urlInput);
 
-      // Detect if video (YouTube/Vimeo) or website
-      if (/youtu\.?be|vimeo\.com/.test(urlInput)) {
+      if (/youtu\.?be|youtube\.com/.test(urlInput)) {
         type = "video";
-      } else {
-        type = "website";
-      }
-
-      const thumbnailUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
-      try {
-        const response = await fetch(thumbnailUrl);
-        const json = await response.json();
-        const imgUrl = json?.data?.screenshot?.url;
-        if (imgUrl) {
-          const imageBlob = await fetch(imgUrl).then(r => r.blob());
+        const videoId = extractYouTubeId(urlInput);
+        if (videoId) {
+          const ytThumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+          const imageBlob = await fetch(ytThumb).then(r => r.blob());
           const base64 = await blobToBase64(imageBlob);
           formData.append('thumbnail', base64);
         }
-      } catch (err) {
-        console.warn("Microlink thumbnail failed", err);
+      } else {
+        type = "website";
+        const apiUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
+        try {
+          const response = await fetch(apiUrl);
+          const json = await response.json();
+          const imgUrl = json?.data?.screenshot?.url;
+          if (imgUrl) {
+            const imageBlob = await fetch(imgUrl).then(r => r.blob());
+            const base64 = await blobToBase64(imageBlob);
+            formData.append('thumbnail', base64);
+          }
+        } catch (err) {
+          console.warn("Microlink thumbnail fetch failed", err);
+        }
       }
     }
 
     formData.append('type', type);
 
-    // Upload
-    await fetch('/api/resources/upload2', {
+    // Send the form
+    const response = await fetch('/api/upload2', {
       method: 'POST',
       body: formData
     });
 
-    alert('Upload successful!');
-    fetchResources();
+    const result = await response.json();
+    if (response.ok) {
+      alert('Upload successful!');
+    } else {
+      alert(`Upload failed: ${result.error}`);
+    }
   });
 
   async function generatePdfThumbnail(file) {
@@ -343,6 +352,11 @@ const quill = new Quill('#editor', {
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
+  }
+
+  function extractYouTubeId(url) {
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/);
+    return match ? match[1] : null;
   }
 
 /*document.getElementById('upload-form').addEventListener('submit', async e => {
