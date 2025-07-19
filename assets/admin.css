@@ -144,18 +144,8 @@ a.link-nochange:hover {
     height: 170px;
     background: url('banner.jpg') no-repeat center center;
     background-size: cover;
-    opacity: 0.5;
-  display: flex;
-  justify-content: center; /* centers horizontally */
-  align-items: center;     /* centers vertically */
-  color: white;            /* optional for contrast */
-  text-align: center;      /* if multi-line */
 }
 
-.banner h1 {
-  margin: 0;
-  font-size: 2em; /* adjust as needed */
-}
 
 
 #one {
