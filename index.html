@@ -1,62 +1,127 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex, nofollow">
-    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-    <title>CESW Hub</title>  
-    <script type="module">var i={};Object.defineProperty(i,"__esModule",{value:!0});function y(r,e,t){var c;if(t===void 0&&(t={}),!e.codes){e.codes={};for(var s=0;s<e.chars.length;++s)e.codes[e.chars[s]]=s}if(!t.loose&&r.length*e.bits&7)throw new SyntaxError("Invalid padding");for(var a=r.length;r[a-1]==="=";)if(--a,!t.loose&&!((r.length-a)*e.bits&7))throw new SyntaxError("Invalid padding");for(var o=new((c=t.out)!=null?c:Uint8Array)(a*e.bits/8|0),n=0,u=0,l=0,f=0;f<a;++f){var E=e.codes[r[f]];if(E===void 0)throw new SyntaxError("Invalid character "+r[f]);u=u<<e.bits|E,n+=e.bits,n>=8&&(n-=8,o[l++]=255&u>>n)}if(n>=e.bits||255&u<<8-n)throw new SyntaxError("Unexpected end of data");return o}function h(r,e,t){t===void 0&&(t={});for(var c=t,s=c.pad,a=s===void 0?!0:s,o=(1<<e.bits)-1,n="",u=0,l=0,f=0;f<r.length;++f)for(l=l<<8|255&r[f],u+=8;u>e.bits;)u-=e.bits,n+=e.chars[o&l>>u];if(u&&(n+=e.chars[o&l<<e.bits-u]),a)for(;n.length*e.bits&7;)n+="=";return n}var L={chars:"0123456789ABCDEF",bits:4},K={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567",bits:5},O={chars:"0123456789ABCDEFGHIJKLMNOPQRSTUV",bits:5},$={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",bits:6},P={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",bits:6},F={parse:function(e,t){return y(e.toUpperCase(),L,t)},stringify:function(e,t){return h(e,L,t)}},I={parse:function(e,t){return t===void 0&&(t={}),y(t.loose?e.toUpperCase().replace(/0/g,"O").replace(/1/g,"L").replace(/8/g,"B"):e,K,t)},stringify:function(e,t){return h(e,K,t)}},k={parse:function(e,t){return y(e,O,t)},stringify:function(e,t){return h(e,O,t)}},B={parse:function(e,t){return y(e,$,t)},stringify:function(e,t){return h(e,$,t)}},G={parse:function(e,t){return y(e,P,t)},stringify:function(e,t){return h(e,P,t)}},H={parse:y,stringify:h};i.base16=F;i.base32=I;i.base32hex=k;i.base64=B;i.base64url=G;i.codec=H;i.base16;i.base32;i.base32hex;const J=i.base64;i.base64url;i.codec;function b(r){const e=document.querySelector(r);if(e)return e;throw new Error(`No element found with selector: "${r}"`)}const d=b("input"),m=b("header"),j=b("#msg"),g=b("form"),v=b("#load");let N,D,M,T;document.addEventListener("DOMContentLoaded",async()=>{const r=b("pre[data-i]");if(!r.innerText){d.disabled=!0,S("No encrypted payload.");return}T=Number(r.dataset.i);const e=J.parse(r.innerText);if(N=e.slice(0,32),D=e.slice(32,32+16),M=e.slice(32+16),location.hash){const t=new URL(window.location.href);d.value=t.hash.slice(1),t.hash="",history.replaceState(null,"",t.toString())}sessionStorage.k||d.value?await U():(w(v),x(g),m.classList.replace("hidden","flex"),d.focus())});var A,C;const p=((A=window.crypto)==null?void 0:A.subtle)||((C=window.crypto)==null?void 0:C.webkitSubtle);p||(S("Please use a modern browser."),d.disabled=!0);function x(r){r.classList.remove("hidden")}function w(r){r.classList.add("hidden")}function S(r){j.innerText=r,m.classList.add("red")}g.addEventListener("submit",async r=>{r.preventDefault(),await U()});async function R(r){return new Promise(e=>setTimeout(e,r))}async function U(){v.lastElementChild.innerText="Checking...",w(m),w(g),x(v),await R(60);try{const r=await V({salt:N,iv:D,ciphertext:M,iterations:T},d.value);document.write(r),document.close()}catch(r){w(v),x(g),m.classList.replace("hidden","flex"),sessionStorage.k?sessionStorage.removeItem("k"):S("Whoops, try again, or contact ITSupport"),d.value="",d.focus()}}async function q(r,e,t){const c=new TextEncoder,s=await p.importKey("raw",c.encode(e),"PBKDF2",!1,["deriveKey"]);return await p.deriveKey({name:"PBKDF2",salt:r,iterations:t,hash:"SHA-256"},s,{name:"AES-GCM",length:256},!0,["decrypt"])}async function Q(r){return p.importKey("jwk",r,"AES-GCM",!0,["decrypt"])}async function V({salt:r,iv:e,ciphertext:t,iterations:c},s){const a=new TextDecoder,o=sessionStorage.k?await Q(JSON.parse(sessionStorage.k)):await q(r,s,c),n=new Uint8Array(await p.decrypt({name:"AES-GCM",iv:e},o,t));if(!n)throw"Malformed data";return sessionStorage.k=JSON.stringify(await p.exportKey("jwk",o)),a.decode(n)}</script>
-    <link rel="stylesheet" href="assets/login.css"/>
-   
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <title>CESW Hub - Resources</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<link rel="stylesheet" href="assets/resources.css">
 
-    <style>.banner {
-      width: 100%;
-      height: 170px;
-      background: url('assets/banner.jpg') no-repeat center center;
-      background-size: cover;
-    }</style>
 </head>
 <body>
+<div class="navbar">
+	<span class="menu-icon">&#9776;</span>
+<div class="nav-links">
+		<div class="nav-links">
+        <a class="nav-item" href="index.html">Resources</a>
+        <a class="nav-item" href="feed.html">Feed</a>
+
+		</div>
+		</div>
+    </div>
+    <div class="banner"></div>
+      
+    <h1 class="title"><i class="fa-solid fa-people-group"></i> CESW Hub</h1>
+	
+    <h2 class="title"><i class="fa-solid fa-file"></i> Resources</h2>  
     
+<main>		
+<div id="search-container">
+      <input type="text" id="searchBar" placeholder="Find a resource">
+ 
+    </div>
+
+    <div id="noResults">
+      Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search
+    </div>
+    <div class="card-container"></div>
+
+    <a href="mailto:ITSupport@kotakureo.school.nz" id="contact" class="link-nochange">
+      <i class="fa fa-envelope"></i> Contact
+    </a>
+    <button id="backToTop">
+      <i class="fa-solid fa-angle-up"></i> Back to Top
+    </button>
+
+</main>
+
+   <script>
+
+    async function loadPosts() {
+      const res = await fetch('/api/resourcespull');
+      const posts = await res.json();
+
+      // Server already ordered by pinned & date
+      const container = document.querySelector('.card-container');
+      container.innerHTML = '';
+
+      posts.forEach(p => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          
+<a class="link-nochange" href="${p.url}">
+ <div class="card" data-name="${p.title.toLowerCase()}">
+ <p>${p.title}</p> 
+ <img src="${p.thumbnail}">
+ </div>
+</a>
+        `;
+        container.append(div);
+      });
+
+      filterCards();
+    }
+
+    function filterCards() {
+      let val = $('#searchBar').val().toLowerCase();
+      let shown = 0;
 
 
-<div id="dialogWrap">
-<div id="dialogWrapCell">
-<div id="mainDialog">
 
-<div id="load">
-<p class="spinner"></p><p>Loading...</p>
-</div>
+      $('.card').each(function() {
+        const name = $(this).data('name');
 
-<header class="hidden">
+        const ok   = name.includes(val);
+        $(this).toggle(ok);
+        if (ok) shown++;
+      });
 
+      $('#noResults').toggle(shown === 0);
+    }
+        // Toggle menu
+    $('.menu-icon').click(function () {
+        $('.nav-links').toggleClass('active');
+    });
 
-<div>
-    <div class="logo">
-        <img src="assets/logo.png" alt="Your Logo">
-      </div>  
-    <h1 style="text-align: center;""><i class="fa-solid fa-people-group"></i> CESW Hub</h1>
-</div>
+    $(document).ready(function() {
+      loadPosts();
+      $('#searchBar')
+        .focus()
+        .on('keyup input', filterCards)
+        .on('input', function() {
+          clearTimeout($.data(this,'timer'));
+          const self = this;
+          $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
+        })
+        .on('keydown', function() {
+          clearTimeout($.data(this,'timer'));
+        });
 
-</header>
-
-<div id="passArea">
-<form class="hidden">
-<input type="password" id="pwd" name="pwd" aria-label="Password" autofocus placeholder="Password"/>
-<button type="submit id="submitPass"">Login</button>
-</form>
-<p id="msg"></p>
-</div>
-</div>
-
-</div>
-</div>
-
-<!-- Pre from Output.html goes below -->
-          <pre class="hidden" data-i="2e+6">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</pre>
-
-    
-    
-    
-    </body></html>
+      $(window).on('scroll', () => {
+        const scrolled = $(window).scrollTop() > 100;
+        $('#backToTop, #contact').toggle(scrolled);
+      });
+      $('#backToTop').on('click', () =>
+        $('html, body').animate({ scrollTop: 0 }, 'fast')
+      );
+       // Clear search bar when clicking clear button
+    $('#clearSearch').click(function () {
+        location.reload();
+    });
+    });
+  </script>
+	
+</body>
+</html>
+   
