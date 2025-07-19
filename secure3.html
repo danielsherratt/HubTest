@@ -166,7 +166,7 @@ const quill = new Quill('#editor', {
           <td><a href="${r.url}" class="link-nochange" target="_blank">${r.title}</a></td>
           <td>${new Date(r.created_date).toLocaleDateString()}</td>
           <td>
-           <button class="pinresource-btn onclick="togglePinResource(${r.id}, ${r.pinned})">
+           <button class="pinresource-btn" onclick="togglePinResource(${r.id}, ${r.pinned})">
             <i class="${r.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${r.pinned ? 'Unpin' : 'Pin'}</button>
             <button class="deleteresource-btn" onclick="deleteResource(${r.id})"><i class="fa fa-trash"></i> Delete</button>
           </td>`;
@@ -233,7 +233,7 @@ const quill = new Quill('#editor', {
       });
       form.reset(); quill.setContents([]); fetchPosts();
     });
-
+//Form UPLOAD
 document.getElementById('upload-form').addEventListener('submit', async e => {
   e.preventDefault();
 
