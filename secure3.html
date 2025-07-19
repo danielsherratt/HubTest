@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CESW Hub - Admin</title>
   <link rel="stylesheet" href="assets/admin.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+
 
 </head>
 <body>
@@ -234,22 +236,57 @@ const quill = new Quill('#editor', {
       form.reset(); quill.setContents([]); fetchPosts();
     });
 
-    document.getElementById('upload-form').addEventListener('submit', async e => {
-      e.preventDefault();
-      const formData = new FormData();
-      formData.append('title', document.getElementById('resource-title').value);
-      formData.append('file', document.getElementById('resource-file').files[0]);
-      formData.append('pinned', document.getElementById('resource-pinned').checked);
-      const res = await fetch('/api/resources/upload', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      });
-      if (res.ok) {
-        e.target.reset();
-        fetchResources();
-      } else alert('Upload failed');
-    });
+document.getElementById('upload-form').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const fileInput = document.getElementById('resource-file');
+  const file = fileInput.files[0];
+  if (!file) return alert("Please select a file");
+
+  const title = document.getElementById('resource-title').value;
+  const pinned = document.getElementById('resource-pinned').checked;
+
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('file', file);
+  formData.append('pinned', pinned);
+
+  // 🔍 Check if file is PDF and create thumbnail
+  if (file.type === 'application/pdf') {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(1);
+
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      const viewport = page.getViewport({ scale: 1.5 });
+
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: context, viewport }).promise;
+
+      const thumbnailDataUrl = canvas.toDataURL('image/jpeg', 0.8); // base64 JPEG
+      formData.append('thumbnail', thumbnailDataUrl);
+    } catch (err) {
+      console.error('Thumbnail generation failed:', err);
+    }
+  }
+
+  // 📤 Send to API
+  const res = await fetch('/api/resources/upload', {
+    method: 'POST',
+    body: formData,
+    credentials: 'include'
+  });
+
+  if (res.ok) {
+    e.target.reset();
+    fetchResources();
+  } else {
+    alert('Upload failed');
+  }
+});
 
     document.getElementById('search-posts').addEventListener('input', renderPosts);
     document.getElementById('search-resources').addEventListener('input', renderResources);
@@ -274,6 +311,8 @@ const quill = new Quill('#editor', {
       fetchPosts();
       fetchResources();
     });
+
+    
   </script>
 </body>
 </html>
