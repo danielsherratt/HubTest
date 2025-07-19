@@ -20,6 +20,13 @@ a.link-nochange:hover {
   color:#004a47;
 }
 
+.fa-eye {
+  color:#00625f
+}
+.fa-ey:hover {
+  color:#004a47
+}
+
 h2 {margin-top:100px;}
 
     /* Form */
