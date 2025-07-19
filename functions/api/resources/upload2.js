@@ -39,8 +39,7 @@ export async function onRequestPost({ request, env }) {
       // Hardcoded thumbnails based on type
       const typeThumbnails = {
         website: 'https://files.danieltesting.space/thumbs/website.png',
-        video: 'https://files.danieltesting.space/thumbs/video.png',
-        link:   'https://files.danieltesting.space/thumbs/link.png'
+        video: 'https://files.danieltesting.space/thumbs/video.png'
       };
 
       thumbnail = typeThumbnails[type] || urlInput;
