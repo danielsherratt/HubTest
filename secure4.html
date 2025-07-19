@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CESW Hub - Admin</title>
+  <link rel="stylesheet" href="assets/admin.css">
+
+</head>
+<body>
+  <div class="banner"></div>
+  <main style="max-width: 800px; margin: auto;">
+    <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub - Admin</h1>
+
+
+    <!-- Add Post -->
+    <h2 class="title"><i class="fa-solid fa-plus"></i> Add Post</h2>
+    <form id="new-post">
+      <input name="title" id="new-post-input" placeholder="Title" required />
+      <select name="category" id="new-post-select" required>
+        <option value="" disabled selected>Select category</option>
+        <option value="general">General</option>
+      </select>
+     <label class="star-checkbox">
+        <input type="checkbox" name="pinned" />
+        <i class="fa-regular fa-star unchecked"></i>
+        <i class="fa-solid fa-star checked"></i>
+        Pin this post
+      </label>
+      <div id="editor"></div>
+      <button type="submit" id="new-post-button">Create Post</button>
+    </form>
+
+    <!-- Manage Posts -->
+    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Posts</h2>
+    <i class="fa-solid fa-eye"></i>
+    <input type="text" id="search-posts" class="search-bar" placeholder="Search posts...">
+    <table id="posts-table">
+      <thead>
+        <tr>
+          <th class="sortable" data-key="title">Title</th>
+          <th class="sortable" data-key="created_at">Date</th>
+          <th class="sortable" data-key="category">Category</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <i>Latest 10 are shown</i>
+
+
+    <!-- Upload Resource -->
+   <h2 class="title">Add Resource</h2>
+<form id="upload-form" class="upload-section" enctype="multipart/form-data">
+  <input type="text" id="resource-title" placeholder="Resource title" required /><br>
+  
+  <!-- Either File or URL -->
+  <input type="file" id="resource-file" /><br>
+  <input type="url" id="resource-url" placeholder="or enter a URL instead"><br>
+
+  <!-- Type dropdown -->
+  <select id="resource-type">
+    <option value="">Select type</option>
+    <option value="file">File</option>
+    <option value="website">Website</option>
+    <option value="video">Video</option>
+  </select><br>
+
+  <!-- Pinned checkbox -->
+  <label class="star-checkbox">
+    <input type="checkbox" id="resource-pinned" />
+    <i class="fa-regular fa-star unchecked"></i>
+    <i class="fa-solid fa-star checked"></i>
+    Pin this resource
+  </label><br>
+
+  <button type="submit" id="new-upload-button">Add Resource</button>
+</form>
+
+    <!-- Manage Resources -->
+    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Resources</h2>
+    <i class="fa-solid fa-eye"></i>
+    <input type="text" id="search-resources" class="search-bar" placeholder="Search resources...">
+    <table id="resources-table">
+      <thead>
+        <tr>
+          <th class="sortable" data-key="title">Title</th>
+          <th class="sortable" data-key="created_date">Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <i>Latest 10 are shown</i>
+    <div style="margin-bottom:1em;"></div>
+
+    <a href="mailto:ITSupport@kotakureo.school.nz" id="one" class="link-nochange">
+      <i class="fa-solid fa-life-ring"></i> Help
+    </a>
+
+  </main>
+
+<script>
+  (function() {
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener = function(type, listener, options) {
+      if (type === 'DOMNodeInserted' || type === 'DOMNodeRemoved') return;
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  })();
+</script>
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script>
+const quill = new Quill('#editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          ['bold', 'italic'],
+          [{ header: [1, 2, 3, false] }],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['image']
+        ]
+      }
+    });
+
+    let posts = [];
+    let resources = [];
+    let postSort = { key: 'created_at', asc: false };
+    let resourceSort = { key: 'created_date', asc: false };
+
+    async function fetchPosts() {
+      const res = await fetch('/api/posts?admin=true', { credentials: 'include' });
+      if (res.status === 401) return location.href = '/login.html';
+      posts = await res.json();
+      renderPosts();
+    }
+
+    async function fetchResources() {
+      const res = await fetch('/api/resourcespull', { credentials: 'include' });
+      if (res.status === 401) return location.href = '/login.html';
+      resources = await res.json();
+      renderResources();
+    }
+
+    function renderPosts() {
+      const tbody = document.querySelector('#posts-table tbody');
+      const search = document.getElementById('search-posts').value.toLowerCase();
+      const filtered = posts
+        .filter(p => p.title.toLowerCase().includes(search))
+        .sort(sortBy(postSort.key, postSort.asc))
+        .slice(0, 10);
+
+      tbody.innerHTML = '';
+      for (const p of filtered) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${p.title}</td>
+          <td>${new Date(p.created_at).toLocaleDateString()}</td>
+          <td>${p.category}</td>
+          <td>
+        <button class="pin-btn" onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
+              <i class="${p.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${p.pinned ? 'Unpin' : 'Pin'}</button>
+            </button>
+            <button class="delete-btn" onclick="deletePost(${p.id})"><i class="fa fa-trash"></i> Delete</button>
+          </td>`;
+        tbody.appendChild(row);
+      }
+    }
+
+    function renderResources() {
+      const tbody = document.querySelector('#resources-table tbody');
+      const search = document.getElementById('search-resources').value.toLowerCase();
+      const filtered = resources
+        .filter(r => r.title.toLowerCase().includes(search))
+        .sort(sortBy(resourceSort.key, resourceSort.asc))
+        .slice(0, 10);
+
+      tbody.innerHTML = '';
+      for (const r of filtered) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><a href="${r.url}" class="link-nochange" target="_blank">${r.title}</a></td>
+          <td>${new Date(r.created_date).toLocaleDateString()}</td>
+          <td>
+           <button class="pinresource-btn" onclick="togglePinResource(${r.id}, ${r.pinned})">
+            <i class="${r.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${r.pinned ? 'Unpin' : 'Pin'}</button>
+            <button class="deleteresource-btn" onclick="deleteResource(${r.id})"><i class="fa fa-trash"></i> Delete</button>
+          </td>`;
+        tbody.appendChild(row);
+      }
+    }
+
+    function sortBy(key, asc) {
+      return (a, b) => {
+        const valA = a[key]?.toLowerCase?.() || a[key];
+        const valB = b[key]?.toLowerCase?.() || b[key];
+        if (valA < valB) return asc ? -1 : 1;
+        if (valA > valB) return asc ? 1 : -1;
+        return 0;
+      };
+    }
+
+    window.togglePinPost = async (id, category, pinned) => {
+      const newCat = pinned ? category.replace(/^pinned\s*/i, '') : `pinned ${category}`;
+      await fetch(`/api/posts/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: newCat, pinned: !pinned })
+      });
+      fetchPosts();
+    };
+
+    window.deletePost = async (id) => {
+      if (confirm('Delete this post?')) {
+        await fetch(`/api/posts/${id}`, { method: 'DELETE', credentials: 'include' });
+        fetchPosts();
+      }
+    };
+
+    window.togglePinResource = async (id, pinned) => {
+      await fetch(`/api/resources/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pinned: !pinned })
+      });
+      fetchResources();
+    };
+
+    window.deleteResource = async (id) => {
+      if (confirm('Delete this resource?')) {
+        await fetch(`/api/resources/${id}`, { method: 'DELETE', credentials: 'include' });
+        fetchResources();
+      }
+    };
+
+    document.getElementById('new-post').addEventListener('submit', async e => {
+      e.preventDefault();
+      const form = e.target;
+      const title = form.title.value;
+      const category = form.category.value;
+      const pinned = form.pinned.checked;
+      await fetch('/api/posts', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, category: pinned ? `pinned ${category}` : category, body: quill.root.innerHTML, pinned })
+      });
+      form.reset(); quill.setContents([]); fetchPosts();
+    });
+//Form UPLOAD
+document.getElementById('upload-form').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const file = document.getElementById('resource-file').files[0];
+  const urlInput = document.getElementById('resource-url').value.trim();
+  const title = document.getElementById('resource-title').value.trim();
+  const pinned = document.getElementById('resource-pinned').checked;
+  const type = document.getElementById('resource-type').value;
+
+  if (!file && !urlInput) return alert("Please provide a file or a URL.");
+  if (!title || !type) return alert("Title and type are required.");
+
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('pinned', pinned);
+  formData.append('type', type);
+
+  if (file) {
+    formData.append('file', file);
+    // If it's a PDF, generate thumbnail as usual (you already handle this)
+  } else {
+    formData.append('url', urlInput);
+  }
+
+  const res = await fetch('/api/resources/upload2', {
+    method: 'POST',
+    body: formData,
+    credentials: 'include'
+  });
+
+  if (res.ok) {
+    e.target.reset();
+    fetchResources();
+  } else {
+    alert('Upload failed');
+  }
+});
+
+    document.getElementById('search-posts').addEventListener('input', renderPosts);
+    document.getElementById('search-resources').addEventListener('input', renderResources);
+
+    document.querySelectorAll('#posts-table th.sortable').forEach(th =>
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        postSort.asc = key === postSort.key ? !postSort.asc : true;
+        postSort.key = key;
+        renderPosts();
+      }));
+
+    document.querySelectorAll('#resources-table th.sortable').forEach(th =>
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        resourceSort.asc = key === resourceSort.key ? !resourceSort.asc : true;
+        resourceSort.key = key;
+        renderResources();
+      }));
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchPosts();
+      fetchResources();
+    });
+
+    
+  </script>
+</body>
+</html>
