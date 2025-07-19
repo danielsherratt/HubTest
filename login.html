@@ -3,8 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CESW Hub Login</title>
-   
+  <title>Admin Login – CESW Hub</title>
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -82,7 +81,7 @@
   <div class="banner"></div>
 
   <div class="login-card">
-    <h1>CESW Hub Login</h1>
+    <h1>CESW Admin Login</h1>
     <form id="login-form">
       <input name="pass" type="password" placeholder="Enter Password" required autocomplete="current-password" />
       <button type="submit">Log In</button>
@@ -90,6 +89,32 @@
     </form>
   </div>
 
-  
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const form = e.target;
+      const error = document.getElementById('error-msg');
+      error.style.display = 'none';
+
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ pass: form.pass.value })
+      });
+
+      if (res.ok) {
+        const { role } = await res.json();
+        if (role === 'admin') {
+          window.location.href = '/secure.html';
+        } else {
+          window.location.href = '/index.html';
+        }
+      } else {
+        error.textContent = 'Invalid password.';
+        error.style.display = 'block';
+      }
+    });
+  </script>
 </body>
 </html>
