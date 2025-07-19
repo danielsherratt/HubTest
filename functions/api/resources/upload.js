@@ -6,36 +6,61 @@ export async function onRequestPost({ request, env }) {
     }
 
     const formData = await request.formData();
-    const file = formData.get('file');
-    const title = formData.get('title');
-    const pinned = formData.get('pinned') === 'true';
+    const file     = formData.get('file');
+    const title    = formData.get('title');
+    const urlInput = formData.get('url');
+    const type     = formData.get('type');
+    const pinned   = formData.get('pinned') === 'true';
+    const uploadedThumbnail = formData.get('thumbnail');
 
-
-    if (!file || !(file instanceof File) || !title) {
-      return new Response('Missing file or title', { status: 400 });
+    if (!title) {
+      return new Response('Missing title', { status: 400 });
     }
 
-    const filename = `${Date.now()}-${file.name}`;
-    const key = `uploads/${filename}`;
-    const url = `https://files.danieltesting.space/${key}`;
+    let url = '';
+    let thumbnail = '';
 
-    // Upload to R2
-    await env.MY_BUCKET.put(key, file.stream(), {
-      httpMetadata: { contentType: file.type }
-    });
-    const thumbnail = formData.get('thumbnail') || url;
+    // === CASE 1: FILE upload ===
+    if (file && file instanceof File) {
+      const filename = `${Date.now()}-${file.name}`;
+      const key = `uploads/${filename}`;
+      url = `https://files.danieltesting.space/${key}`;
+
+      await env.MY_BUCKET.put(key, file.stream(), {
+        httpMetadata: { contentType: file.type }
+      });
+
+      thumbnail = uploadedThumbnail || url;
+
+    // === CASE 2: URL input ===
+    } else if (urlInput) {
+      url = urlInput;
+
+      // Hardcoded thumbnails based on type
+      const typeThumbnails = {
+        website: 'https://files.danieltesting.space/thumbs/website.png',
+        video: 'https://files.danieltesting.space/thumbs/video.png'
+      };
+
+      thumbnail = typeThumbnails[type] || urlInput;
+
+    } else {
+      return new Response('Missing file or URL', { status: 400 });
+    }
+
     // Insert into D1
     await env.POSTS_DB.prepare(`
       INSERT INTO resources (title, created_date, url, pinned, thumbnail)
       VALUES (?, datetime('now'), ?, ?, ?)
     `)
-    .bind(title, url, pinned ? 1 : 0, thumbnail || null)
+    .bind(title, url, pinned ? 1 : 0, thumbnail)
     .run();
 
     return new Response(JSON.stringify({ success: true, url }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
+
   } catch (err) {
     console.error('Upload error:', err);
     return new Response(
