@@ -24,6 +24,8 @@ export async function onRequestPost({ request, env }) {
       httpMetadata: { contentType: file.type }
     });
 
+    if (!thumbnail){thumbnail=url}
+
     // Insert into D1
     await env.POSTS_DB.prepare(`
       INSERT INTO resources (title, created_date, url, pinned, thumbnail)
