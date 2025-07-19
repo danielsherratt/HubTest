@@ -9,8 +9,16 @@
     <script type="module">var i={};Object.defineProperty(i,"__esModule",{value:!0});function y(r,e,t){var c;if(t===void 0&&(t={}),!e.codes){e.codes={};for(var s=0;s<e.chars.length;++s)e.codes[e.chars[s]]=s}if(!t.loose&&r.length*e.bits&7)throw new SyntaxError("Invalid padding");for(var a=r.length;r[a-1]==="=";)if(--a,!t.loose&&!((r.length-a)*e.bits&7))throw new SyntaxError("Invalid padding");for(var o=new((c=t.out)!=null?c:Uint8Array)(a*e.bits/8|0),n=0,u=0,l=0,f=0;f<a;++f){var E=e.codes[r[f]];if(E===void 0)throw new SyntaxError("Invalid character "+r[f]);u=u<<e.bits|E,n+=e.bits,n>=8&&(n-=8,o[l++]=255&u>>n)}if(n>=e.bits||255&u<<8-n)throw new SyntaxError("Unexpected end of data");return o}function h(r,e,t){t===void 0&&(t={});for(var c=t,s=c.pad,a=s===void 0?!0:s,o=(1<<e.bits)-1,n="",u=0,l=0,f=0;f<r.length;++f)for(l=l<<8|255&r[f],u+=8;u>e.bits;)u-=e.bits,n+=e.chars[o&l>>u];if(u&&(n+=e.chars[o&l<<e.bits-u]),a)for(;n.length*e.bits&7;)n+="=";return n}var L={chars:"0123456789ABCDEF",bits:4},K={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567",bits:5},O={chars:"0123456789ABCDEFGHIJKLMNOPQRSTUV",bits:5},$={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",bits:6},P={chars:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",bits:6},F={parse:function(e,t){return y(e.toUpperCase(),L,t)},stringify:function(e,t){return h(e,L,t)}},I={parse:function(e,t){return t===void 0&&(t={}),y(t.loose?e.toUpperCase().replace(/0/g,"O").replace(/1/g,"L").replace(/8/g,"B"):e,K,t)},stringify:function(e,t){return h(e,K,t)}},k={parse:function(e,t){return y(e,O,t)},stringify:function(e,t){return h(e,O,t)}},B={parse:function(e,t){return y(e,$,t)},stringify:function(e,t){return h(e,$,t)}},G={parse:function(e,t){return y(e,P,t)},stringify:function(e,t){return h(e,P,t)}},H={parse:y,stringify:h};i.base16=F;i.base32=I;i.base32hex=k;i.base64=B;i.base64url=G;i.codec=H;i.base16;i.base32;i.base32hex;const J=i.base64;i.base64url;i.codec;function b(r){const e=document.querySelector(r);if(e)return e;throw new Error(`No element found with selector: "${r}"`)}const d=b("input"),m=b("header"),j=b("#msg"),g=b("form"),v=b("#load");let N,D,M,T;document.addEventListener("DOMContentLoaded",async()=>{const r=b("pre[data-i]");if(!r.innerText){d.disabled=!0,S("No encrypted payload.");return}T=Number(r.dataset.i);const e=J.parse(r.innerText);if(N=e.slice(0,32),D=e.slice(32,32+16),M=e.slice(32+16),location.hash){const t=new URL(window.location.href);d.value=t.hash.slice(1),t.hash="",history.replaceState(null,"",t.toString())}sessionStorage.k||d.value?await U():(w(v),x(g),m.classList.replace("hidden","flex"),d.focus())});var A,C;const p=((A=window.crypto)==null?void 0:A.subtle)||((C=window.crypto)==null?void 0:C.webkitSubtle);p||(S("Please use a modern browser."),d.disabled=!0);function x(r){r.classList.remove("hidden")}function w(r){r.classList.add("hidden")}function S(r){j.innerText=r,m.classList.add("red")}g.addEventListener("submit",async r=>{r.preventDefault(),await U()});async function R(r){return new Promise(e=>setTimeout(e,r))}async function U(){v.lastElementChild.innerText="Checking...",w(m),w(g),x(v),await R(60);try{const r=await V({salt:N,iv:D,ciphertext:M,iterations:T},d.value);document.write(r),document.close()}catch(r){w(v),x(g),m.classList.replace("hidden","flex"),sessionStorage.k?sessionStorage.removeItem("k"):S("Whoops, try again, or contact ITSupport"),d.value="",d.focus()}}async function q(r,e,t){const c=new TextEncoder,s=await p.importKey("raw",c.encode(e),"PBKDF2",!1,["deriveKey"]);return await p.deriveKey({name:"PBKDF2",salt:r,iterations:t,hash:"SHA-256"},s,{name:"AES-GCM",length:256},!0,["decrypt"])}async function Q(r){return p.importKey("jwk",r,"AES-GCM",!0,["decrypt"])}async function V({salt:r,iv:e,ciphertext:t,iterations:c},s){const a=new TextDecoder,o=sessionStorage.k?await Q(JSON.parse(sessionStorage.k)):await q(r,s,c),n=new Uint8Array(await p.decrypt({name:"AES-GCM",iv:e},o,t));if(!n)throw"Malformed data";return sessionStorage.k=JSON.stringify(await p.exportKey("jwk",o)),a.decode(n)}</script>
     <link rel="stylesheet" href="assets/login.css"/>
    
+
+    <style>.banner {
+      width: 100%;
+      height: 170px;
+      background: url('assets/banner.jpg') no-repeat center center;
+      background-size: cover;
+    }</style>
 </head>
 <body>
+    
 
 
 <div id="dialogWrap">
@@ -23,11 +31,12 @@
 
 <header class="hidden">
 
-<div style="display:grid; grid-template-columns: auto auto;">
+
+<div>
     <div class="logo">
         <img src="assets/logo.png" alt="Your Logo">
       </div>  
-<div><h1>CESW Hub</h1></div>
+    <h1 style="text-align: center;""><i class="fa-solid fa-gear"></i> CESW Hub - Admin</h1>
 </div>
 
 </header>

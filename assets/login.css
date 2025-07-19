@@ -33,7 +33,7 @@
             }
             
             #mainDialog {
-                max-width: 400px;
+                max-width: 500px;
                 margin: 5px;
                 border: solid #AAAAAA 1px;
                 border-radius: 10px;
@@ -95,7 +95,7 @@
     }
     
     button:hover {
-      background-color:#72a546; 
+      background-color:#004a47; 
     }
     
     
