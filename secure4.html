@@ -274,34 +274,34 @@ const quill = new Quill('#editor', {
 
     let type = "unknown";
 
-    try {
-      if (file) {
-        formData.append('file', file);
+    if (file) {
+      formData.append('file', file);
 
-        if (file.type === "application/pdf") {
-          type = "pdf";
-          const pdfThumb = await generatePdfThumbnail(file);
-          if (pdfThumb) formData.append('thumbnail', pdfThumb);
-        } else if (file.type.startsWith("image/")) {
-          type = "image";
-          // You may add image-specific handling if needed
+      if (file.type === "application/pdf") {
+        type = "pdf";
+        const pdfThumb = await generatePdfThumbnail(file);
+        if (pdfThumb) formData.append('thumbnail', pdfThumb);
+      } else if (file.type.startsWith("image/")) {
+        type = "image";
+        // Optional: Add image preview/thumbnail
+      }
+
+    } else if (urlInput) {
+      formData.append('url', urlInput);
+
+      if (/youtu\.?be|youtube\.com/.test(urlInput)) {
+        type = "video";
+        const videoId = extractYouTubeId(urlInput);
+        if (videoId) {
+          const ytThumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+          const imageBlob = await fetch(ytThumb).then(r => r.blob());
+          const base64 = await blobToBase64(imageBlob);
+          formData.append('thumbnail', base64);
         }
-
-      } else if (urlInput) {
-        formData.append('url', urlInput);
-
-        if (/youtu\.?be|youtube\.com/.test(urlInput)) {
-          type = "video";
-          const videoId = extractYouTubeId(urlInput);
-          if (videoId) {
-            const ytThumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-            const imageBlob = await fetch(ytThumb).then(r => r.blob());
-            const base64 = await blobToBase64(imageBlob);
-            formData.append('thumbnail', base64);
-          }
-        } else {
-          type = "website";
-          const apiUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
+      } else {
+        type = "website";
+        const apiUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
+        try {
           const response = await fetch(apiUrl);
           const json = await response.json();
           const imgUrl = json?.data?.screenshot?.url;
@@ -310,35 +310,25 @@ const quill = new Quill('#editor', {
             const base64 = await blobToBase64(imageBlob);
             formData.append('thumbnail', base64);
           }
+        } catch (err) {
+          console.warn("Microlink thumbnail fetch failed", err);
         }
       }
+    }
 
-      formData.append('type', type);
+    formData.append('type', type);
 
-      // Upload to server
-      const response = await fetch('/api/upload2', {
-        method: 'POST',
-        body: formData
-      });
+    // Send the form
+    const response = await fetch('/api/upload2', {
+      method: 'POST',
+      body: formData
+    });
 
-      const responseClone = response.clone();
-
-      try {
-        const result = await response.json();
-        if (response.ok) {
-          alert('Upload successful!');
-        } else {
-          alert(`Upload failed: ${result.error || 'Unknown error'}`);
-        }
-      } catch (jsonError) {
-        const fallbackText = await responseClone.text();
-        console.error("Non-JSON response:", fallbackText);
-        alert(`Upload failed (non-JSON response): ${fallbackText}`);
-      }
-
-    } catch (err) {
-      console.error('Unexpected upload error:', err);
-      alert(`Upload failed: ${err.message || err}`);
+    const result = await response.json();
+    if (response.ok) {
+      alert('Upload successful!');
+    } else {
+      alert(`Upload failed: ${result.error}`);
     }
   });
 
@@ -369,7 +359,63 @@ const quill = new Quill('#editor', {
     return match ? match[1] : null;
   }
 
-  //End Form input
+/*document.getElementById('upload-form').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const file = document.getElementById('resource-file').files[0];
+  const urlInput = document.getElementById('resource-url').value.trim();
+  const title = document.getElementById('resource-title').value.trim();
+  const pinned = document.getElementById('resource-pinned').checked;
+  const type = document.getElementById('resource-type').value;
+
+  if (!file && !urlInput) return alert("Please provide a file or a URL.");
+  if (!title || !type) return alert("Title and type are required.");
+
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('pinned', pinned);
+  formData.append('type', type);
+
+  if (file) {
+    formData.append('file', file);
+
+    const fileType = file.type;
+
+    if (fileType === 'application/pdf') {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 1.5 });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      const context = canvas.getContext('2d');
+      await page.render({ canvasContext: context, viewport }).promise;
+
+      const base64 = canvas.toDataURL('image/jpeg');
+      formData.append('thumbnail', base64);
+    }
+
+  } else {
+    formData.append('url', urlInput);
+  }
+
+  const res = await fetch('/api/resources/upload2', {
+    method: 'POST',
+    body: formData,
+    credentials: 'include'
+  });
+
+  if (res.ok) {
+    e.target.reset();
+    fetchResources();
+  } else {
+    alert('Upload failed');
+  }
+});
+*/
 
     document.getElementById('search-posts').addEventListener('input', renderPosts);
     document.getElementById('search-resources').addEventListener('input', renderResources);
