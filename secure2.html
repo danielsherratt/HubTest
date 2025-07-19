@@ -187,7 +187,7 @@
     });
 
     async function loadResources() {
-      const res = await fetch('/api/resources', { credentials: 'include' });
+      const res = await fetch('/api/resourcespull', { credentials: 'include' });
       if (res.status === 401) return window.location.href = '/login.html';
 
       const data = await res.json();
