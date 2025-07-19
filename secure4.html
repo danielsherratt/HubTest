@@ -303,7 +303,7 @@ const quill = new Quill('#editor', {
       body: formData
     });
 
-    alert('Uploaded successfully!');
+    fetchResources();
   });
 
   function blobToBase64(blob) {
