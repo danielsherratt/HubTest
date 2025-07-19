@@ -48,33 +48,6 @@
 
    <script>
 
-(async function checkAuthRole() {
-  const cookie = document.cookie.split('; ').find(row => row.startsWith('token='));
-  const token = cookie?.split('=')[1];
-  if (!token) return window.location.href = '/login.html';
-
-  try {
-    const [headerB64, payloadB64, sig] = token.split('.');
-    if (!headerB64 || !payloadB64 || !sig) throw new Error('Invalid token');
-
-    const json = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
-    const now = Math.floor(Date.now() / 1000);
-    if (json.exp < now) throw new Error('Token expired');
-
-    const role = json.sub;
-    if (!['admin', 'user'].includes(role)) throw new Error('Invalid role');
-
-    // Optional: expose role globally
-    window.userRole = role;
-    document.body.style.display = 'block';
-
-  } catch (err) {
-    console.warn('JWT error:', err.message);
-    window.location.href = '/login.html';
-  }
-})();
-
-
     async function loadPosts() {
       const res = await fetch('/api/resourcespull');
       const posts = await res.json();
