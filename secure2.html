@@ -18,8 +18,8 @@
     <!-- ====================== ADD POST ======================= -->
     <h2 class="title">Add Post</h2>
     <form id="new-post">
-      <input name="title" type="text" placeholder="Title" required />
-      <select name="category" required>
+      <input name="title" id="new-post-input" type="text" placeholder="Title" required />
+      <select name="category" id="new-post-select" required>
         <option value="" disabled selected>Select category</option>
         <option value="general">General</option>  
       </select>
@@ -30,7 +30,7 @@
         Pin this post
       </label>
       <div id="editor"></div>
-      <button type="submit">Create Post</button>
+      <button type="submit" id="new-post-button">Create Post</button>
     </form>
 
     <h2 class="title">Manage Posts</h2>
@@ -42,7 +42,7 @@
     <!-- ====================== UPLOAD RESOURCE ======================= -->
     <h2 class="title">Upload Resource</h2>
     <form id="upload-form" class="upload-section" enctype="multipart/form-data">
-      <input type="text" id="resource-title" placeholder="Resource title" required />
+      <input type="text" id="resource-title" id="new-upload-input" placeholder="Resource title" required />
       <label class="star-checkbox">
         <input type="checkbox" id="resource-pinned" />
         <i class="fa-regular fa-star unchecked"></i>
@@ -50,7 +50,7 @@
         Pin this resource
       </label>
       <input type="file" id="resource-file" required />
-      <button type="submit">Upload File</button>
+      <button type="submit" id="new-upload-button">Upload File</button>
     </form>
 
     <h2 class="title">Manage Resources</h2>
