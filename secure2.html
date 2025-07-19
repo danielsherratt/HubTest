@@ -50,7 +50,7 @@
         <i class="fa-solid fa-star checked"></i>
         Pin this resource
       </label>
-      <br><button type="submit" id="new-upload-button">Upload File</button>
+      <br><button type="submit" id="new-upload-button">Add Resource</button>
     </form>
 
     <h2 class="title">Manage Resources</h2>
@@ -193,7 +193,7 @@
         const isPinned = r.pinned === 1;
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><a href="${r.url}" target="_blank">${r.title}</a></td>
+          <td><a class="link-nochange" href="${r.url}" target="_blank">${r.title}</a></td>
           <td>
             <button class="pinresource-btn ${isPinned ? 'unpin' : ''}" data-id="${r.id}">
               <i class="${isPinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>
