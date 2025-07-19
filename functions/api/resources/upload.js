@@ -9,7 +9,7 @@ export async function onRequestPost({ request, env }) {
     const file = formData.get('file');
     const title = formData.get('title');
     const pinned = formData.get('pinned') === 'true';
-    const thumbnail = formData.get('thumbnail'); // May be null
+    const thumbnail = formData.get('thumbnail') || null; // base64 image string if provided
 
     if (!file || !(file instanceof File) || !title) {
       return new Response('Missing file or title', { status: 400 });
@@ -24,18 +24,19 @@ export async function onRequestPost({ request, env }) {
       httpMetadata: { contentType: file.type }
     });
 
-    // Insert into D1
+    // Insert into D1 with thumbnail column
     await env.POSTS_DB.prepare(`
       INSERT INTO resources (title, created_date, url, pinned, thumbnail)
       VALUES (?, datetime('now'), ?, ?, ?)
     `)
-    .bind(title, url, pinned ? 1 : 0, thumbnail || null)
+    .bind(title, url, pinned ? 1 : 0, thumbnail)
     .run();
 
     return new Response(JSON.stringify({ success: true, url }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
+
   } catch (err) {
     console.error('Upload error:', err);
     return new Response(
@@ -44,3 +45,4 @@ export async function onRequestPost({ request, env }) {
     );
   }
 }
+
