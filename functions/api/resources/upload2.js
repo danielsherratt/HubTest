@@ -1,39 +1,72 @@
-const file = formData.get('file');
-const urlInput = formData.get('url');
-const type = formData.get('type');
-let url = '';
-let thumbnail = '';
+export async function onRequestPost({ request, env }) {
+  try {
+    const contentType = request.headers.get('content-type') || '';
+    if (!contentType.includes('multipart/form-data')) {
+      return new Response('Expected multipart/form-data', { status: 400 });
+    }
 
-// Determine if using uploaded file or external URL
-if (file && file instanceof File) {
-  const filename = `${Date.now()}-${file.name}`;
-  const key = `uploads/${filename}`;
-  url = `https://files.danieltesting.space/${key}`;
+    const formData = await request.formData();
+    const file     = formData.get('file');
+    const title    = formData.get('title');
+    const urlInput = formData.get('url');
+    const type     = formData.get('type');
+    const pinned   = formData.get('pinned') === 'true';
+    const uploadedThumbnail = formData.get('thumbnail');
 
-  await env.MY_BUCKET.put(key, file.stream(), {
-    httpMetadata: { contentType: file.type }
-  });
+    if (!title) {
+      return new Response('Missing title', { status: 400 });
+    }
 
-  // Check for uploaded thumbnail (from PDF processing or image preview)
-  thumbnail = formData.get('thumbnail');
-} else if (urlInput && typeof urlInput === 'string') {
-  url = urlInput;
+    let url = '';
+    let thumbnail = '';
 
-  // Set generic thumbnail based on type
-  const typeThumbMap = {
-    website: 'https://example.com/thumbs/website.png',
-    video: 'https://example.com/thumbs/video.png'
-  };
-  thumbnail = typeThumbMap[type] || 'https://example.com/thumbs/default.png';
+    // === CASE 1: FILE upload ===
+    if (file && file instanceof File) {
+      const filename = `${Date.now()}-${file.name}`;
+      const key = `uploads/${filename}`;
+      url = `https://files.danieltesting.space/${key}`;
+
+      await env.MY_BUCKET.put(key, file.stream(), {
+        httpMetadata: { contentType: file.type }
+      });
+
+      thumbnail = uploadedThumbnail || url;
+
+    // === CASE 2: URL input ===
+    } else if (urlInput) {
+      url = urlInput;
+
+      // Hardcoded thumbnails based on type
+      const typeThumbnails = {
+        website: 'https://files.danieltesting.space/thumbs/website.png',
+        video: 'https://files.danieltesting.space/thumbs/video.png',
+        link:   'https://files.danieltesting.space/thumbs/link.png'
+      };
+
+      thumbnail = typeThumbnails[type] || urlInput;
+
+    } else {
+      return new Response('Missing file or URL', { status: 400 });
+    }
+
+    // Insert into D1
+    await env.POSTS_DB.prepare(`
+      INSERT INTO resources (title, created_date, url, pinned, thumbnail)
+      VALUES (?, datetime('now'), ?, ?, ?)
+    `)
+    .bind(title, url, pinned ? 1 : 0, thumbnail)
+    .run();
+
+    return new Response(JSON.stringify({ success: true, url }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+  } catch (err) {
+    console.error('Upload error:', err);
+    return new Response(
+      JSON.stringify({ error: 'Upload failed', details: err.message || String(err) }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 }
-
-// Fallback to URL if no image thumbnail
-if (!thumbnail) thumbnail = url;
-
-// Save to D1
-await env.POSTS_DB.prepare(`
-  INSERT INTO resources (title, created_date, url, pinned, thumbnail)
-  VALUES (?, datetime('now'), ?, ?, ?)
-`)
-.bind(title, url, pinned ? 1 : 0, thumbnail)
-.run();
