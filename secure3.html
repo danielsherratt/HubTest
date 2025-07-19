@@ -148,7 +148,7 @@ const quill = new Quill('#editor', {
       for (const r of filtered) {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><a href="${r.url}" target="_blank">${r.title}</a></td>
+          <td><a href="${r.url}" class="link-nochange" target="_blank">${r.title}</a></td>
           <td>${new Date(r.created_date).toLocaleDateString()}</td>
           <td>
             <button onclick="togglePinResource(${r.id}, ${r.pinned})"><i class="${isPinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>${r.pinned ? 'Unpin' : 'Pin'}</button>
