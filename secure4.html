@@ -284,7 +284,7 @@ const quill = new Quill('#editor', {
           if (pdfThumb) formData.append('thumbnail', pdfThumb);
         } else if (file.type.startsWith("image/")) {
           type = "image";
-          // Optional: image preview/thumbnail logic
+          // You may add image-specific handling if needed
         }
 
       } else if (urlInput) {
@@ -315,10 +315,13 @@ const quill = new Quill('#editor', {
 
       formData.append('type', type);
 
+      // Upload to server
       const response = await fetch('/api/upload2', {
         method: 'POST',
         body: formData
       });
+
+      const responseClone = response.clone();
 
       try {
         const result = await response.json();
@@ -328,7 +331,7 @@ const quill = new Quill('#editor', {
           alert(`Upload failed: ${result.error || 'Unknown error'}`);
         }
       } catch (jsonError) {
-        const fallbackText = await response.text();
+        const fallbackText = await responseClone.text();
         console.error("Non-JSON response:", fallbackText);
         alert(`Upload failed (non-JSON response): ${fallbackText}`);
       }
@@ -365,6 +368,8 @@ const quill = new Quill('#editor', {
     const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/);
     return match ? match[1] : null;
   }
+
+  //End Form input
 
     document.getElementById('search-posts').addEventListener('input', renderPosts);
     document.getElementById('search-resources').addEventListener('input', renderResources);
