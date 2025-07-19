@@ -359,64 +359,6 @@ const quill = new Quill('#editor', {
     return match ? match[1] : null;
   }
 
-/*document.getElementById('upload-form').addEventListener('submit', async e => {
-  e.preventDefault();
-
-  const file = document.getElementById('resource-file').files[0];
-  const urlInput = document.getElementById('resource-url').value.trim();
-  const title = document.getElementById('resource-title').value.trim();
-  const pinned = document.getElementById('resource-pinned').checked;
-  const type = document.getElementById('resource-type').value;
-
-  if (!file && !urlInput) return alert("Please provide a file or a URL.");
-  if (!title || !type) return alert("Title and type are required.");
-
-  const formData = new FormData();
-  formData.append('title', title);
-  formData.append('pinned', pinned);
-  formData.append('type', type);
-
-  if (file) {
-    formData.append('file', file);
-
-    const fileType = file.type;
-
-    if (fileType === 'application/pdf') {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const page = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale: 1.5 });
-
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-
-      const context = canvas.getContext('2d');
-      await page.render({ canvasContext: context, viewport }).promise;
-
-      const base64 = canvas.toDataURL('image/jpeg');
-      formData.append('thumbnail', base64);
-    }
-
-  } else {
-    formData.append('url', urlInput);
-  }
-
-  const res = await fetch('/api/resources/upload2', {
-    method: 'POST',
-    body: formData,
-    credentials: 'include'
-  });
-
-  if (res.ok) {
-    e.target.reset();
-    fetchResources();
-  } else {
-    alert('Upload failed');
-  }
-});
-*/
-
     document.getElementById('search-posts').addEventListener('input', renderPosts);
     document.getElementById('search-resources').addEventListener('input', renderResources);
 
