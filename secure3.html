@@ -38,8 +38,8 @@
       <thead>
         <tr>
           <th class="sortable" data-key="title">Title</th>
-          <th class="sortable" data-key="category">Category</th>
           <th class="sortable" data-key="created_at">Date</th>
+          <th class="sortable" data-key="category">Category</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -140,8 +140,8 @@ const quill = new Quill('#editor', {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${p.title}</td>
-          <td>${p.category}</td>
           <td>${new Date(p.created_at).toLocaleDateString()}</td>
+          <td>${p.category}</td>
           <td>
         <button class="pin-btn" onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
               <i class="${p.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${p.pinned ? 'Unpin' : 'Pin'}</button>
