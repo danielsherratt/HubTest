@@ -238,6 +238,7 @@ const quill = new Quill('#editor', {
       form.reset(); quill.setContents([]); fetchPosts();
     });
 
+    
 document.getElementById('upload-form').addEventListener('submit', async e => {
   e.preventDefault();
 
@@ -288,6 +289,22 @@ document.getElementById('upload-form').addEventListener('submit', async e => {
     uploadFormData(formData);
   }
 });
+
+async function uploadFormData(formData) {
+  const res = await fetch('/api/resources/upload', {
+    method: 'POST',
+    body: formData,
+    credentials: 'include'
+  });
+
+  if (res.ok) {
+    document.getElementById('upload-form').reset();
+    fetchResources();
+  } else {
+    alert('Upload failed');
+  }
+}
+
 
 async function uploadFormData(formData) {
   const res = await fetch('/api/resources/upload', {
