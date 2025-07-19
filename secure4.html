@@ -58,13 +58,13 @@
     <!-- Either File or URL -->
   <input type="file" id="resource-file" /><br>
   <input type="url" id="resource-url" placeholder="or paste a URL instead"><br>
-    <!-- Type dropdown -->
+    <!-- Type dropdown 
   <select id="resource-type">
     <option value="">Select resource type</option>
     <option value="file">File</option>
     <option value="website">Website</option>
     <option value="video">Video</option>
-  </select><br>
+  </select>--><br>
   <input type="text" id="resource-title" placeholder="Resource title" required /><br>
   
   <!-- Pinned checkbox -->
@@ -127,13 +127,6 @@ const quill = new Quill('#editor', {
         ]
       }
     });
-
-    document.getElementById('resource-file').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    document.getElementById('resource-type').value = 'file';
-  }
-});
 
     let posts = [];
     let resources = [];
@@ -262,8 +255,96 @@ const quill = new Quill('#editor', {
       form.reset(); quill.setContents([]); fetchPosts();
     });
 
+// Form Upload
 
-document.getElementById('upload-form').addEventListener('submit', async e => {
+    document.getElementById('upload-form').addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const file = document.getElementById('resource-file').files[0];
+    const urlInput = document.getElementById('resource-url').value.trim();
+    const title = document.getElementById('resource-title').value.trim();
+    const pinned = document.getElementById('resource-pinned').checked;
+
+    if (!file && !urlInput) return alert("Please provide a file or a URL.");
+    if (!title) return alert("Title is required.");
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('pinned', pinned);
+
+    // Determine type
+    let type = "unknown";
+
+    if (file) {
+      formData.append('file', file);
+
+      if (file.type === "application/pdf") {
+        type = "pdf";
+        const pdfThumb = await generatePdfThumbnail(file);
+        if (pdfThumb) formData.append('thumbnail', pdfThumb);
+      } else if (file.type.startsWith("image/")) {
+        type = "image";
+        // Optionally add an image preview here
+      }
+    } else if (urlInput) {
+      formData.append('url', urlInput);
+
+      // Detect if video (YouTube/Vimeo) or website
+      if (/youtu\.?be|vimeo\.com/.test(urlInput)) {
+        type = "video";
+      } else {
+        type = "website";
+      }
+
+      const thumbnailUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
+      try {
+        const response = await fetch(thumbnailUrl);
+        const json = await response.json();
+        const imgUrl = json?.data?.screenshot?.url;
+        if (imgUrl) {
+          const imageBlob = await fetch(imgUrl).then(r => r.blob());
+          const base64 = await blobToBase64(imageBlob);
+          formData.append('thumbnail', base64);
+        }
+      } catch (err) {
+        console.warn("Microlink thumbnail failed", err);
+      }
+    }
+
+    formData.append('type', type);
+
+    // Upload
+    await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    alert('Upload successful!');
+  });
+
+  async function generatePdfThumbnail(file) {
+    const pdfData = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 1 });
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: context, viewport }).promise;
+    return canvas.toDataURL("image/png");
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+/*document.getElementById('upload-form').addEventListener('submit', async e => {
   e.preventDefault();
 
   const file = document.getElementById('resource-file').files[0];
@@ -319,7 +400,7 @@ document.getElementById('upload-form').addEventListener('submit', async e => {
     alert('Upload failed');
   }
 });
-
+*/
 
     document.getElementById('search-posts').addEventListener('input', renderPosts);
     document.getElementById('search-resources').addEventListener('input', renderResources);
