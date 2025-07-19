@@ -48,7 +48,7 @@ export async function onRequest({ request, env }) {
     }
     const { results } = await db
       .prepare(`
-        SELECT id, title, url, pinned, created_date
+        SELECT id, title, url, pinned, created_date, thumbnail
           FROM resources
          ORDER BY pinned DESC, created_date DESC
       `)

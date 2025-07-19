@@ -241,10 +241,7 @@ const quill = new Quill('#editor', {
 document.getElementById('upload-form').addEventListener('submit', async e => {
   e.preventDefault();
 
-  const fileInput = document.getElementById('resource-file');
-  const file = fileInput.files[0];
-  if (!file) return alert("Please select a file");
-
+  const file = document.getElementById('resource-file').files[0];
   const title = document.getElementById('resource-title').value;
   const pinned = document.getElementById('resource-pinned').checked;
 
@@ -253,29 +250,46 @@ document.getElementById('upload-form').addEventListener('submit', async e => {
   formData.append('file', file);
   formData.append('pinned', pinned);
 
-  // 🔍 Check if file is PDF and create thumbnail
-  if (file.type === 'application/pdf') {
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const page = await pdf.getPage(1);
+  if (!file) return alert("Please select a file");
 
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
+  const fileType = file.type;
+
+  if (fileType === 'application/pdf') {
+    // Generate PDF thumbnail
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const pdfData = new Uint8Array(reader.result);
+      const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+      const page = await pdf.getPage(1);
       const viewport = page.getViewport({ scale: 1.5 });
 
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
-      await page.render({ canvasContext: context, viewport }).promise;
 
-      const thumbnailDataUrl = canvas.toDataURL('image/jpeg', 0.8); // base64 JPEG
-      formData.append('thumbnail', thumbnailDataUrl);
-    } catch (err) {
-      console.error('Thumbnail generation failed:', err);
-    }
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      const base64 = canvas.toDataURL('image/png');
+      formData.append('thumbnail', base64);
+
+      uploadFormData(formData);
+    };
+    reader.readAsArrayBuffer(file);
+  } else if (fileType.startsWith('image/')) {
+    // Use image directly as thumbnail
+    const reader = new FileReader();
+    reader.onload = () => {
+      formData.append('thumbnail', reader.result); // data:image/jpeg;base64,...
+      uploadFormData(formData);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    // No thumbnail for other types
+    uploadFormData(formData);
   }
+});
 
-  // 📤 Send to API
+async function uploadFormData(formData) {
   const res = await fetch('/api/resources/upload', {
     method: 'POST',
     body: formData,
@@ -283,12 +297,12 @@ document.getElementById('upload-form').addEventListener('submit', async e => {
   });
 
   if (res.ok) {
-    e.target.reset();
+    document.getElementById('upload-form').reset();
     fetchResources();
   } else {
     alert('Upload failed');
   }
-});
+}
 
     document.getElementById('search-posts').addEventListener('input', renderPosts);
     document.getElementById('search-resources').addEventListener('input', renderResources);
