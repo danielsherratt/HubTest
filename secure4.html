@@ -49,23 +49,23 @@
     <i>Latest 10 are shown</i>
 
 
+
     <!-- Upload Resource -->
    <h2 class="title">Add Resource</h2>
 <form id="upload-form" class="upload-section" enctype="multipart/form-data">
-  <input type="text" id="resource-title" placeholder="Resource title" required /><br>
-  
-  <!-- Either File or URL -->
+
+    <!-- Either File or URL -->
   <input type="file" id="resource-file" /><br>
   <input type="url" id="resource-url" placeholder="or enter a URL instead"><br>
-
-  <!-- Type dropdown -->
+    <!-- Type dropdown -->
   <select id="resource-type">
     <option value="">Select type</option>
     <option value="file">File</option>
     <option value="website">Website</option>
     <option value="video">Video</option>
   </select><br>
-
+  <input type="text" id="resource-title" placeholder="Resource title" required /><br>
+  
   <!-- Pinned checkbox -->
   <label class="star-checkbox">
     <input type="checkbox" id="resource-pinned" />
@@ -254,7 +254,7 @@ const quill = new Quill('#editor', {
       form.reset(); quill.setContents([]); fetchPosts();
     });
 
-    
+
 document.getElementById('upload-form').addEventListener('submit', async e => {
   e.preventDefault();
 

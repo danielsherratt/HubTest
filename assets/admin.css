@@ -21,10 +21,10 @@ a.link-nochange:hover {
 }
 
 .fa-eye {
-  color:#00625f
+  color: #00625f; text-align: center;
 }
-.fa-ey:hover {
-  color:#004a47
+.fa-eye:hover {
+  color: #004a47; text-align: center;
 }
 
 h2 {margin-top:100px;}
@@ -39,7 +39,9 @@ h2 {margin-top:100px;}
     }
     #new-post-input,
     #new-post-select,
+    #resource-type
     #resource-title,
+    #resource-url,
     #search-resources,
     #search-posts {
       padding: 0.5rem;
@@ -51,6 +53,7 @@ h2 {margin-top:100px;}
  
     #new-post-input,
     #resource-title,
+    #resource-url,
     #search-resources,
     #search-posts,
     #new-post label {
