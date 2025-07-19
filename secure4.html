@@ -314,7 +314,7 @@ const quill = new Quill('#editor', {
     formData.append('type', type);
 
     // Upload
-    await fetch('/api/upload2', {
+    await fetch('/api/resources/upload2', {
       method: 'POST',
       body: formData
     });
