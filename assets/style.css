@@ -149,6 +149,8 @@ a.link-nochange:hover {
     color: #000;
 }
 
+a {text-decoration: none;color:#00625f;}
+
 /* Scroll Bar Styles */
 ::-webkit-scrollbar {
     width: 4px;
