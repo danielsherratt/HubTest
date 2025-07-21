@@ -58,13 +58,12 @@ export async function onRequest({ request, env }) {
     });
   }
 
-  // 2) All mutating methods require a valid JWT
-  if (['POST', 'PUT', 'DELETE'].includes(method)) {
-    const user = token && await verifyJWT(token, env.JWT_SECRET);
-    if (!user) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+if (['POST', 'PUT', 'DELETE'].includes(method)) {
+  const user = token && await verifyJWT(token, env.JWT_SECRET);
+  if (!user || user.sub !== 'admin') {
+    return new Response('Forbidden', { status: 403 });
   }
+}
 
   // 3) POST → create
   if (method === 'POST') {
