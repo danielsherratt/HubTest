@@ -7,7 +7,9 @@
     <title>CESW Hub - Resources</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 	<link rel="stylesheet" href="assets/resources.css">
-
+<style>
+  body { display: none; }
+</style>
 <script>
 (async () => {
   try {
@@ -19,8 +21,7 @@
     if (!['user', 'admin'].includes(data.role)) {
       window.location.href = '/index.html';
     }
-    // Optional: if you only want users here, but not admin:
-    // if (data.role !== 'user') window.location.href = '/secure.html';
+    document.body.style.display = 'block';
   } catch (err) {
     window.location.href = '/index.html';
   }
