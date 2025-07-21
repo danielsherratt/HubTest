@@ -24,12 +24,12 @@
     if (!res.ok) throw new Error('Not authorized');
     const data = await res.json();
     if (!['user', 'admin'].includes(data.role)) {
-      window.location.href = '/login.html';
+      window.location.href = '/index.html';
     }
     // Optional: if you only want users here, but not admin:
     // if (data.role !== 'user') window.location.href = '/secure.html';
   } catch (err) {
-    window.location.href = '/login.html';
+    window.location.href = '/index.html';
   }
 })();
 </script>
