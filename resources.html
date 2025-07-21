@@ -48,6 +48,23 @@
 
    <script>
 
+      async function checkAuth() {
+    try {
+      const res = await fetch('/api/auth/check', { credentials: 'include' });
+      if (!res.ok) throw new Error('Unauthorized');
+      const { role } = await res.json();
+      return role;
+    } catch (err) {
+      window.location.href = '/login.html';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const role = await checkAuth(); // Blocks until user is validated
+    loadPosts(); // Only proceed if authenticated
+    setupEvents(); // You can wrap the rest of your jQuery stuff in this
+  });
+
     async function loadPosts() {
       const res = await fetch('/api/resourcespull');
       const posts = await res.json();
