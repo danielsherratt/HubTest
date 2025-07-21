@@ -8,6 +8,27 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 	<link rel="stylesheet" href="assets/resources.css">
 
+<script>
+(async () => {
+  try {
+    const res = await fetch('/api/verify', {
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('Not authorized');
+    const data = await res.json();
+    if (!['user', 'admin'].includes(data.role)) {
+      window.location.href = '/login.html';
+    }
+    // Optional: if you only want users here, but not admin:
+    // if (data.role !== 'user') window.location.href = '/secure.html';
+  } catch (err) {
+    window.location.href = '/login.html';
+  }
+})();
+</script>
+
+
+
 </head>
 <body>
 <div class="navbar">
@@ -47,24 +68,6 @@
 </main>
 
    <script>
-
-      async function checkAuth() {
-    try {
-      const res = await fetch('/api/auth/check', { credentials: 'include' });
-      if (!res.ok) throw new Error('Unauthorized');
-      const { role } = await res.json();
-      return role;
-    } catch (err) {
-      window.location.href = '/login.html';
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', async () => {
-    const role = await checkAuth(); // Blocks until user is validated
-    loadPosts(); // Only proceed if authenticated
-    setupEvents(); // You can wrap the rest of your jQuery stuff in this
-  });
-
     async function loadPosts() {
       const res = await fetch('/api/resourcespull');
       const posts = await res.json();

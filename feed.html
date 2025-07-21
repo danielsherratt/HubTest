@@ -13,6 +13,28 @@
   />
   <!-- Your custom CSS -->
   <link rel="stylesheet" href="assets/style.css">
+
+
+<script>
+(async () => {
+  try {
+    const res = await fetch('/api/verify', {
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('Not authorized');
+    const data = await res.json();
+    if (!['user', 'admin'].includes(data.role)) {
+      window.location.href = '/login.html';
+    }
+    // Optional: if you only want users here, but not admin:
+    // if (data.role !== 'user') window.location.href = '/secure.html';
+  } catch (err) {
+    window.location.href = '/login.html';
+  }
+})();
+</script>
+
+
 </head>
 <body>
 <div class="navbar">
