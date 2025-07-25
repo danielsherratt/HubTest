@@ -36,48 +36,7 @@
   <main style="max-width: 800px; margin: auto;">
     <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub - Admin</h1>
 
-
-    <!-- Add Post -->
-    <h2 class="title"><i class="fa-solid fa-plus"></i> Add Post</h2>
-    <form id="new-post">
-      <input name="title" id="new-post-input" placeholder="Title" required />
-      <select name="category" id="new-post-select" required>
-        <option value="" disabled selected>Select category</option>
-        <option value="general">General</option>
-        <option value="resources">Resources</option>
-        <option value="onlineresources">Online Resources</option>
-        <option value="faq">FAQ</option>
-      </select>
-     <label class="star-checkbox">
-        <input type="checkbox" name="pinned" />
-        <i class="fa-regular fa-star unchecked"></i>
-        <i class="fa-solid fa-star checked"></i>
-        Pin this post
-      </label>
-      <div id="editor"></div>
-      <button type="submit" id="new-post-button">Create Post</button>
-    </form>
-
-    <!-- Manage Posts -->
-    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Posts</h2>
-    <a href="feed.html" target="_blank" alt="View Feed"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
-    <input type="text" id="search-posts" class="search-bar" placeholder="Search posts...">
-    <table id="posts-table">
-      <thead>
-        <tr>
-          <th class="sortable" data-key="title">Title</th>
-          <th class="sortable" data-key="created_at">Date</th>
-          <th class="sortable" data-key="category">Category</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <p id="posts-empty" style="display:none;">Mmm, no post found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</p>
-
-    <i>Latest 10 are shown, search for the exact one you want</i>
-
-
+<a class="calendarbutton" href="https://calendar.online/852ff24234751e548d10"><i class="fa fa-calendar">Calendar</i></a>
 
     <!-- Upload Resource -->
    <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
@@ -134,6 +93,46 @@
     <p id="resources-empty" style="display:none;">Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</p>
     <i>Latest 10 are shown, search for the exact one you want</i>
     <div style="margin-bottom:1em;"></div>
+
+    <!-- Add Post -->
+    <h2 class="title"><i class="fa-solid fa-plus"></i> Add Post</h2>
+    <form id="new-post">
+      <input name="title" id="new-post-input" placeholder="Title" required />
+      <select name="category" id="new-post-select" required>
+        <option value="" disabled selected>Select category</option>
+        <option value="general">General</option>
+        <option value="resources">Resources</option>
+        <option value="onlineresources">Online Resources</option>
+        <option value="faq">FAQ</option>
+      </select>
+     <label class="star-checkbox">
+        <input type="checkbox" name="pinned" />
+        <i class="fa-regular fa-star unchecked"></i>
+        <i class="fa-solid fa-star checked"></i>
+        Pin this post
+      </label>
+      <div id="editor"></div>
+      <button type="submit" id="new-post-button">Create Post</button>
+    </form>
+
+    <!-- Manage Posts -->
+    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Posts</h2>
+    <a href="feed.html" target="_blank" alt="View Feed"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
+    <input type="text" id="search-posts" class="search-bar" placeholder="Search posts...">
+    <table id="posts-table">
+      <thead>
+        <tr>
+          <th class="sortable" data-key="title">Title</th>
+          <th class="sortable" data-key="created_at">Date</th>
+          <th class="sortable" data-key="category">Category</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p id="posts-empty" style="display:none;">Mmm, no post found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</p>
+
+    <i>Latest 10 are shown, search for the exact one you want</i>
 
     <a href="mailto:ITSupport@kotakureo.school.nz" id="one" class="link-nochange">
       <i class="fa-solid fa-life-ring"></i> Help

@@ -1,5 +1,3 @@
-// functions/api/resourcespull.js
-
 // Helpers for JWT verification via Web Crypto
 function base64urlToUint8Array(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -40,24 +38,25 @@ export async function onRequest({ request, env }) {
   const method  = request.method;
   const isAdmin = url.searchParams.has('admin');
 
-  // 1) GET — public except when admin=true
+  // Handle GET request
   if (method === 'GET') {
     if (isAdmin) {
       const user = token && await verifyJWT(token, env.JWT_SECRET);
       if (!user) return new Response('Unauthorized', { status: 401 });
     }
+
     const { results } = await db
       .prepare(`
-        SELECT id, title, url, pinned, created_date, thumbnail
+        SELECT id, title, url, pinned, created_date, thumbnail, category
           FROM resources
          ORDER BY pinned DESC, created_date DESC
       `)
       .all();
+
     return new Response(JSON.stringify(results), {
       headers: { 'Content-Type': 'application/json' }
     });
-  }  
+  }
 
-  // 6) Fallback
   return new Response('Method Not Allowed', { status: 405 });
 }
