@@ -44,6 +44,9 @@
       <select name="category" id="new-post-select" required>
         <option value="" disabled selected>Select category</option>
         <option value="general">General</option>
+        <option value="resources">Resources</option>
+        <option value="onlineresources">Online Resources</option>
+        <option value="faq">FAQ</option>
       </select>
      <label class="star-checkbox">
         <input type="checkbox" name="pinned" />
@@ -90,11 +93,14 @@
     <option value="website">Website</option>
     <option value="video">Video</option>
   </select><br>
+
   <select id="resource-category" required>
-  <option value="">Select category</option>
-  <option value="Apple">Maths</option>
-  <option value="Banana">Banana</option>
-</select><br>
+    <option value="" disabled selected>Select category</option>
+    <option value="general">General</option>
+    <option value="resources">Resources</option>
+    <option value="onlineresources">Online Resources</option>
+    <option value="faq">FAQ</option>
+  </select><br>
   <input type="text" id="resource-title" placeholder="Resource title" required /><br>
   
 
