@@ -75,7 +75,7 @@
   card.className = 'category-card';
   card.dataset.cat = cat.toLowerCase();
 
-  const imageUrl = `https://files.danieltesting.space/uploads/${encodeURIComponent(cat)}.png`;
+  const imageUrl = `https://files.danieltesting.space/uploads/${encodeURIComponent(cat.toLowerCase())}.png`;
 
   card.innerHTML = `
     <img src="${imageUrl}">
