@@ -150,6 +150,7 @@ img {padding-top:10px;}
 
 .category-card {
     height:200px;
+    justify-content: center;
 }
 
  #backToCategories {
