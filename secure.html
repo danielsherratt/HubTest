@@ -181,7 +181,7 @@ const quill = new Quill('#editor', {
     }
 
     async function fetchResources() {
-      const res = await fetch('/api/resourcespull', { credentials: 'include' });
+      const res = await fetch('/api/resourcespull2', { credentials: 'include' });
       if (res.status === 401) return location.href = '/login.html';
       resources = await res.json();
       renderResources();
