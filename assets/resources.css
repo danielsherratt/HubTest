@@ -157,7 +157,12 @@ img {padding-top:10px;}
     object-fit: cover;
     border-radius: 20px;
 }
-
+.category-card img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 20px;
+}
 
 #noResults {
     display: none;
