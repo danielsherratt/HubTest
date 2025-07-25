@@ -78,8 +78,8 @@
   const imageUrl = `https://files.danieltesting.space/uploads/${encodeURIComponent(cat.toLowerCase())}.png`;
 
   card.innerHTML = `
+  <h3 style="text-align: center;">${cat}</h3>
     <img src="${imageUrl}">
-    <h3 style="text-align: center;">${cat}</h3>
   `;
 
   card.addEventListener('click', () => showCategory(cat));
