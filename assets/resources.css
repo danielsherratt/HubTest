@@ -148,6 +148,10 @@ img {padding-top:10px;}
     cursor: pointer;
 }
 
+.category-card {
+    height:200px;
+}
+
  #backToCategories {
       padding: 0.75rem;
       background: #00625f;
