@@ -131,7 +131,7 @@ img {padding-top:10px;}
     justify-content: center;
 }
 
-.card {
+.card, .category-card {
 	display: flex;
     flex-direction: column;
     justify-content: space-between; /* Pushes content to the top and image to the bottom */
@@ -147,7 +147,7 @@ img {padding-top:10px;}
     transition: background-color 0.3s;
 }
 
-.card:hover {
+.card:hover, .category-card:hover {
     background-color: rgba(0, 0, 0, 0.1);
 }
 
