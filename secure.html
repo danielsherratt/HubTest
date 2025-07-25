@@ -36,63 +36,6 @@
   <main style="max-width: 800px; margin: auto;">
     <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub - Admin</h1>
 
-<a class="calendarbutton" href="https://calendar.online/852ff24234751e548d10"><i class="fa fa-calendar">Calendar</i></a>
-
-    <!-- Upload Resource -->
-   <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
-<form id="upload-form" class="upload-section" enctype="multipart/form-data">
-
-    <!-- Either File or URL -->
-  <input type="file" id="resource-file" />
-  <input type="url" id="resource-url" placeholder="Or paste a link instead"><br>
-    <!-- Type dropdown -->
-  <select id="resource-type">
-    <option value="">Select resource type</option>
-    <option value="file">File</option>
-    <option value="website">Website</option>
-    <option value="video">Video</option>
-  </select><br>
-
-  <select id="resource-category" required>
-    <option value="" disabled selected>Select category</option>
-    <option value="general">General</option>
-    <option value="resources">Resources</option>
-    <option value="onlineresources">Online Resources</option>
-    <option value="faq">FAQ</option>
-  </select><br>
-  <input type="text" id="resource-title" placeholder="Resource title" required /><br>
-  
-
-
-  <!-- Pinned checkbox -->
-  <label class="star-checkbox">
-    <input type="checkbox" id="resource-pinned" />
-    <i class="fa-regular fa-star unchecked"></i>
-    <i class="fa-solid fa-star checked"></i>
-    Pin this resource
-  </label><br>
-
-  <button type="submit" id="new-upload-button">Add Resource</button>
-</form>
-
-    <!-- Manage Resources -->
-    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Resources</h2>
-    <a href="resources.html" target="_blank" alt="View Resources"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
-    <input type="text" id="search-resources" class="search-bar" placeholder="Search resources...">
-    <table id="resources-table">
-      <thead>
-        <tr>
-          <th class="sortable" data-key="title">Title</th>
-          <th class="sortable" data-key="created_date">Date</th>
-          <th class="sortable" data-key="resource-category">Category</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <p id="resources-empty" style="display:none;">Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</p>
-    <i>Latest 10 are shown, search for the exact one you want</i>
-    <div style="margin-bottom:1em;"></div>
 
     <!-- Add Post -->
     <h2 class="title"><i class="fa-solid fa-plus"></i> Add Post</h2>
