@@ -149,7 +149,6 @@ img {padding-top:10px;}
 }
 
  #backToCategories {
-      width: 100%;
       padding: 0.75rem;
       background: #00625f;
       color: white;
@@ -158,6 +157,10 @@ img {padding-top:10px;}
       font-size: 1rem;
       cursor: pointer;
       transition: background 0.2s;
+    }
+
+    #backToCategories:hover {
+        background: #004a47;
     }
 
 .card:hover, .category-card:hover {
