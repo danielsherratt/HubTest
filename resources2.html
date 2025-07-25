@@ -70,14 +70,21 @@
       const categories = [...new Set(allPosts.map(p => p.category).filter(Boolean))];
       const catContainer = document.getElementById('category-container');
       catContainer.innerHTML = '';
-      categories.forEach(cat => {
-        const card = document.createElement('div');
-        card.className = 'category-card';
-        card.textContent = cat;
-        card.dataset.cat = cat.toLowerCase();
-        card.addEventListener('click', () => showCategory(cat));
-        catContainer.appendChild(card);
-      });
+   categories.forEach(cat => {
+  const card = document.createElement('div');
+  card.className = 'category-card';
+  card.dataset.cat = cat.toLowerCase();
+
+  const imageUrl = `https://files.danieltesting.space/uploads/${encodeURIComponent(cat)}.jpg`;
+
+  card.innerHTML = `
+    <img src="${imageUrl}" alt="${cat}" style="width: 100%; border-radius: 8px;">
+    <h3 style="text-align: center;">${cat}</h3>
+  `;
+
+  card.addEventListener('click', () => showCategory(cat));
+  catContainer.appendChild(card);
+});
 
       renderCards(allPosts); // default to show nothing
       document.querySelector('.card-container').innerHTML = '';
