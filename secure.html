@@ -118,6 +118,7 @@
         <tr>
           <th class="sortable" data-key="title">Title</th>
           <th class="sortable" data-key="created_date">Date</th>
+          <th class="sortable" data-key="resource-category">Category</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -246,6 +247,7 @@ function renderPosts() {
     row.innerHTML = `
       <td><a href="${r.url}" class="link-nochange" target="_blank">${r.title}</a></td>
       <td>${new Date(r.created_date).toLocaleDateString()}</td>
+      <td>${r.category}</td>
       <td>
         <button class="pinresource-btn" onclick="togglePinResource(${r.id}, ${r.pinned})">
           <i class="${r.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${r.pinned ? 'Unpin' : 'Pin'}
