@@ -67,7 +67,7 @@
     let allPosts = [];
 
     async function loadPosts() {
-      const res = await fetch('/api/resourcespull2');
+      const res = await fetch('/api/resourcespull');
       allPosts = await res.json();
 
       const categories = [...new Set(allPosts.map(p => p.category).filter(Boolean))];
