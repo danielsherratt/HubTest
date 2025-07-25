@@ -47,7 +47,9 @@
     </div>
 
     <div id="category-container"></div>
-
+<button id="backToCategories" style="display:none; margin: 1em 0;">
+  <i class="fa-solid fa-arrow-left"></i> Back to Categories
+</button>
     <div id="noResults">
       Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search
     </div>
@@ -90,12 +92,20 @@
       document.querySelector('.card-container').innerHTML = '';
     }
 
-    function showCategory(cat) {
-      document.getElementById('searchBar').value = '';
-      const filtered = allPosts.filter(p => (p.category || '').toLowerCase() === cat.toLowerCase());
-      renderCards(filtered);
-    }
+function showCategory(cat) {
+  document.getElementById('searchBar').value = '';
+  document.getElementById('category-container').style.display = 'none';
+  document.getElementById('backToCategories').style.display = 'inline-block';
 
+  const filtered = allPosts.filter(p => (p.category || '').toLowerCase() === cat.toLowerCase());
+  renderCards(filtered);
+}
+document.getElementById('backToCategories').addEventListener('click', () => {
+  document.getElementById('category-container').style.display = 'flex';
+  document.getElementById('backToCategories').style.display = 'none';
+  document.querySelector('.card-container').innerHTML = '';
+  $('#noResults').hide();
+});
     function filterCards() {
       const val = $('#searchBar').val().toLowerCase().trim();
       const container = document.querySelector('.card-container');
