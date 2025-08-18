@@ -81,7 +81,7 @@
 
   card.innerHTML = `
   
-    <img src="${imageUrl}">
+    <img src="${imageUrl}" onload="this.classList.add('loaded')">
   `;
 
   card.addEventListener('click', () => showCategory(cat));
@@ -137,7 +137,7 @@ document.getElementById('backToCategories').addEventListener('click', () => {
 <a class="link-nochange" href="${p.url}">
   <div class="card" data-name="${p.title.toLowerCase()}" data-category="${(p.category || '').toLowerCase()}">
     <p>${p.title}</p> 
-    <img src="${p.thumbnail}">
+    <img src="${p.thumbnail}" onload="this.classList.add('loaded')">
   </div>
 </a>`;
         container.appendChild(div);
