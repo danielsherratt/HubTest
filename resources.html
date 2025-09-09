@@ -207,7 +207,7 @@ document.getElementById('backToCategories').addEventListener('click', () => {
         $('#searchBar').val("").trigger('keyup');
         $('#noFavourites').hide();
         $('#searchBar').focus();
-        clearTimeout(typingTimer);
+        $('#backToCategories').style.display = 'none';
 
     });
 
