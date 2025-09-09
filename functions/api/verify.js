@@ -41,7 +41,7 @@ export async function onRequest({ request, env }) {
   const user = await verifyJWT(token, env.JWT_SECRET);
   if (!user) return new Response('Unauthorized', { status: 401 });
 
-  return new Response(JSON.stringify({ role: user.sub }), {
+  return new Response(JSON.stringify({ role: user.role, email: user.sub }), {
     headers: { 'Content-Type': 'application/json' }
   });
 }

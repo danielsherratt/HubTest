@@ -1,4 +1,13 @@
+import { verifyJWT } from '../../lib/auth';
+
 export async function onRequestPost({ request, env }) {
+  const cookie = request.headers.get('Cookie') || '';
+  const m = cookie.match(/(?:^|;\s*)token=([^;]+)/);
+  const token = m && m[1];
+  const user = token && await verifyJWT(token, env.JWT_SECRET);
+  if (!user) return new Response('Unauthorized', { status: 401 });
+  if (user.role !== 'admin') return new Response('Forbidden', { status: 403 });
+
   try {
     const contentType = request.headers.get('content-type') || '';
     if (!contentType.includes('multipart/form-data')) {
