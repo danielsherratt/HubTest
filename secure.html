@@ -135,7 +135,7 @@
       <i class="fa-solid fa-life-ring"></i> Help
     </a>
 
-    <!-- ───────────────────────────── User Management (searchable/sortable, top 10, alerts) ───────────────────────────── -->
+    <!-- ───────────────────────────── User Management (searchable/sortable, top 10, alerts + RESET PASSWORD) ───────────────────────────── -->
     <h2 class="title" style="margin-top:2rem;"><i class="fa-solid fa-users-gear"></i> User Management</h2>
 
     <!-- Search box -->
@@ -475,13 +475,7 @@
       })
     );
 
-    document.addEventListener('DOMContentLoaded', () => {
-      fetchPosts();
-      fetchResources();
-      umLoadUsers();
-    });
-
-    // ───────────────────── User Management logic (search + sort + top 10 + alerts) ─────────────────────
+    // ───────────────────── User Management logic (search + sort + top 10 + alerts + reset) ─────────────────────
     const umRows = document.getElementById('um-rows');
     const umForm = document.getElementById('um-create-form');
     const umMsg  = document.getElementById('um-create-msg');
@@ -511,17 +505,13 @@
         dir: umSortAsc ? 'asc' : 'desc'
       });
       try{
-        // Server should enforce LIMIT 10 and compute distinct_ips_24h
+        // Server enforces LIMIT 10 and computes distinct_ips_24h
         const r = await fetch('/api/users?' + params.toString(), { credentials:'include' });
         if(!r.ok){ umRows.innerHTML = '<tr><td colspan="6">Failed to load users.</td></tr>'; return; }
         let data = await r.json();
-
-        // Safety: if your API hasn't been updated yet, limit client-side
-        if (Array.isArray(data)) {
-          data = data.slice(0, 10);
-        } else {
-          data = [];
-        }
+        if (!Array.isArray(data)) data = [];
+        // Safety: cap at 10 if server not yet updated
+        data = data.slice(0, 10);
 
         if(!data.length){ umRows.innerHTML = '<tr><td colspan="6">No users.</td></tr>'; return; }
 
@@ -540,7 +530,10 @@
                 <div>${esc(u.last_sign_ip || '')}</div>
                 ${alert}
               </td>
-              <td>
+              <td style="display:flex; gap:.35rem; flex-wrap:wrap;">
+                <button class="pinresource-btn" data-reset="${u.id}">
+                  <i class="fa-solid fa-key"></i> Reset Password
+                </button>
                 <button class="deleteresource-btn" data-del="${u.id}">
                   <i class="fa-solid fa-user-xmark"></i> Delete
                 </button>
@@ -559,23 +552,56 @@
       });
     }
 
-    // Delete user
+    // Handle row actions: reset password / delete
     umRows.addEventListener('click', async (e)=>{
-      const btn = e.target.closest('button[data-del]');
-      if(!btn) return;
-      const id = btn.dataset.del;
-      if(!confirm('Delete this user? This cannot be undone.')) return;
-      try{
-        const r = await fetch('/api/users/'+id, { method:'DELETE', credentials:'include' });
-        if(r.status === 204){ umLoadUsers(); return; }
-        const t = await r.text();
-        alert('Delete failed: ' + t);
-      }catch(err){ alert('Delete error'); }
+      const resetBtn = e.target.closest('button[data-reset]');
+      const delBtn   = e.target.closest('button[data-del]');
+
+      if (resetBtn) {
+        const id = resetBtn.dataset.reset;
+        const row = resetBtn.closest('tr');
+        const email = row?.children?.[0]?.textContent?.trim() || '';
+        const p1 = prompt(`Set new password for ${email}:`);
+        if (!p1) return;
+        const p2 = prompt('Confirm new password:');
+        if (p1 !== p2) { alert('Passwords do not match.'); return; }
+        if (p1.length < 6) { alert('Password must be at least 6 characters.'); return; }
+        try{
+          const r = await fetch('/api/users/' + id, {
+            method:'PUT',
+            headers: { 'Content-Type':'application/json' },
+            credentials:'include',
+            body: JSON.stringify({ password: p1 })
+          });
+          if (r.ok) {
+            alert('Password updated.');
+          } else {
+            const data = await r.json().catch(()=>({}));
+            alert('Reset failed: ' + (data?.error || r.status));
+          }
+        }catch(err){
+          alert('Network error while resetting password.');
+        }
+        return;
+      }
+
+      if (delBtn) {
+        const id = delBtn.dataset.del;
+        if(!confirm('Delete this user? This cannot be undone.')) return;
+        try{
+          const r = await fetch('/api/users/'+id, { method:'DELETE', credentials:'include' });
+          if(r.status === 204){ umLoadUsers(); return; }
+          const t = await r.text();
+          alert('Delete failed: ' + t);
+        }catch(err){ alert('Delete error'); }
+        return;
+      }
     });
 
     // Create user
-    umForm.addEventListener('submit', async (e)=>{
+    document.getElementById('um-create-form').addEventListener('submit', async (e)=>{
       e.preventDefault();
+      const umMsg  = document.getElementById('um-create-msg');
       umMsg.textContent = '';
       const email = document.getElementById('um-email').value.trim();
       const password = document.getElementById('um-password').value;
@@ -590,7 +616,7 @@
         if(r.ok){
           umMsg.style.color = '#00625f';
           umMsg.textContent = 'User created.';
-          umForm.reset();
+          e.target.reset();
           umLoadUsers();
         } else {
           let data={}; try{ data = await r.json(); }catch{}
