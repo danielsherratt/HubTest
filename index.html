@@ -146,12 +146,13 @@
       padding: 1rem 0 1.25rem;
     }
   </style>
-  <script>
+<script>
   (async () => {
     try {
       const r = await fetch('/api/auth/me', { credentials: 'include' });
-      if (r.ok) window.location.href = '/feed.html';
-    } catch {}
+      if (r.ok) window.location.href = '/secure.html';
+      // else ignore 401 silently
+    } catch { /* ignore */ }
   })();
 </script>
 </head>
