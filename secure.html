@@ -7,11 +7,9 @@
 
   <link rel="stylesheet" href="assets/admin.css">
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-
-  <!-- Icons (required for the <i class="fa ..."> used below) -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
 
-  <!-- Hide page until admin is verified -->
+  <!-- Hide page until admin verified -->
   <style> body{ display:none; } </style>
 
   <!-- Admin gate: verify cookie + admin role via /api/auth/me -->
@@ -21,12 +19,9 @@
       const res = await fetch('/api/auth/me', { credentials: 'include' });
       if (!res.ok) throw new Error('Not authorized');
       const me = await res.json();
-      if (!me || me.role !== 'admin') {
-        window.location.href = '/index.html';
-        return;
-      }
+      if (!me || me.role !== 'admin') { window.location.href = '/index.html'; return; }
       document.body.style.display = 'block';
-    } catch (err) {
+    } catch {
       window.location.href = '/index.html';
     }
   })();
@@ -35,7 +30,7 @@
 <body>
   <div class="banner"></div>
 
-  <main style="max-width: 800px; margin: auto;">
+  <main style="max-width: 1000px; margin: auto;">
     <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub - Admin</h1>
 
     <a class="calendarbutton" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">
@@ -140,8 +135,13 @@
       <i class="fa-solid fa-life-ring"></i> Help
     </a>
 
-    <!-- ───────────────────────────── User Management (NEW) ───────────────────────────── -->
+    <!-- ───────────────────────────── User Management (searchable/sortable, top 10, alerts) ───────────────────────────── -->
     <h2 class="title" style="margin-top:2rem;"><i class="fa-solid fa-users-gear"></i> User Management</h2>
+
+    <!-- Search box -->
+    <input id="um-search" type="search" placeholder="Search users by email…" class="search-bar" style="margin:.25rem 0 1rem 0; width:100%;">
+
+    <!-- Create user -->
     <section class="upload-section" style="padding:1rem;border:1px solid #e8ecee;border-radius:10px;margin-bottom:1rem;">
       <form id="um-create-form" autocomplete="off">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.5rem;align-items:end;">
@@ -168,24 +168,25 @@
       </form>
     </section>
 
+    <!-- Users table -->
     <table id="um-table">
       <thead>
         <tr>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Last sign in</th>
-          <th>IP</th>
+          <th class="um-sort" data-sort="email">Email <i class="fa-solid fa-sort"></i></th>
+          <th class="um-sort" data-sort="role">Role <i class="fa-solid fa-sort"></i></th>
+          <th class="um-sort" data-sort="last_sign_in">Last sign in <i class="fa-solid fa-sort"></i></th>
+          <th class="um-sort" data-sort="created_at">Created <i class="fa-solid fa-sort"></i></th>
+          <th>IP / Alerts</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody id="um-rows">
-        <tr><td colspan="5">Loading…</td></tr>
+        <tr><td colspan="6">Loading…</td></tr>
       </tbody>
     </table>
-
   </main>
 
-  <!-- ───────────────────────────── Polyfill guard ───────────────────────────── -->
+  <!-- EventTarget guard -->
   <script>
     (function() {
       const originalAddEventListener = EventTarget.prototype.addEventListener;
@@ -480,44 +481,89 @@
       umLoadUsers();
     });
 
-    // ───────────────────── User Management logic ─────────────────────
+    // ───────────────────── User Management logic (search + sort + top 10 + alerts) ─────────────────────
     const umRows = document.getElementById('um-rows');
     const umForm = document.getElementById('um-create-form');
     const umMsg  = document.getElementById('um-create-msg');
+    const umSearch = document.getElementById('um-search');
+    const umSortHeaders = document.querySelectorAll('.um-sort');
+
+    // default: top 10 by created_at DESC
+    let umSortKey = 'created_at';
+    let umSortAsc = false;
+
+    function umSortIcon(th, active, asc) {
+      const i = th.querySelector('i');
+      if (!i) return;
+      if (!active) { i.className = 'fa-solid fa-sort'; return; }
+      i.className = asc ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+    }
 
     function esc(s){
       return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
     }
 
     async function umLoadUsers(){
+      const q = umSearch.value.trim();
+      const params = new URLSearchParams({
+        q,
+        sort: umSortKey,
+        dir: umSortAsc ? 'asc' : 'desc'
+      });
       try{
-        const r = await fetch('/api/users', { credentials:'include' });
-        if(!r.ok){ umRows.innerHTML = '<tr><td colspan="5">Failed to load users.</td></tr>'; return; }
-        const data = await r.json();
-        if(!data.length){ umRows.innerHTML = '<tr><td colspan="5">No users.</td></tr>'; return; }
-        umRows.innerHTML = data.map(u => `
-          <tr data-id="${u.id}">
-            <td>${esc(u.email)}</td>
-            <td><span class="chip">${esc(u.role)}</span></td>
-            <td>${esc(u.last_sign_in || '')}</td>
-            <td>${esc(u.last_sign_ip || '')}</td>
-            <td>
-              <button class="deleteresource-btn" data-del="${u.id}">
-                <i class="fa-solid fa-user-xmark"></i> Delete
-              </button>
-            </td>
-          </tr>
-        `).join('');
+        // Server should enforce LIMIT 10 and compute distinct_ips_24h
+        const r = await fetch('/api/users?' + params.toString(), { credentials:'include' });
+        if(!r.ok){ umRows.innerHTML = '<tr><td colspan="6">Failed to load users.</td></tr>'; return; }
+        let data = await r.json();
+
+        // Safety: if your API hasn't been updated yet, limit client-side
+        if (Array.isArray(data)) {
+          data = data.slice(0, 10);
+        } else {
+          data = [];
+        }
+
+        if(!data.length){ umRows.innerHTML = '<tr><td colspan="6">No users.</td></tr>'; return; }
+
+        umRows.innerHTML = data.map(u => {
+          const multiIp = Number(u.distinct_ips_24h || 0);
+          const alert = (multiIp >= 3)
+            ? `<span class="chip" title="Signed in from ${multiIp} IPs in last 24h" style="background:#fff3cd;color:#8a6d3b"><i class="fa-solid fa-triangle-exclamation"></i> multi-IP</span>`
+            : '';
+          return `
+            <tr data-id="${u.id}">
+              <td>${esc(u.email)}</td>
+              <td><span class="chip">${esc(u.role)}</span></td>
+              <td>${esc(u.last_sign_in || '')}</td>
+              <td>${esc(u.created_at || '')}</td>
+              <td>
+                <div>${esc(u.last_sign_ip || '')}</div>
+                ${alert}
+              </td>
+              <td>
+                <button class="deleteresource-btn" data-del="${u.id}">
+                  <i class="fa-solid fa-user-xmark"></i> Delete
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
       } catch (e) {
-        umRows.innerHTML = '<tr><td colspan="5">Error loading users.</td></tr>';
+        umRows.innerHTML = '<tr><td colspan="6">Error loading users.</td></tr>';
       }
+
+      // update sort icons
+      umSortHeaders.forEach(th => {
+        umSortIcon(th, th.dataset.sort === umSortKey, umSortAsc);
+      });
     }
 
+    // Delete user
     umRows.addEventListener('click', async (e)=>{
       const btn = e.target.closest('button[data-del]');
       if(!btn) return;
       const id = btn.dataset.del;
-      if(!id) return;
       if(!confirm('Delete this user? This cannot be undone.')) return;
       try{
         const r = await fetch('/api/users/'+id, { method:'DELETE', credentials:'include' });
@@ -527,6 +573,7 @@
       }catch(err){ alert('Delete error'); }
     });
 
+    // Create user
     umForm.addEventListener('submit', async (e)=>{
       e.preventDefault();
       umMsg.textContent = '';
@@ -554,6 +601,35 @@
         umMsg.style.color = '#b00020';
         umMsg.textContent = 'Network error.';
       }
+    });
+
+    // Search (debounced)
+    let umT;
+    document.getElementById('um-search').addEventListener('input', () => {
+      clearTimeout(umT);
+      umT = setTimeout(umLoadUsers, 200);
+    });
+
+    // Sort headers
+    document.querySelectorAll('.um-sort').forEach(th => {
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        if (key === umSortKey) {
+          umSortAsc = !umSortAsc;
+        } else {
+          umSortKey = key;
+          umSortAsc = key === 'email' || key === 'role' ? true : false; // default asc for text cols
+        }
+        umLoadUsers();
+      });
+    });
+
+    // Initial loads
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchPosts();
+      fetchResources();
+      umLoadUsers();
     });
   </script>
 </body>

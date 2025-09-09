@@ -3,6 +3,8 @@ import { verifyJWT, pbkdf2Hash } from '../../lib/auth.js';
 
 export async function onRequest({ request, env }) {
   const db = env.POSTS_DB;
+
+  // AuthZ: admin only
   const cookie = request.headers.get('Cookie') || '';
   const m = cookie.match(/(?:^|;\s*)token=([^;]+)/);
   const token = m && m[1];
@@ -10,16 +12,45 @@ export async function onRequest({ request, env }) {
   if (!me) return new Response('Unauthorized', { status: 401 });
   if (me.role !== 'admin') return new Response('Forbidden', { status: 403 });
 
-  if (request.method === 'GET') {
-    const { results } = await db.prepare(`
-      SELECT id, email, role, last_sign_in, last_sign_ip, created_at
-        FROM users
-       ORDER BY created_at DESC
-    `).all();
+  const method = request.method;
+
+  if (method === 'GET') {
+    // Search/sort params
+    const url = new URL(request.url);
+    const q   = (url.searchParams.get('q') || '').trim().toLowerCase();
+    const sort = (url.searchParams.get('sort') || 'created_at').toLowerCase();
+    const dir  = (url.searchParams.get('dir') || 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    const limit = 10;
+
+    const allowedSort = new Set(['email', 'role', 'last_sign_in', 'created_at']);
+    const orderCol = allowedSort.has(sort) ? sort : 'created_at';
+
+    let where = '';
+    let binds = [];
+    if (q) { where = 'WHERE LOWER(email) LIKE ?'; binds.push(`%${q}%`); }
+
+    // Return most recent by chosen sort, plus distinct IPs in last 24h
+    const stmt = `
+      SELECT
+        u.id, u.email, u.role, u.last_sign_in, u.last_sign_ip, u.created_at,
+        COALESCE((
+          SELECT COUNT(DISTINCT s.ip)
+          FROM user_signins s
+          WHERE s.user_id = u.id
+            AND s.at > datetime('now','-1 day')
+        ), 0) AS distinct_ips_24h
+      FROM users u
+      ${where}
+      ORDER BY ${orderCol} ${dir}
+      LIMIT ${limit}
+    `;
+
+    const { results } = await db.prepare(stmt).bind(...binds).all();
     return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' } });
   }
 
-  if (request.method === 'POST') {
+  if (method === 'POST') {
+    // Create user
     const body = await request.json().catch(() => ({}));
     const email = String(body.email || '').trim().toLowerCase();
     const password = String(body.password || '');
@@ -29,6 +60,8 @@ export async function onRequest({ request, env }) {
         status: 400, headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    // salt: 16 bytes
     const salt = new Uint8Array(16); crypto.getRandomValues(salt);
     const saltB64 = btoa(String.fromCharCode(...salt));
     const hashB64 = await pbkdf2Hash(password, saltB64, 100000, 32);
@@ -49,6 +82,7 @@ export async function onRequest({ request, env }) {
         status: 500, headers: { 'Content-Type': 'application/json' }
       });
     }
+
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
   }
 
