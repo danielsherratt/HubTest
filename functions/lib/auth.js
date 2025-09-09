@@ -1,7 +1,7 @@
 // functions/lib/auth.js
 // Utilities for PBKDF2 password hashing and JWT creation/verification using Workers Web Crypto
 
-export async function pbkdf2Hash(password, saltB64, iterations = 150000, keylen = 32) {
+export async function pbkdf2Hash(password, saltB64, iterations = 100000, keylen = 32) {
   const enc = new TextEncoder();
   const pwKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
   const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));

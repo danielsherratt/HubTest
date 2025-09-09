@@ -45,7 +45,7 @@ export async function onRequest({ request, env }) {
     if (row.password_algo !== 'pbkdf2-sha256') throw new Error('Unsupported password algorithm: ' + row.password_algo);
 
     dbg.step = 'pbkdf2';
-    const derived = await pbkdf2Hash(password, row.password_salt, 150000, 32);
+    const derived = await pbkdf2Hash(password, row.password_salt, 100000, 32);
     dbg.derivedPrefix = derived.slice(0, 12);
     dbg.storedPrefix  = (row.password_hash || '').slice(0, 12);
 

@@ -19,7 +19,7 @@ export async function onRequest({ request, env }) {
 
   // Hash password
   const saltB64 = randomSalt(16);
-  const hashB64 = await pbkdf2Hash(password, saltB64, 150000, 32);
+  const hashB64 = await pbkdf2Hash(password, saltB64, 100000, 32);
 
   // Insert
   try {
