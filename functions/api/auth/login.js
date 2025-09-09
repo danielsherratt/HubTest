@@ -31,7 +31,7 @@ export async function onRequest({ request, env }) {
     `).bind(email).first();
 
     if (!row) {
-      return new Response(JSON.stringify({ error: 'Invalid credentials (no user).', dbg }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: 'Invalid credentials, Please contact ITSupport if required', dbg }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 
     dbg.row = { id: row.id, email: row.email, algo: row.password_algo, role: row.role, fa: row.failed_attempts, lu: row.lockout_until };
@@ -58,7 +58,7 @@ export async function onRequest({ request, env }) {
         return new Response(JSON.stringify({ error: 'Too many attempts. Account locked for 15 minutes.', dbg }), { status: 423, headers: { 'Content-Type': 'application/json' } });
       } else {
         await db.prepare(`UPDATE users SET failed_attempts = ? WHERE id = ?`).bind(attempts, row.id).run();
-        return new Response(JSON.stringify({ error: 'Invalid credentials (bad password).', dbg }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ error: 'Invalid credentials, Please contact ITSupport if required', dbg }), { status: 401, headers: { 'Content-Type': 'application/json' } });
       }
     }
 
