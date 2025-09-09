@@ -235,7 +235,7 @@
       viewMode = 'favs';
       $('#searchBar').val('');
       $catContainer.hide();
-      $backToCategories.show();
+      $backToCategories.hide();
 
       const favSet = new Set(favourites);
       const favPosts = allPosts.filter(p => favSet.has(getKey(p)));
@@ -254,7 +254,7 @@
       viewMode = 'search'; // treat as "all view" with empty search
       $('#searchBar').val('');
       $catContainer.hide();
-      $backToCategories.show();
+      $backToCategories.hide();
       renderCards(allPosts);
     }
 
