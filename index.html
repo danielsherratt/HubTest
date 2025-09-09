@@ -150,7 +150,7 @@
   (async () => {
     try {
       const r = await fetch('/api/auth/me', { credentials: 'include' });
-      if (r.ok) window.location.href = '/secure.html';
+      if (r.ok) window.location.href = '/feed.html';
       // else ignore 401 silently
     } catch { /* ignore */ }
   })();

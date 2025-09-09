@@ -1,254 +1,560 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CESW Hub – Admin</title>
-  <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
-  <meta name="color-scheme" content="light only" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CESW Hub - Admin</title>
 
-  <!-- Fonts & Icons -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/admin.css">
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+
+  <!-- Icons (required for the <i class="fa ..."> used below) -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
 
-  <!-- Admin-only gate: hide document until verified as admin -->
-  <style id="admin-hide">html{visibility:hidden}</style>
+  <!-- Hide page until admin is verified -->
+  <style> body{ display:none; } </style>
+
+  <!-- Admin gate: verify cookie + admin role via /api/auth/me -->
   <script>
-    (async function() {
-      try {
-        const r = await fetch('/api/auth/me', { credentials: 'include' });
-        if (!r.ok) { window.location.href = '/index.html'; return; }
-        const me = await r.json();
-        if (!me || me.role !== 'admin') { window.location.href = '/index.html'; return; }
-        // Allowed: reveal page
-        document.getElementById('admin-hide')?.remove();
-        // Show who is signed in (optional)
-        const who = document.getElementById('whoami'); if (who) who.textContent = me.email || 'admin';
-      } catch {
+  (async () => {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!res.ok) throw new Error('Not authorized');
+      const me = await res.json();
+      if (!me || me.role !== 'admin') {
         window.location.href = '/index.html';
+        return;
       }
-    })();
+      document.body.style.display = 'block';
+    } catch (err) {
+      window.location.href = '/index.html';
+    }
+  })();
   </script>
-
-  <style>
-    :root {
-      --brand: #00625f;
-      --brand-700: #00514e;
-      --bg: #f6f7f8;
-      --text: #1f2d2e;
-      --muted: #6b7c80;
-      --border: #d0d6d9;
-      --error: #b00020;
-      --radius: 10px;
-      --shadow: 0 10px 25px rgba(0,0,0,.08);
-    }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      font-family: "Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
-      color: var(--text);
-      background: var(--bg);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    .banner {
-      width: 100%;
-      height: 170px;
-      background: url('assets/banner.jpg') center/cover no-repeat;
-    }
-    header .bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: .75rem 1rem;
-      background: #ffffffcc;
-      backdrop-filter: saturate(1.2) blur(2px);
-      border-bottom: 1px solid #e8ecee;
-    }
-    header .title {
-      font-weight: 700;
-      color: var(--brand);
-      display: flex; align-items: center; gap: .5rem;
-    }
-    header .meta { color: var(--muted); font-size: .95rem; }
-    header .actions {
-      display: flex; gap: .5rem; align-items: center;
-    }
-    .btn {
-      border: 0; border-radius: 8px; padding: .55rem .8rem;
-      background: var(--brand); color: #fff; cursor: pointer;
-      font-weight: 600;
-    }
-    .btn.secondary { background: #e9eef0; color: #113; }
-    .btn.danger { background: #b00020; }
-    .wrap { flex: 1; padding: 1.25rem; display: grid; gap: 1rem; }
-    .panel {
-      background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
-      border: 1px solid #eef2f4;
-    }
-    .panel .hd { padding: .9rem 1rem; border-bottom: 1px solid #eef2f4; color: var(--brand); font-weight: 700; display:flex; align-items:center; justify-content:space-between;}
-    .panel .bd { padding: 1rem; }
-
-    /* User Management */
-    .admin-grid{display:grid;grid-template-columns:1fr 2fr;gap:1rem}
-    .admin-card{border:1px solid var(--border);border-radius:10px;padding:.9rem}
-    .admin-card h3{margin:.25rem 0 .5rem;color:#334;font-size:1.05rem}
-    .admin-card label{display:block;font-size:.9rem;margin:.4rem 0 .2rem}
-    .admin-card input,.admin-card select{width:100%;padding:.6rem;border:1px solid var(--border);border-radius:8px}
-    .admin-actions{margin-top:.75rem;display:flex;gap:.5rem}
-    .table{width:100%;border-collapse:collapse}
-    .table th,.table td{border-bottom:1px solid #eef2f4;padding:.55rem;text-align:left;font-size:.95rem;vertical-align:middle}
-    .chip{display:inline-block;padding:.2rem .5rem;border-radius:999px;background:#eef6f6;color:#00625f;font-size:.85rem}
-    .muted{color:var(--muted)}
-    .right{ text-align:right; }
-  </style>
 </head>
 <body>
-  <div class="banner" role="img" aria-label="CESW banner"></div>
+  <div class="banner"></div>
 
-  <header>
-    <div class="bar">
-      <div class="title">
-        <i class="fa-solid fa-shield-halved"></i> CESW Hub — Admin
-        <span class="meta">(<span id="whoami">admin</span>)</span>
-      </div>
-      <div class="actions">
-        <!-- If you add a /api/auth/logout endpoint later, hook a real sign out -->
-        <a class="btn secondary" href="/feed.html"><i class="fa-solid fa-house"></i> Home</a>
-      </div>
-    </div>
-  </header>
+  <main style="max-width: 800px; margin: auto;">
+    <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub - Admin</h1>
 
-  <main class="wrap">
+    <a class="calendarbutton" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">
+      <i class="fa fa-calendar"></i> Calendar
+    </a>
 
-    <!-- ===== User Management ===== -->
-    <section class="panel" aria-label="User Management">
-      <div class="hd">
-        <span>User Management</span>
-      </div>
-      <div class="bd">
-        <div class="admin-grid">
-          <div class="admin-card">
-            <h3>Create user</h3>
-            <form id="createUserForm" autocomplete="off">
-              <label for="userEmail">Email</label>
-              <input id="userEmail" name="email" type="email" required placeholder="user@example.com">
-              <label for="userPassword">Password</label>
-              <input id="userPassword" name="password" type="password" required placeholder="Set a password">
-              <label for="userRole">Role</label>
-              <select id="userRole" name="role">
-                <option value="user">user</option>
-                <option value="admin">admin</option>
-              </select>
-              <div class="admin-actions">
-                <button class="btn" type="submit"><i class="fa-solid fa-user-plus"></i> Create</button>
-                <button class="btn secondary" type="button" id="resetCreateForm">Reset</button>
-              </div>
-              <div id="createUserMsg" style="margin-top:.4rem;font-size:.95rem;"></div>
-            </form>
+    <!-- ───────────────────────────── Upload Resource ───────────────────────────── -->
+    <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
+    <form id="upload-form" class="upload-section" enctype="multipart/form-data">
+      <!-- Either File or URL -->
+      <input type="file" id="resource-file" />
+      <input type="url" id="resource-url" placeholder="Or paste a link instead"><br>
+
+      <!-- Type dropdown -->
+      <select id="resource-type" required>
+        <option value="">Select resource type</option>
+        <option value="file">File</option>
+        <option value="website">Website</option>
+        <option value="video">Video</option>
+      </select><br>
+
+      <select id="resource-category" required>
+        <option value="" disabled selected>Select category</option>
+        <option value="general">General</option>
+        <option value="resources">Resources</option>
+        <option value="onlineresources">Online Resources</option>
+        <option value="faq">FAQ</option>
+      </select><br>
+
+      <input type="text" id="resource-title" placeholder="Resource title" required /><br>
+
+      <!-- Pinned checkbox -->
+      <label class="star-checkbox">
+        <input type="checkbox" id="resource-pinned" />
+        <i class="fa-regular fa-star unchecked"></i>
+        <i class="fa-solid fa-star checked"></i>
+        Pin this resource
+      </label><br>
+
+      <button type="submit" id="new-upload-button">Add Resource</button>
+    </form>
+
+    <!-- ───────────────────────────── Manage Resources ───────────────────────────── -->
+    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Resources</h2>
+    <a href="resources.html" target="_blank" rel="noopener" alt="View Resources"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
+    <input type="text" id="search-resources" class="search-bar" placeholder="Search resources...">
+    <table id="resources-table">
+      <thead>
+        <tr>
+          <th class="sortable" data-key="title">Title</th>
+          <th class="sortable" data-key="created_date">Date</th>
+          <th class="sortable" data-key="resource-category">Category</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p id="resources-empty" style="display:none;">Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</p>
+    <i>Latest 10 are shown, search for the exact one you want</i>
+    <div style="margin-bottom:1em;"></div>
+
+    <!-- ───────────────────────────── Add Post ───────────────────────────── -->
+    <h2 class="title"><i class="fa-solid fa-plus"></i> Add to Feed</h2>
+    <form id="new-post">
+      <input name="title" id="new-post-input" placeholder="Title" required />
+      <select name="category" id="new-post-select" required>
+        <option value="" disabled selected>Select category</option>
+        <option value="general">General</option>
+        <option value="resources">Resources</option>
+        <option value="onlineresources">Online Resources</option>
+        <option value="faq">FAQ</option>
+      </select>
+      <label class="star-checkbox">
+        <input type="checkbox" name="pinned" />
+        <i class="fa-regular fa-star unchecked"></i>
+        <i class="fa-solid fa-star checked"></i>
+        Pin this post
+      </label>
+      <div id="editor"></div>
+      <button type="submit" id="new-post-button">Create Post</button>
+    </form>
+
+    <!-- ───────────────────────────── Manage Posts ───────────────────────────── -->
+    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Feed</h2>
+    <a href="feed.html" target="_blank" rel="noopener" alt="View Feed"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
+    <input type="text" id="search-posts" class="search-bar" placeholder="Search posts...">
+    <table id="posts-table">
+      <thead>
+        <tr>
+          <th class="sortable" data-key="title">Title</th>
+          <th class="sortable" data-key="created_at">Date</th>
+          <th class="sortable" data-key="category">Category</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p id="posts-empty" style="display:none;">Mmm, no post found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</p>
+
+    <i>Latest 10 are shown, search for the exact one you want</i>
+    <a href="mailto:ITSupport@kotakureo.school.nz" id="one" class="link-nochange">
+      <i class="fa-solid fa-life-ring"></i> Help
+    </a>
+
+    <!-- ───────────────────────────── User Management (NEW) ───────────────────────────── -->
+    <h2 class="title" style="margin-top:2rem;"><i class="fa-solid fa-users-gear"></i> User Management</h2>
+    <section class="upload-section" style="padding:1rem;border:1px solid #e8ecee;border-radius:10px;margin-bottom:1rem;">
+      <form id="um-create-form" autocomplete="off">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.5rem;align-items:end;">
+          <div>
+            <label for="um-email">Email</label>
+            <input id="um-email" type="email" placeholder="user@example.com" required />
           </div>
-
-          <div class="admin-card">
-            <h3>Existing users</h3>
-            <table class="table">
-              <thead>
-                <tr><th>Email</th><th>Role</th><th>Last sign in</th><th>IP</th><th class="right"></th></tr>
-              </thead>
-              <tbody id="userRows">
-                <tr><td colspan="5" class="muted">Loading…</td></tr>
-              </tbody>
-            </table>
+          <div>
+            <label for="um-password">Password</label>
+            <input id="um-password" type="password" placeholder="Set a password" required />
+          </div>
+          <div>
+            <label for="um-role">Role</label>
+            <select id="um-role">
+              <option value="user">user</option>
+              <option value="admin">admin</option>
+            </select>
+          </div>
+          <div>
+            <button type="submit" class="pinresource-btn"><i class="fa-solid fa-user-plus"></i> Create</button>
           </div>
         </div>
-      </div>
+        <div id="um-create-msg" style="margin-top:.5rem;"></div>
+      </form>
     </section>
 
-    <!-- You can add other admin panels below as more .panel blocks -->
+    <table id="um-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Last sign in</th>
+          <th>IP</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="um-rows">
+        <tr><td colspan="5">Loading…</td></tr>
+      </tbody>
+    </table>
 
   </main>
 
+  <!-- ───────────────────────────── Polyfill guard ───────────────────────────── -->
   <script>
-    (function(){
-      const rows = document.getElementById('userRows');
-      const form = document.getElementById('createUserForm');
-      const resetBtn = document.getElementById('resetCreateForm');
-      const msg = document.getElementById('createUserMsg');
-
-      function esc(s){
-        return String(s ?? '').replace(/[&<>"']/g, function(m){
-          return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);
-        });
-      }
-
-      async function loadUsers(){
-        try{
-          const r = await fetch('/api/users', { credentials: 'include' });
-          if(!r.ok){ rows.innerHTML = '<tr><td colspan="5">Failed to load users.</td></tr>'; return; }
-          const data = await r.json();
-          if(!data.length){ rows.innerHTML = '<tr><td colspan="5" class="muted">No users.</td></tr>'; return; }
-          rows.innerHTML = data.map(u => `
-            <tr data-id="${u.id}">
-              <td>${esc(u.email)}</td>
-              <td><span class="chip">${esc(u.role)}</span></td>
-              <td>${esc(u.last_sign_in || '')}</td>
-              <td>${esc(u.last_sign_ip || '')}</td>
-              <td class="right"><button class="btn secondary" style="color:#b00020" data-del="${u.id}"><i class="fa-solid fa-user-xmark"></i> Delete</button></td>
-            </tr>
-          `).join('');
-        }catch(e){
-          rows.innerHTML = '<tr><td colspan="5">Error loading users.</td></tr>';
-        }
-      }
-
-      rows?.addEventListener('click', async (e)=>{
-        const id = e.target?.dataset?.del || e.target?.closest('button')?.dataset?.del;
-        if(!id) return;
-        if(!confirm('Delete this user? This cannot be undone.')) return;
-        try{
-          const r = await fetch('/api/users/'+id, { method:'DELETE', credentials:'include' });
-          if(r.status === 204){ loadUsers(); return; }
-          const t = await r.text();
-          alert('Delete failed: ' + t);
-        }catch(err){ alert('Delete error'); }
-      });
-
-      form?.addEventListener('submit', async (e)=>{
-        e.preventDefault();
-        msg.textContent='';
-        const payload = {
-          email: form.email.value.trim(),
-          password: form.password.value,
-          role: form.role.value
-        };
-        try{
-          const r = await fetch('/api/users', {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            credentials:'include',
-            body: JSON.stringify(payload)
-          });
-          if(r.ok){
-            msg.style.color='#00625f';
-            msg.textContent='User created.';
-            form.reset();
-            loadUsers();
-          } else {
-            let data={}; try{ data = await r.json(); }catch{}
-            msg.style.color='#b00020';
-            msg.textContent = data?.error || 'Create failed.';
-          }
-        }catch(err){
-          msg.style.color='#b00020';
-          msg.textContent='Network error.';
-        }
-      });
-
-      resetBtn?.addEventListener('click', ()=> form.reset());
-
-      loadUsers();
+    (function() {
+      const originalAddEventListener = EventTarget.prototype.addEventListener;
+      EventTarget.prototype.addEventListener = function(type, listener, options) {
+        if (type === 'DOMNodeInserted' || type === 'DOMNodeRemoved') return;
+        return originalAddEventListener.call(this, type, listener, options);
+      };
     })();
+  </script>
+
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';</script>
+
+  <!-- Quill -->
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+  <script>
+    // ───────────────────── Quill editor ─────────────────────
+    const quill = new Quill('#editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          ['bold', 'italic'],
+          [{ header: [1, 2, 3, false] }],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['image']
+        ]
+      }
+    });
+
+    // Set resource type to "file" when file chosen
+    document.getElementById('resource-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) document.getElementById('resource-type').value = 'file';
+    });
+
+    let posts = [];
+    let resources = [];
+    let postSort = { key: 'created_at', asc: false };
+    let resourceSort = { key: 'created_date', asc: false };
+
+    // ───────────────────── Fetch posts/resources ─────────────────────
+    async function fetchPosts() {
+      const res = await fetch('/api/posts?admin=true', { credentials: 'include' });
+      if (res.status === 401) return location.href = '/index.html';
+      posts = await res.json();
+      renderPosts();
+    }
+
+    async function fetchResources() {
+      const res = await fetch('/api/resourcespull', { credentials: 'include' });
+      if (res.status === 401) return location.href = '/index.html';
+      resources = await res.json();
+      renderResources();
+    }
+
+    function renderPosts() {
+      const tbody = document.querySelector('#posts-table tbody');
+      const emptyMsg = document.getElementById('posts-empty');
+      const search = document.getElementById('search-posts').value.toLowerCase();
+
+      const filtered = posts
+        .filter(p => p.title.toLowerCase().includes(search))
+        .sort(sortBy(postSort.key, postSort.asc))
+        .slice(0, 10);
+
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        emptyMsg.style.display = 'block';
+        return;
+      } else {
+        emptyMsg.style.display = 'none';
+      }
+
+      for (const p of filtered) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${p.title}</td>
+          <td>${new Date(p.created_at).toLocaleDateString()}</td>
+          <td>${p.category}</td>
+          <td>
+            <button class="pin-btn" onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
+              <i class="${p.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${p.pinned ? 'Unpin' : 'Pin'}
+            </button>
+            <button class="delete-btn" onclick="deletePost(${p.id})"><i class="fa fa-trash"></i> Delete</button>
+          </td>`;
+        tbody.appendChild(row);
+      }
+    }
+
+    function renderResources() {
+      const tbody = document.querySelector('#resources-table tbody');
+      const emptyMsg = document.getElementById('resources-empty');
+      const search = document.getElementById('search-resources').value.toLowerCase();
+
+      const filtered = resources
+        .filter(r => r.title.toLowerCase().includes(search))
+        .sort(sortBy(resourceSort.key, resourceSort.asc))
+        .slice(0, 10);
+
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        emptyMsg.style.display = 'block';
+        return;
+      } else {
+        emptyMsg.style.display = 'none';
+      }
+
+      for (const r of filtered) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><a href="${r.url}" class="link-nochange" target="_blank" rel="noopener">${r.title}</a></td>
+          <td>${new Date(r.created_date).toLocaleDateString()}</td>
+          <td>${r.category}</td>
+          <td>
+            <button class="pinresource-btn" onclick="togglePinResource(${r.id}, ${r.pinned})">
+              <i class="${r.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${r.pinned ? 'Unpin' : 'Pin'}
+            </button>
+            <button class="deleteresource-btn" onclick="deleteResource(${r.id})"><i class="fa fa-trash"></i> Delete</button>
+          </td>`;
+        tbody.appendChild(row);
+      }
+    }
+
+    function sortBy(key, asc) {
+      return (a, b) => {
+        const valA = a[key]?.toLowerCase?.() || a[key];
+        const valB = b[key]?.toLowerCase?.() || b[key];
+        if (valA < valB) return asc ? -1 : 1;
+        if (valA > valB) return asc ? 1 : -1;
+        return 0;
+      };
+    }
+
+    // ───────────────────── Post actions ─────────────────────
+    window.togglePinPost = async (id, category, pinned) => {
+      const newCat = pinned ? category.replace(/^pinned\s*/i, '') : `pinned ${category}`;
+      await fetch(`/api/posts/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: newCat, pinned: !pinned })
+      });
+      fetchPosts();
+    };
+
+    window.deletePost = async (id) => {
+      if (confirm('Delete this post?')) {
+        await fetch(`/api/posts/${id}`, { method: 'DELETE', credentials: 'include' });
+        fetchPosts();
+      }
+    };
+
+    // ───────────────────── Resource actions ─────────────────────
+    window.togglePinResource = async (id, pinned) => {
+      await fetch(`/api/resources/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pinned: !pinned })
+      });
+      fetchResources();
+    };
+
+    window.deleteResource = async (id) => {
+      if (confirm('Delete this resource?')) {
+        await fetch(`/api/resources/${id}`, { method: 'DELETE', credentials: 'include' });
+        fetchResources();
+      }
+    };
+
+    // ───────────────────── Create Post submit ─────────────────────
+    document.getElementById('new-post').addEventListener('submit', async e => {
+      e.preventDefault();
+      const form = e.target;
+      const title = form.title.value;
+      const category = form.category.value;
+      const pinned = form.pinned.checked;
+      await fetch('/api/posts', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, category: pinned ? `pinned ${category}` : category, body: quill.root.innerHTML, pinned })
+      });
+      form.reset();
+      quill.setContents([]);
+      fetchPosts();
+    });
+
+    // ───────────────────── Upload Resource submit ─────────────────────
+    document.getElementById('upload-form').addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const file = document.getElementById('resource-file').files[0];
+      const urlInput = document.getElementById('resource-url').value.trim();
+      const title = document.getElementById('resource-title').value.trim();
+      const pinned = document.getElementById('resource-pinned').checked;
+      const type = document.getElementById('resource-type').value;
+      const category = document.getElementById('resource-category').value.trim();
+
+      if (!file && !urlInput) return alert("Please provide a file or a URL.");
+      if (!title || !type) return alert("Title and type are required.");
+
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('pinned', pinned);
+      formData.append('type', type);
+      formData.append('category', category);
+
+      if (file) {
+        formData.append('file', file);
+        if (file.type === "application/pdf") {
+          // Generate thumbnail from PDF
+          const pdfThumb = await generatePdfThumbnail(file);
+          if (pdfThumb) formData.append('thumbnail', pdfThumb);
+        }
+      } else {
+        formData.append('url', urlInput);
+        // Generate thumbnail via Microlink
+        const thumbnailUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
+        try {
+          const response = await fetch(thumbnailUrl);
+          const data = await response.json();
+          const imgUrl = data?.data?.screenshot?.url;
+          if (imgUrl) {
+            const imageBlob = await fetch(imgUrl).then(r => r.blob());
+            const base64 = await blobToBase64(imageBlob);
+            formData.append('thumbnail', base64);
+          }
+        } catch (err) {
+          console.warn("Microlink thumbnail failed:", err);
+        }
+      }
+
+      await fetch('/api/resources/upload', { method: 'POST', body: formData });
+      location.reload();
+    });
+
+    async function generatePdfThumbnail(file) {
+      try {
+        const pdfData = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1 });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        canvas.width = viewport.width; canvas.height = viewport.height;
+        await page.render({ canvasContext: context, viewport }).promise;
+        return canvas.toDataURL("image/png");
+      } catch (err) {
+        console.error("PDF thumbnail generation failed:", err);
+        return null;
+      }
+    }
+
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    document.getElementById('search-posts').addEventListener('input', renderPosts);
+    document.getElementById('search-resources').addEventListener('input', renderResources);
+
+    document.querySelectorAll('#posts-table th.sortable').forEach(th =>
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        postSort.asc = key === postSort.key ? !postSort.asc : true;
+        postSort.key = key;
+        renderPosts();
+      })
+    );
+
+    document.querySelectorAll('#resources-table th.sortable').forEach(th =>
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        resourceSort.asc = key === resourceSort.key ? !resourceSort.asc : true;
+        resourceSort.key = key;
+        renderResources();
+      })
+    );
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchPosts();
+      fetchResources();
+      umLoadUsers();
+    });
+
+    // ───────────────────── User Management logic ─────────────────────
+    const umRows = document.getElementById('um-rows');
+    const umForm = document.getElementById('um-create-form');
+    const umMsg  = document.getElementById('um-create-msg');
+
+    function esc(s){
+      return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    async function umLoadUsers(){
+      try{
+        const r = await fetch('/api/users', { credentials:'include' });
+        if(!r.ok){ umRows.innerHTML = '<tr><td colspan="5">Failed to load users.</td></tr>'; return; }
+        const data = await r.json();
+        if(!data.length){ umRows.innerHTML = '<tr><td colspan="5">No users.</td></tr>'; return; }
+        umRows.innerHTML = data.map(u => `
+          <tr data-id="${u.id}">
+            <td>${esc(u.email)}</td>
+            <td><span class="chip">${esc(u.role)}</span></td>
+            <td>${esc(u.last_sign_in || '')}</td>
+            <td>${esc(u.last_sign_ip || '')}</td>
+            <td>
+              <button class="deleteresource-btn" data-del="${u.id}">
+                <i class="fa-solid fa-user-xmark"></i> Delete
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        umRows.innerHTML = '<tr><td colspan="5">Error loading users.</td></tr>';
+      }
+    }
+
+    umRows.addEventListener('click', async (e)=>{
+      const btn = e.target.closest('button[data-del]');
+      if(!btn) return;
+      const id = btn.dataset.del;
+      if(!id) return;
+      if(!confirm('Delete this user? This cannot be undone.')) return;
+      try{
+        const r = await fetch('/api/users/'+id, { method:'DELETE', credentials:'include' });
+        if(r.status === 204){ umLoadUsers(); return; }
+        const t = await r.text();
+        alert('Delete failed: ' + t);
+      }catch(err){ alert('Delete error'); }
+    });
+
+    umForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      umMsg.textContent = '';
+      const email = document.getElementById('um-email').value.trim();
+      const password = document.getElementById('um-password').value;
+      const role = document.getElementById('um-role').value;
+      try{
+        const r = await fetch('/api/users', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          credentials:'include',
+          body: JSON.stringify({ email, password, role })
+        });
+        if(r.ok){
+          umMsg.style.color = '#00625f';
+          umMsg.textContent = 'User created.';
+          umForm.reset();
+          umLoadUsers();
+        } else {
+          let data={}; try{ data = await r.json(); }catch{}
+          umMsg.style.color = '#b00020';
+          umMsg.textContent = data?.error || 'Create failed.';
+        }
+      }catch(err){
+        umMsg.style.color = '#b00020';
+        umMsg.textContent = 'Network error.';
+      }
+    });
   </script>
 </body>
 </html>
