@@ -3,52 +3,64 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
   <title>CESW Hub - Feed</title>
-  <link rel="stylesheet" href="assets/style.css">
 
-<style>
-  body { display: none; }
-</style>
-<script>
-(async () => {
-  try {
-    const res = await fetch('/api/verify', {
-      credentials: 'include'
-    });
-    if (!res.ok) throw new Error('Not authorized');
-    const data = await res.json();
-    if (!['user', 'admin'].includes(data.role)) {
+  <link rel="stylesheet" href="assets/style.css">
+  <!-- Icons for the star, etc. -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+
+  <style>
+    body { display: none; }
+
+    /* Favourite star */
+    .card { position: relative; }
+    .fav-btn {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: none; border: none; cursor: pointer;
+      font-size: 1.15rem; color: #c9c9c9;
+    }
+    .fav-btn:hover { color: #a9a9a9; }
+    .fav-btn.active i { color: gold !important; }
+  </style>
+
+  <!-- Auth gate -->
+  <script>
+  (async () => {
+    try {
+      const res = await fetch('/api/verify', { credentials: 'include' });
+      if (!res.ok) throw new Error('Not authorized');
+      const data = await res.json();
+      if (!['user', 'admin'].includes(data.role)) window.location.href = '/index.html';
+      document.body.style.display = 'block';
+    } catch {
       window.location.href = '/index.html';
     }
-document.body.style.display = 'block';
-  } catch (err) {
-    window.location.href = '/index.html';
-  }
-})();
-</script>
-
-
+  })();
+  </script>
 </head>
 <body>
-<div class="navbar">
-	<span class="menu-icon">&#9776;</span>
-<div class="nav-links">
-		<div class="nav-links">
-      <a class="nav-item" href="feed.html">Feed</a>
-      <a class="nav-item" href="resources.html">Resources</a>
-      <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank">Calendar</a>
-		</div>
-		</div>
+  <div class="navbar">
+    <span class="menu-icon">&#9776;</span>
+    <div class="nav-links">
+      <div class="nav-links">
+        <a class="nav-item" href="feed.html">Feed</a>
+        <a class="nav-item" href="resources.html">Resources</a>
+        <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
+      </div>
     </div>
-    <div class="banner"></div>
-    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Feed</h2>  
-    
-<main>	
+  </div>
+
+  <div class="banner"></div>
+  <h2 class="title"><i class="fa-solid fa-list-ul"></i> Feed</h2>
+
+  <main>
     <div id="search-container">
       <input type="text" id="searchBar" placeholder="Find a post">
       <select id="category-select">
         <option value="">All</option>
+        <option value="favourites">My Favourites</option>
         <option value="pinned">Pinned</option>
         <option value="general">General</option>
         <option value="faq">FAQ</option>
@@ -60,6 +72,7 @@ document.body.style.display = 'block';
     <div id="noResults">
       Mmm no post found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category
     </div>
+
     <div class="card-container"></div>
 
     <a href="mailto:ITSupport@kotakureo.school.nz" id="contact" class="link-nochange">
@@ -72,21 +85,47 @@ document.body.style.display = 'block';
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    async function loadPosts() {
-      const res = await fetch('/api/posts');
-      const posts = await res.json();
+    // ===== Favourites state (separate from resources page) =====
+    // store post favourites as strings (post IDs), under a distinct key
+    const FAV_KEY = 'postFavourites';
+    let postFavourites = (JSON.parse(localStorage.getItem(FAV_KEY)) || []).map(String);
 
-      // Server already ordered by pinned & date
+    function favHas(key) {
+      return postFavourites.includes(String(key));
+    }
+    function favSet(key, on) {
+      key = String(key);
+      const i = postFavourites.indexOf(key);
+      if (on && i === -1) postFavourites.push(key);
+      if (!on && i !== -1) postFavourites.splice(i, 1);
+      localStorage.setItem(FAV_KEY, JSON.stringify(postFavourites));
+    }
+
+    // ===== Data load / render =====
+    let posts = [];
+
+    async function loadPosts() {
+      const res = await fetch('/api/posts', { credentials: 'include' });
+      posts = await res.json();
+
       const container = document.querySelector('.card-container');
       container.innerHTML = '';
 
       posts.forEach(p => {
-        const displayCat = p.category.toLowerCase();
+        const displayCat = (p.category || '').toLowerCase();
+        const key = String(p.id ?? (p.title || '').toLowerCase());
+        const isFav = favHas(key);
+
         const div = document.createElement('div');
-        div.className         = 'card';
-        div.dataset.name      = p.title.toLowerCase();
-        div.dataset.category  = displayCat;
+        div.className = 'card';
+        div.dataset.name = (p.title || '').toLowerCase();
+        div.dataset.category = displayCat;
+        div.dataset.id = key;
+
         div.innerHTML = `
+          <button type="button" class="fav-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove from favourites' : 'Add to favourites'}" aria-pressed="${isFav}">
+            <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-star"></i>
+          </button>
           <h1>${p.title}</h1>
           <div>${p.body}</div>
           <br><i>${new Date(p.created_at).toLocaleDateString()} ${p.category}</i>
@@ -94,33 +133,90 @@ document.body.style.display = 'block';
         container.append(div);
       });
 
-      filterCards();
+      filterCards(); // apply current search/category filter
     }
 
     function filterCards() {
-      let val = $('#searchBar').val().toLowerCase();
-      const cat = $('#category-select').val().toLowerCase();
+      const val = ($('#searchBar').val() || '').toLowerCase();
+      const cat = ($('#category-select').val() || '').toLowerCase();
       let shown = 0;
 
-
+      // Build a set for quick fav checks when filtering
+      const favSet = new Set(postFavourites);
 
       $('.card').each(function() {
-        const name = $(this).data('name');
-        const c    = $(this).data('category');
-        const ok   = name.includes(val) && (!cat || c.includes(cat));
-        $(this).toggle(ok);
+        const $card = $(this);
+        const name = $card.data('name');
+        const c    = String($card.data('category') || '');
+        const id   = String($card.data('id') || '');
+
+        // matches search?
+        const matchesSearch = name.includes(val);
+
+        // matches category?
+        let matchesCategory = true;
+        if (cat) {
+          if (cat === 'favourites') {
+            matchesCategory = favSet.has(id);
+          } else {
+            // existing behaviour: category "includes" to match "pinned general"
+            matchesCategory = c.includes(cat);
+          }
+        }
+
+        const ok = matchesSearch && matchesCategory;
+        $card.toggle(ok);
         if (ok) shown++;
       });
 
+      const isFavView = (cat === 'favourites');
+      $('#noResults').html(
+        isFavView
+          ? `No favourites match your search. <i class="fa-regular fa-star"></i>`
+          : `Mmm no post found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category`
+      );
       $('#noResults').toggle(shown === 0);
     }
-        // Toggle menu
-    $('.menu-icon').click(function () {
-        $('.nav-links').toggleClass('active');
+
+    // ===== Events =====
+    // Toggle menu
+    $(document).on('click', '.menu-icon', function () {
+      $('.nav-links').toggleClass('active');
+    });
+
+    // Delegated fav click (cards are dynamic)
+    $(document).on('click', '.fav-btn', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const $btn  = $(this);
+      const $card = $btn.closest('.card');
+      const key   = String($card.data('id'));
+      const wasActive = $btn.hasClass('active');
+      const nowActive = !wasActive;
+
+      favSet(key, nowActive);
+
+      // update UI
+      $btn.toggleClass('active', nowActive)
+          .attr('aria-pressed', String(nowActive))
+          .attr('title', nowActive ? 'Remove from favourites' : 'Add to favourites')
+          .find('i')
+          .toggleClass('fa-solid', nowActive)
+          .toggleClass('fa-regular', !nowActive);
+
+      // if currently filtering by favourites and we unfaved, hide the card immediately
+      const cat = ($('#category-select').val() || '').toLowerCase();
+      if (cat === 'favourites' && !nowActive) {
+        $card.hide();
+        // re-evaluate empty state
+        filterCards();
+      }
     });
 
     $(document).ready(function() {
       loadPosts();
+
       $('#searchBar')
         .focus()
         .on('keyup input', filterCards)
@@ -129,9 +225,8 @@ document.body.style.display = 'block';
           const self = this;
           $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
         })
-        .on('keydown', function() {
-          clearTimeout($.data(this,'timer'));
-        });
+        .on('keydown', function() { clearTimeout($.data(this,'timer')); });
+
       $('#category-select').on('change', filterCards);
 
       $(window).on('scroll', () => {
