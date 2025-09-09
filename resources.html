@@ -10,6 +10,33 @@
   <style>
     body { display: none; }
     #category-container { display: flex; flex-wrap: wrap; gap: 1em; margin: 1em 0; }
+    .fav-btn:hover {
+  color: #dbdbdb !important;
+}
+
+.fav-btn.active i {
+  color: gold !important;
+}
+
+.fa-solid {color:#000 !important; }
+
+.fav-btn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2em;
+  color: #dbdbdb !important;
+}
+#clearSearch, #Dice, #NZ, #Jazz, #Unlisted, #ShowFavs, #toggleCategories {
+    padding: 8px 15px;
+    margin-left: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    color:#000 !important;
+}
   </style>
   <script>
     (async () => {
@@ -44,7 +71,13 @@
   <main>
     <div id="search-container">
       <input type="text" id="searchBar" placeholder="Find a resource">
+          <button id="clearSearch"><i class="fa-solid fa-xmark"></i></button>
+            <button id="ShowFavs" title="Favourites"><i class="fa-solid fa-star"></i></button>
     </div>
+
+    <div id="noFavourites" style="display:none; text-align:center; margin:20px;">
+  <i class="fa-regular fa-star"></i> You have no favourites yet. Click the star on a song to add one.
+</div>
 
     <div id="category-container"></div>
 <button id="backToCategories" style="display:none; margin: 1em 0;">
@@ -138,6 +171,7 @@ document.getElementById('backToCategories').addEventListener('click', () => {
   <div class="card" data-name="${p.title.toLowerCase()}" data-category="${(p.category || '').toLowerCase()}">
     <p>${p.title}</p> 
     <img src="${p.thumbnail}" onload="this.classList.add('loaded')">
+    <button class="fav-btn" title="Add to favourites"><i class="fa-regular fa-star"></i></button>
   </div>
 </a>`;
         container.appendChild(div);
@@ -167,6 +201,81 @@ document.getElementById('backToCategories').addEventListener('click', () => {
         $('html, body').animate({ scrollTop: 0 }, 'fast')
       );
     });
+
+        // Clear search bar when clicking clear button
+    $('#clearSearch').click(function () {
+        $('#searchBar').val("").trigger('keyup');
+        $('#noFavourites').hide();
+        $('#searchBar').focus();
+        clearTimeout(typingTimer);
+
+    });
+
+
+
+    // Load favourites from localStorage
+let favourites = JSON.parse(localStorage.getItem('favourites')) || [];
+
+
+$('#ShowFavs').click(function () {
+  if (favourites.length === 0) {
+    // hide all cards
+    $('.card').hide();
+    // show message
+    $('#noFavourites').show();
+  } else {
+    $('.card').each(function () {
+      const title = $(this).data('name');
+      $(this).toggle(favourites.includes(title));
+    });
+    // hide message
+    $('#noFavourites').hide();
+  }
+});
+
+$('#ShowAll').click(function () {
+  $('.card').show();
+  $('#noFavourites').hide();
+});
+
+
+
+
+
+
+// Initialize UI state
+$('.card').each(function () {
+  const title = $(this).data('name');
+  if (favourites.includes(title)) {
+    $(this).find('.fav-btn').addClass('active')
+      .find('i').removeClass('fa-regular').addClass('fa-solid');
+  }
+});
+
+// Handle click
+$('.fav-btn').click(function (e) {
+  // stop the <a> link from firing
+  e.preventDefault();
+  e.stopPropagation();
+
+  const card = $(this).closest('.card');
+  const title = card.data('name');
+  
+  if (favourites.includes(title)) {
+    // Remove from favourites
+    favourites = favourites.filter(f => f !== title);
+    $(this).removeClass('active')
+      .find('i').removeClass('fa-solid').addClass('fa-regular');
+  } else {
+    // Add to favourites
+    favourites.push(title);
+    $(this).addClass('active')
+      .find('i').removeClass('fa-regular').addClass('fa-solid');
+  }
+
+  // Save back to localStorage
+  localStorage.setItem('favourites', JSON.stringify(favourites));
+});
   </script>
 </body>
 </html>
