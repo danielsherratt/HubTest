@@ -1,5 +1,5 @@
-// functions/api/auth/login.js (TEMP DEBUG)
-import { pbkdf2Hash, signJWT } from '../../lib/auth';
+// functions/api/auth/login.js
+import { pbkdf2Hash, signJWT } from '../../lib/auth.js';
 
 function cookieAttrs(request) {
   const isHttps = new URL(request.url).protocol === 'https:'; // Secure only on https
@@ -12,30 +12,20 @@ export async function onRequest({ request, env }) {
     if (request.method !== 'POST') {
       return new Response('Method Not Allowed', { status: 405 });
     }
-
-    // 0) Sanity checks
     if (!env.JWT_SECRET) {
-      return new Response(JSON.stringify({ error: 'Missing JWT_SECRET env var' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: 'Missing JWT_SECRET' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
     if (!db || !db.prepare) {
-      return new Response(JSON.stringify({ error: 'Missing D1 binding: env.POSTS_DB' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: 'Missing D1 binding: POSTS_DB' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // 1) Parse body
-    const payload = await request.json().catch(() => ({}));
-    const email = String(payload.email || '').trim().toLowerCase();
-    const password = String(payload.password || '');
+    const body = await request.json().catch(() => ({}));
+    const email = String(body.email || '').trim().toLowerCase();
+    const password = String(body.password || '');
     if (!email || !password) {
       return new Response(JSON.stringify({ error: 'Email and password are required.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // 2) Confirm table exists
-    const tables = await db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='users'`).all();
-    if (!tables.results?.length) {
-      return new Response(JSON.stringify({ error: 'users table not found in D1' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-    }
-
-    // 3) Load user
     const row = await db.prepare(`
       SELECT id, email, password_algo, password_salt, password_hash, role,
              failed_attempts, lockout_until
@@ -46,13 +36,12 @@ export async function onRequest({ request, env }) {
       return new Response(JSON.stringify({ error: 'Invalid credentials (no user).' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // 4) Lockout check
+    // Lockout check
     const nowIso = new Date().toISOString();
     if (row.lockout_until && row.lockout_until > nowIso) {
       return new Response(JSON.stringify({ error: 'Account locked. Try again later.' }), { status: 423, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // 5) Verify algo + hash
     if (row.password_algo !== 'pbkdf2-sha256') {
       return new Response(JSON.stringify({ error: 'Unsupported password algorithm.' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
@@ -74,7 +63,7 @@ export async function onRequest({ request, env }) {
       }
     }
 
-    // 6) Success → reset attempts, update last signin/ip
+    // Success → reset attempts + update audit
     await db.prepare(`
       UPDATE users
          SET failed_attempts = 0,
@@ -93,7 +82,6 @@ export async function onRequest({ request, env }) {
     return res;
 
   } catch (e) {
-    // return error details as JSON so you can see it in DevTools
     return new Response(JSON.stringify({ error: 'Server error in /api/auth/login', detail: String(e) }), {
       status: 500, headers: { 'Content-Type': 'application/json' }
     });
