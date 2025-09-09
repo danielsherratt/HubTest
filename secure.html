@@ -1,594 +1,254 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CESW Hub - Admin</title>
-  <link rel="stylesheet" href="assets/admin.css">
-     <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-<style>
-  body { display: none; }
-</style>
-     <script>
-(async () => {
-  try {
-    const res = await fetch('/api/verify', {
-      credentials: 'include'
-    });
-    if (!res.ok) throw new Error('Not authorized');
-    const data = await res.json();
-    if (!['admin'].includes(data.role)) {
-      window.location.href = '/index.html';
-    }
-    document.body.style.display = 'block';
-    // Optional: if you only want users here, but not admin:
-    // if (data.role !== 'user') window.location.href = '/secure.html';
-  } catch (err) {
-    window.location.href = '/index.html';
-  }
-})();
-</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CESW Hub – Admin</title>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
+  <meta name="color-scheme" content="light only" />
 
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
 
+  <!-- Admin-only gate: hide document until verified as admin -->
+  <style id="admin-hide">html{visibility:hidden}</style>
+  <script>
+    (async function() {
+      try {
+        const r = await fetch('/api/auth/me', { credentials: 'include' });
+        if (!r.ok) { window.location.href = '/index.html'; return; }
+        const me = await r.json();
+        if (!me || me.role !== 'admin') { window.location.href = '/index.html'; return; }
+        // Allowed: reveal page
+        document.getElementById('admin-hide')?.remove();
+        // Show who is signed in (optional)
+        const who = document.getElementById('whoami'); if (who) who.textContent = me.email || 'admin';
+      } catch {
+        window.location.href = '/index.html';
+      }
+    })();
+  </script>
 
   <style>
-    .overlay{position:fixed;inset:0;background:#f6f7f8;display:none;align-items:center;justify-content:center;z-index:9999;}
-    .overlay .card{background:#fff;max-width:380px;width:92%;padding:1.25rem 1.25rem 1.5rem;border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,.08)}
-    .overlay h2{margin:0 0 .75rem;color:#00625f;font-size:1.1rem;text-align:center}
-    .overlay label{display:block;font-size:.9rem;margin:.5rem 0 .25rem}
-    .overlay input{width:100%;padding:.7rem .8rem;border:1px solid #d0d6d9;border-radius:8px}
-    .overlay .row{display:flex;gap:.6rem;margin-top:1rem}
-    .overlay button{flex:1;padding:.7rem;border:0;border-radius:8px;cursor:pointer}
-    .overlay .primary{background:#00625f;color:#fff}
-    .overlay .secondary{background:#e9eef0}
-    .overlay .error{color:#b00020;font-size:.9rem;margin-top:.5rem;min-height:1.2rem;text-align:center}
-  </style>
-  <div id="loginOverlay" class="overlay" aria-modal="true" role="dialog">
-    <div class="card">
-      <h2>Admin sign in</h2>
-      <form id="loginForm">
-        <label for="loginEmail">Email</label>
-        <input id="loginEmail" name="email" type="email" autocomplete="username" required />
-        <label for="loginPassword">Password</label>
-        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required />
-        <div class="row">
-          <button type="submit" class="primary" id="loginSubmit">Sign in</button>
-          <button type="button" class="secondary" id="loginCancel">Cancel</button>
-        </div>
-        <div class="error" id="loginError"></div>
-      </form>
-    </div>
-  </div>
+    :root {
+      --brand: #00625f;
+      --brand-700: #00514e;
+      --bg: #f6f7f8;
+      --text: #1f2d2e;
+      --muted: #6b7c80;
+      --border: #d0d6d9;
+      --error: #b00020;
+      --radius: 10px;
+      --shadow: 0 10px 25px rgba(0,0,0,.08);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .banner {
+      width: 100%;
+      height: 170px;
+      background: url('assets/banner.jpg') center/cover no-repeat;
+    }
+    header .bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .75rem 1rem;
+      background: #ffffffcc;
+      backdrop-filter: saturate(1.2) blur(2px);
+      border-bottom: 1px solid #e8ecee;
+    }
+    header .title {
+      font-weight: 700;
+      color: var(--brand);
+      display: flex; align-items: center; gap: .5rem;
+    }
+    header .meta { color: var(--muted); font-size: .95rem; }
+    header .actions {
+      display: flex; gap: .5rem; align-items: center;
+    }
+    .btn {
+      border: 0; border-radius: 8px; padding: .55rem .8rem;
+      background: var(--brand); color: #fff; cursor: pointer;
+      font-weight: 600;
+    }
+    .btn.secondary { background: #e9eef0; color: #113; }
+    .btn.danger { background: #b00020; }
+    .wrap { flex: 1; padding: 1.25rem; display: grid; gap: 1rem; }
+    .panel {
+      background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
+      border: 1px solid #eef2f4;
+    }
+    .panel .hd { padding: .9rem 1rem; border-bottom: 1px solid #eef2f4; color: var(--brand); font-weight: 700; display:flex; align-items:center; justify-content:space-between;}
+    .panel .bd { padding: 1rem; }
 
+    /* User Management */
+    .admin-grid{display:grid;grid-template-columns:1fr 2fr;gap:1rem}
+    .admin-card{border:1px solid var(--border);border-radius:10px;padding:.9rem}
+    .admin-card h3{margin:.25rem 0 .5rem;color:#334;font-size:1.05rem}
+    .admin-card label{display:block;font-size:.9rem;margin:.4rem 0 .2rem}
+    .admin-card input,.admin-card select{width:100%;padding:.6rem;border:1px solid var(--border);border-radius:8px}
+    .admin-actions{margin-top:.75rem;display:flex;gap:.5rem}
+    .table{width:100%;border-collapse:collapse}
+    .table th,.table td{border-bottom:1px solid #eef2f4;padding:.55rem;text-align:left;font-size:.95rem;vertical-align:middle}
+    .chip{display:inline-block;padding:.2rem .5rem;border-radius:999px;background:#eef6f6;color:#00625f;font-size:.85rem}
+    .muted{color:var(--muted)}
+    .right{ text-align:right; }
+  </style>
 </head>
 <body>
-  <div class="banner"></div>
-  <main style="max-width: 800px; margin: auto;">
-    <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub - Admin</h1>
+  <div class="banner" role="img" aria-label="CESW banner"></div>
 
-    <a class="calendarbutton" href="https://calendar.online/852ff24234751e548d10"><i class="fa fa-calendar"></i> Calendar</a>
+  <header>
+    <div class="bar">
+      <div class="title">
+        <i class="fa-solid fa-shield-halved"></i> CESW Hub — Admin
+        <span class="meta">(<span id="whoami">admin</span>)</span>
+      </div>
+      <div class="actions">
+        <!-- If you add a /api/auth/logout endpoint later, hook a real sign out -->
+        <a class="btn secondary" href="/feed.html"><i class="fa-solid fa-house"></i> Home</a>
+      </div>
+    </div>
+  </header>
 
-    <!-- Upload Resource -->
-   <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
-<form id="upload-form" class="upload-section" enctype="multipart/form-data">
+  <main class="wrap">
 
-    <!-- Either File or URL -->
-  <input type="file" id="resource-file" />
-  <input type="url" id="resource-url" placeholder="Or paste a link instead"><br>
-    <!-- Type dropdown -->
-  <select id="resource-type">
-    <option value="">Select resource type</option>
-    <option value="file">File</option>
-    <option value="website">Website</option>
-    <option value="video">Video</option>
-  </select><br>
+    <!-- ===== User Management ===== -->
+    <section class="panel" aria-label="User Management">
+      <div class="hd">
+        <span>User Management</span>
+      </div>
+      <div class="bd">
+        <div class="admin-grid">
+          <div class="admin-card">
+            <h3>Create user</h3>
+            <form id="createUserForm" autocomplete="off">
+              <label for="userEmail">Email</label>
+              <input id="userEmail" name="email" type="email" required placeholder="user@example.com">
+              <label for="userPassword">Password</label>
+              <input id="userPassword" name="password" type="password" required placeholder="Set a password">
+              <label for="userRole">Role</label>
+              <select id="userRole" name="role">
+                <option value="user">user</option>
+                <option value="admin">admin</option>
+              </select>
+              <div class="admin-actions">
+                <button class="btn" type="submit"><i class="fa-solid fa-user-plus"></i> Create</button>
+                <button class="btn secondary" type="button" id="resetCreateForm">Reset</button>
+              </div>
+              <div id="createUserMsg" style="margin-top:.4rem;font-size:.95rem;"></div>
+            </form>
+          </div>
 
-  <select id="resource-category" required>
-    <option value="" disabled selected>Select category</option>
-    <option value="general">General</option>
-    <option value="resources">Resources</option>
-    <option value="onlineresources">Online Resources</option>
-    <option value="faq">FAQ</option>
-  </select><br>
-  <input type="text" id="resource-title" placeholder="Resource title" required /><br>
-  
+          <div class="admin-card">
+            <h3>Existing users</h3>
+            <table class="table">
+              <thead>
+                <tr><th>Email</th><th>Role</th><th>Last sign in</th><th>IP</th><th class="right"></th></tr>
+              </thead>
+              <tbody id="userRows">
+                <tr><td colspan="5" class="muted">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
 
-
-  <!-- Pinned checkbox -->
-  <label class="star-checkbox">
-    <input type="checkbox" id="resource-pinned" />
-    <i class="fa-regular fa-star unchecked"></i>
-    <i class="fa-solid fa-star checked"></i>
-    Pin this resource
-  </label><br>
-
-  <button type="submit" id="new-upload-button">Add Resource</button>
-</form>
-
-    <!-- Manage Resources -->
-    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Resources</h2>
-    <a href="resources.html" target="_blank" alt="View Resources"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
-    <input type="text" id="search-resources" class="search-bar" placeholder="Search resources...">
-    <table id="resources-table">
-      <thead>
-        <tr>
-          <th class="sortable" data-key="title">Title</th>
-          <th class="sortable" data-key="created_date">Date</th>
-          <th class="sortable" data-key="resource-category">Category</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <p id="resources-empty" style="display:none;">Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</p>
-    <i>Latest 10 are shown, search for the exact one you want</i>
-    <div style="margin-bottom:1em;"></div>
-
-
-    <!-- Add Post -->
-    <h2 class="title"><i class="fa-solid fa-plus"></i> Add to Feed</h2>
-    <form id="new-post">
-      <input name="title" id="new-post-input" placeholder="Title" required />
-      <select name="category" id="new-post-select" required>
-        <option value="" disabled selected>Select category</option>
-        <option value="general">General</option>
-        <option value="resources">Resources</option>
-        <option value="onlineresources">Online Resources</option>
-        <option value="faq">FAQ</option>
-      </select>
-     <label class="star-checkbox">
-        <input type="checkbox" name="pinned" />
-        <i class="fa-regular fa-star unchecked"></i>
-        <i class="fa-solid fa-star checked"></i>
-        Pin this post
-      </label>
-      <div id="editor"></div>
-      <button type="submit" id="new-post-button">Create Post</button>
-    </form>
-
-    <!-- Manage Posts -->
-    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Feed</h2>
-    <a href="feed.html" target="_blank" alt="View Feed"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
-    <input type="text" id="search-posts" class="search-bar" placeholder="Search posts...">
-    <table id="posts-table">
-      <thead>
-        <tr>
-          <th class="sortable" data-key="title">Title</th>
-          <th class="sortable" data-key="created_at">Date</th>
-          <th class="sortable" data-key="category">Category</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <p id="posts-empty" style="display:none;">Mmm, no post found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</p>
-
-    <i>Latest 10 are shown, search for the exact one you want</i>
-    <a href="mailto:ITSupport@kotakureo.school.nz" id="one" class="link-nochange">
-      <i class="fa-solid fa-life-ring"></i> Help
-    </a>
+    <!-- You can add other admin panels below as more .panel blocks -->
 
   </main>
 
-<script>
-  (function() {
-    const originalAddEventListener = EventTarget.prototype.addEventListener;
-    EventTarget.prototype.addEventListener = function(type, listener, options) {
-      if (type === 'DOMNodeInserted' || type === 'DOMNodeRemoved') return;
-      return originalAddEventListener.call(this, type, listener, options);
-    };
-  })();
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-<script>
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-</script>
-  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
   <script>
-const quill = new Quill('#editor', {
-      theme: 'snow',
-      modules: {
-        toolbar: [
-          ['bold', 'italic'],
-          [{ header: [1, 2, 3, false] }],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          ['image']
-        ]
+    (function(){
+      const rows = document.getElementById('userRows');
+      const form = document.getElementById('createUserForm');
+      const resetBtn = document.getElementById('resetCreateForm');
+      const msg = document.getElementById('createUserMsg');
+
+      function esc(s){
+        return String(s ?? '').replace(/[&<>"']/g, function(m){
+          return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);
+        });
       }
-    });
 
-    document.getElementById('resource-file').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    document.getElementById('resource-type').value = 'file';
-  }
-});
-
-    let posts = [];
-    let resources = [];
-    let postSort = { key: 'created_at', asc: false };
-    let resourceSort = { key: 'created_date', asc: false };
-
-    async function fetchPosts() {
-      const res = await fetch('/api/posts?admin=true', { credentials: 'include' });
-      if (res.status === 401) return location.href = '/index.html';
-      posts = await res.json();
-      renderPosts();
-    }
-
-    async function fetchResources() {
-      const res = await fetch('/api/resourcespull', { credentials: 'include' });
-      if (res.status === 401) return location.href = '/login.html';
-      resources = await res.json();
-      renderResources();
-    }
-
-function renderPosts() {
-  const tbody = document.querySelector('#posts-table tbody');
-  const emptyMsg = document.getElementById('posts-empty');
-  const search = document.getElementById('search-posts').value.toLowerCase();
-
-  const filtered = posts
-    .filter(p => p.title.toLowerCase().includes(search))
-    .sort(sortBy(postSort.key, postSort.asc))
-    .slice(0, 10);
-
-  tbody.innerHTML = '';
-
-  if (filtered.length === 0) {
-    emptyMsg.style.display = 'block';
-    return;
-  } else {
-    emptyMsg.style.display = 'none';
-  }
-
-  for (const p of filtered) {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${p.title}</td>
-      <td>${new Date(p.created_at).toLocaleDateString()}</td>
-      <td>${p.category}</td>
-      <td>
-        <button class="pin-btn" onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
-          <i class="${p.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${p.pinned ? 'Unpin' : 'Pin'}
-        </button>
-        <button class="delete-btn" onclick="deletePost(${p.id})"><i class="fa fa-trash"></i> Delete</button>
-      </td>`;
-    tbody.appendChild(row);
-  }
-}
-
-
-    function renderResources() {
-  const tbody = document.querySelector('#resources-table tbody');
-  const emptyMsg = document.getElementById('resources-empty');
-  const search = document.getElementById('search-resources').value.toLowerCase();
-
-  const filtered = resources
-    .filter(r => r.title.toLowerCase().includes(search))
-    .sort(sortBy(resourceSort.key, resourceSort.asc))
-    .slice(0, 10);
-
-  tbody.innerHTML = '';
-
-  if (filtered.length === 0) {
-    emptyMsg.style.display = 'block';
-    return;
-  } else {
-    emptyMsg.style.display = 'none';
-  }
-
-  for (const r of filtered) {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td><a href="${r.url}" class="link-nochange" target="_blank">${r.title}</a></td>
-      <td>${new Date(r.created_date).toLocaleDateString()}</td>
-      <td>${r.category}</td>
-      <td>
-        <button class="pinresource-btn" onclick="togglePinResource(${r.id}, ${r.pinned})">
-          <i class="${r.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${r.pinned ? 'Unpin' : 'Pin'}
-        </button>
-        <button class="deleteresource-btn" onclick="deleteResource(${r.id})"><i class="fa fa-trash"></i> Delete</button>
-      </td>`;
-    tbody.appendChild(row);
-  }
-}
-
-    function sortBy(key, asc) {
-      return (a, b) => {
-        const valA = a[key]?.toLowerCase?.() || a[key];
-        const valB = b[key]?.toLowerCase?.() || b[key];
-        if (valA < valB) return asc ? -1 : 1;
-        if (valA > valB) return asc ? 1 : -1;
-        return 0;
-      };
-    }
-
-    window.togglePinPost = async (id, category, pinned) => {
-      const newCat = pinned ? category.replace(/^pinned\s*/i, '') : `pinned ${category}`;
-      await fetch(`/api/posts/${id}`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: newCat, pinned: !pinned })
-      });
-      fetchPosts();
-    };
-
-    window.deletePost = async (id) => {
-      if (confirm('Delete this post?')) {
-        await fetch(`/api/posts/${id}`, { method: 'DELETE', credentials: 'include' });
-        fetchPosts();
-      }
-    };
-
-    window.togglePinResource = async (id, pinned) => {
-      await fetch(`/api/resources/${id}`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pinned: !pinned })
-      });
-      fetchResources();
-    };
-
-    window.deleteResource = async (id) => {
-      if (confirm('Delete this resource?')) {
-        await fetch(`/api/resources/${id}`, { method: 'DELETE', credentials: 'include' });
-        fetchResources();
-      }
-    };
-
-    document.getElementById('new-post').addEventListener('submit', async e => {
-      e.preventDefault();
-      const form = e.target;
-      const title = form.title.value;
-      const category = form.category.value;
-      const pinned = form.pinned.checked;
-      await fetch('/api/posts', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, category: pinned ? `pinned ${category}` : category, body: quill.root.innerHTML, pinned })
-      });
-      form.reset(); quill.setContents([]); fetchPosts();
-    });
-
-   document.getElementById('upload-form').addEventListener('submit', async e => {
-    e.preventDefault();
-
-    const file = document.getElementById('resource-file').files[0];
-    const urlInput = document.getElementById('resource-url').value.trim();
-    const title = document.getElementById('resource-title').value.trim();
-    const pinned = document.getElementById('resource-pinned').checked;
-    const type = document.getElementById('resource-type').value;
-    const category = document.getElementById('resource-category').value.trim();
-
-
-    if (!file && !urlInput) return alert("Please provide a file or a URL.");
-    if (!title || !type) return alert("Title and type are required.");
-
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('pinned', pinned);
-    formData.append('type', type);
-    formData.append('category', category);
-
-    if (file) {
-      formData.append('file', file);
-
-      if (file.type === "application/pdf") {
-        // Generate thumbnail from PDF
-        const pdfThumb = await generatePdfThumbnail(file);
-        if (pdfThumb) {
-          formData.append('thumbnail', pdfThumb);
+      async function loadUsers(){
+        try{
+          const r = await fetch('/api/users', { credentials: 'include' });
+          if(!r.ok){ rows.innerHTML = '<tr><td colspan="5">Failed to load users.</td></tr>'; return; }
+          const data = await r.json();
+          if(!data.length){ rows.innerHTML = '<tr><td colspan="5" class="muted">No users.</td></tr>'; return; }
+          rows.innerHTML = data.map(u => `
+            <tr data-id="${u.id}">
+              <td>${esc(u.email)}</td>
+              <td><span class="chip">${esc(u.role)}</span></td>
+              <td>${esc(u.last_sign_in || '')}</td>
+              <td>${esc(u.last_sign_ip || '')}</td>
+              <td class="right"><button class="btn secondary" style="color:#b00020" data-del="${u.id}"><i class="fa-solid fa-user-xmark"></i> Delete</button></td>
+            </tr>
+          `).join('');
+        }catch(e){
+          rows.innerHTML = '<tr><td colspan="5">Error loading users.</td></tr>';
         }
       }
 
-    } else {
-      formData.append('url', urlInput);
+      rows?.addEventListener('click', async (e)=>{
+        const id = e.target?.dataset?.del || e.target?.closest('button')?.dataset?.del;
+        if(!id) return;
+        if(!confirm('Delete this user? This cannot be undone.')) return;
+        try{
+          const r = await fetch('/api/users/'+id, { method:'DELETE', credentials:'include' });
+          if(r.status === 204){ loadUsers(); return; }
+          const t = await r.text();
+          alert('Delete failed: ' + t);
+        }catch(err){ alert('Delete error'); }
+      });
 
-      // Generate thumbnail using Microlink
-      const thumbnailUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
-      try {
-        const response = await fetch(thumbnailUrl);
-        const data = await response.json();
-        const imgUrl = data?.data?.screenshot?.url;
-        if (imgUrl) {
-          const imageBlob = await fetch(imgUrl).then(r => r.blob());
-          const base64 = await blobToBase64(imageBlob);
-          formData.append('thumbnail', base64);
+      form?.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        msg.textContent='';
+        const payload = {
+          email: form.email.value.trim(),
+          password: form.password.value,
+          role: form.role.value
+        };
+        try{
+          const r = await fetch('/api/users', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            credentials:'include',
+            body: JSON.stringify(payload)
+          });
+          if(r.ok){
+            msg.style.color='#00625f';
+            msg.textContent='User created.';
+            form.reset();
+            loadUsers();
+          } else {
+            let data={}; try{ data = await r.json(); }catch{}
+            msg.style.color='#b00020';
+            msg.textContent = data?.error || 'Create failed.';
+          }
+        }catch(err){
+          msg.style.color='#b00020';
+          msg.textContent='Network error.';
         }
-      } catch (err) {
-        console.warn("Microlink thumbnail failed:", err);
-      }
-    }
+      });
 
-    // Submit the form
-    await fetch('/api/resources/upload', {
-      method: 'POST',
-      body: formData
-    });
+      resetBtn?.addEventListener('click', ()=> form.reset());
 
-    location.reload();
-  });
-
-  async function generatePdfThumbnail(file) {
-    try {
-      const pdfData = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-      const page = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale: 1 });
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      await page.render({ canvasContext: context, viewport }).promise;
-      return canvas.toDataURL("image/png");
-    } catch (err) {
-      console.error("PDF thumbnail generation failed:", err);
-      return null;
-    }
-  }
-
-  function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-
-    document.getElementById('search-posts').addEventListener('input', renderPosts);
-    document.getElementById('search-resources').addEventListener('input', renderResources);
-
-    document.querySelectorAll('#posts-table th.sortable').forEach(th =>
-      th.addEventListener('click', () => {
-        const key = th.dataset.key;
-        postSort.asc = key === postSort.key ? !postSort.asc : true;
-        postSort.key = key;
-        renderPosts();
-      }));
-
-    document.querySelectorAll('#resources-table th.sortable').forEach(th =>
-      th.addEventListener('click', () => {
-        const key = th.dataset.key;
-        resourceSort.asc = key === resourceSort.key ? !resourceSort.asc : true;
-        resourceSort.key = key;
-        renderResources();
-      }));
-
-    document.addEventListener('DOMContentLoaded', () => {
-      fetchPosts();
-      fetchResources();
-    });
-
-    
+      loadUsers();
+    })();
   </script>
-
-<!-- Admin Login UI -->
-<div class="login-card">
-  <h2>Admin Login</h2>
-  <form id="admin-login-form" novalidate>
-    <div class="field">
-      <input name="email" type="email" placeholder="Email address" required autocomplete="email" />
-    </div>
-    <div class="field">
-      <input id="admin-password" name="password" type="password" placeholder="Password" required autocomplete="current-password" />
-      <button class="toggle-pass" type="button" aria-label="Toggle password visibility">
-        <i class="fa-regular fa-eye"></i>
-      </button>
-    </div>
-    <button id="adminSubmitBtn" type="submit">Log In</button>
-    <div class="error" id="admin-error-msg" style="display:none;"></div>
-  </form>
-</div>
-
-<script>
-const form = document.getElementById('admin-login-form');
-if(form){
-  const error = document.getElementById('admin-error-msg');
-  const submitBtn = document.getElementById('adminSubmitBtn');
-  const passInput = document.getElementById('admin-password');
-  const toggleBtn = document.querySelector('.toggle-pass');
-
-  toggleBtn.addEventListener('click', () => {
-    const show = passInput.type === 'password';
-    passInput.type = show ? 'text' : 'password';
-    toggleBtn.innerHTML = show ? '<i class="fa-regular fa-eye-slash"></i>' : '<i class="fa-regular fa-eye"></i>';
-  });
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    error.style.display = 'none';
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Signing in…';
-    const body = {
-      email: form.email.value.trim(),
-      password: form.password.value
-    };
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body)
-      });
-      if(!res.ok){
-        const data = await res.json().catch(()=>({}));
-        throw new Error(data.error || 'Login failed');
-      }
-      location.reload();
-    } catch(err){
-      error.textContent = err.message;
-      error.style.display = 'block';
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Log In';
-    }
-  });
-}
-</script>
-
-
-<script>
-(async function() {
-  async function checkSession() {
-    try {
-      const r = await fetch('/api/auth/me', { credentials: 'include' });
-      return r.ok ? await r.json() : null;
-    } catch { return null; }
-  }
-
-  const overlay = document.getElementById('loginOverlay');
-  const form = document.getElementById('loginForm');
-  const err = document.getElementById('loginError');
-  const submit = document.getElementById('loginSubmit');
-  const cancel = document.getElementById('loginCancel');
-
-  async function requireAdmin() {
-    const me = await checkSession();
-    if (!me || me.role !== 'admin') {
-      overlay.style.display = 'flex';
-    } else {
-      overlay.style.display = 'none';
-    }
-  }
-
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    err.textContent = '';
-    submit.disabled = true;
-    submit.textContent = 'Signing in…';
-    const payload = { email: form.email.value.trim(), password: form.password.value };
-    try {
-      const r = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload)
-      });
-      if (r.ok) {
-        overlay.style.display = 'none';
-      } else {
-        const data = await r.json().catch(() => ({}));
-        err.textContent = data.error || 'Sign in failed.';
-      }
-    } finally {
-      submit.disabled = false;
-      submit.textContent = 'Sign in';
-      form.password.value = '';
-    }
-  });
-
-  cancel?.addEventListener('click', () => {
-    overlay.style.display = 'none';
-  });
-
-  await requireAdmin();
-})();
-</script>
-
 </body>
 </html>
