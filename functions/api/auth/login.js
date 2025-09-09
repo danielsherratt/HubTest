@@ -46,7 +46,7 @@ export async function onRequest({ request, env }) {
 
     // Avoid user enumeration
     if (!row) {
-      return new Response(JSON.stringify({ error: 'Invalid credentials.' }), {
+      return new Response(JSON.stringify({ error: 'Invalid credentials. contact ITSupport for assistance' }), {
         status: 401, headers: { 'Content-Type': 'application/json' }
       });
     }
@@ -82,7 +82,7 @@ export async function onRequest({ request, env }) {
       } else {
         await db.prepare(`UPDATE users SET failed_attempts = ? WHERE id = ?`)
           .bind(attempts, row.id).run();
-        return new Response(JSON.stringify({ error: 'Invalid credentials.' }), {
+        return new Response(JSON.stringify({ error: 'Invalid credentials. contact ITSupport for assistance' }), {
           status: 401, headers: { 'Content-Type': 'application/json' }
         });
       }
