@@ -42,7 +42,7 @@ export async function onRequest({ request, env }) {
     });
   }
 
-  // Update user password (PBKDF2-SHA256 @ 100k, 32 bytes)
+  // Update password
   const saltBytes = new Uint8Array(16); crypto.getRandomValues(saltBytes);
   const saltB64 = btoa(String.fromCharCode(...saltBytes));
   const hashB64 = await pbkdf2Hash(password, saltB64, 100000, 32);
@@ -55,8 +55,12 @@ export async function onRequest({ request, env }) {
      WHERE id = ?
   `).bind(saltB64, hashB64, rec.user_id).run();
 
-  // Single-use token
+  // mark token used
   await db.prepare(`UPDATE password_resets SET used = 1 WHERE id = ?`).bind(rec.id).run();
 
-  return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
+  // return the user's email so the client can auto-login
+  const u = await db.prepare(`SELECT email FROM users WHERE id = ?`).bind(rec.user_id).first();
+  return new Response(JSON.stringify({ ok: true, email: u?.email || null }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
 }
