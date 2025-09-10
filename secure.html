@@ -530,8 +530,8 @@
             <tr data-id="${u.id}">
               <td>${esc(u.email)}</td>
               <td><span class="chip">${esc(u.role)}</span></td>
-  <td class="nz-dt" data-ts="${u.last_sign_in || ''}"></td>
-  <td class="nz-dt" data-ts="${u.created_on || u.created_at || ''}"></td>
+              <td class="nz-dt" data-ts="${esc(u.last_sign_in || '')}"></td>
+              <td class="nz-dt" data-ts="${esc(u.created_at || '')}"></td>
               <td>
                 <div>${esc(u.last_sign_ip || '')}</div>
                 ${alert}
