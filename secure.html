@@ -139,7 +139,7 @@
     <h2 class="title" style="margin-top:2rem;"><i class="fa-solid fa-users-gear"></i> User Management</h2>
 
     <!-- Search box -->
-    <input id="um-search" type="search" placeholder="Search users by email…" class="search-bar" style="margin:.25rem 0 1rem 0; width:100%;">
+    <input id="um-search" type="search" placeholder="Search users by email…" class="search-bar">
 
     <!-- Create user -->
     <section class="upload-section" style="padding:1rem;border:1px solid #e8ecee;border-radius:10px;margin-bottom:1rem;">
@@ -147,11 +147,11 @@
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.5rem;align-items:end;">
           <div>
             <label for="um-email">Email</label>
-            <input id="um-email" type="email" placeholder="user@example.com" required />
+            <input id="um-email" type="email" class="search-bar" placeholder="user@example.com" required />
           </div>
           <div>
             <label for="um-password">Password</label>
-            <input id="um-password" type="password" placeholder="Set a password" required />
+            <input id="um-password" type="password" class="search-bar" placeholder="Set a password" required />
           </div>
           <div>
             <label for="um-role">Role</label>
