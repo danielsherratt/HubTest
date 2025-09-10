@@ -137,7 +137,8 @@ If you didn’t expect this, you can ignore the email.`;
           <p>Your temporary password is: <code>${password}</code></p>
           <p>Please reset your password within <b>3 hours</b> using the link below:</p>
           <p><a href="${link}" style="display:inline-block;padding:10px 14px;background:#00625f;color:#fff;border-radius:6px;text-decoration:none">Set a new password</a></p>
-          <p>If the button doesn't work, paste this link:<br><a href="${link}">${link}</a></p>
+      <br>
+      <p>Contact <a href="mailto:ITSupport@kotakureo.school.nz">ITSupport@kotakureo.school.nz</a> for assistance if required</p>
         `;
 
         await sendEmail({ env, to: email, subject, html, text });

@@ -203,6 +203,13 @@
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
   <script>
+
+    function applyNZ(selector = '.nz-dt') {
+  document.querySelectorAll(selector).forEach(el => {
+    const raw = el.getAttribute('data-ts') || el.textContent;
+    el.textContent = nzDateTime(raw);
+  });
+}
     
     // ───────────────────── Quill editor ─────────────────────
     const quill = new Quill('#editor', {
@@ -523,8 +530,8 @@
             <tr data-id="${u.id}">
               <td>${esc(u.email)}</td>
               <td><span class="chip">${esc(u.role)}</span></td>
-              <td>${esc(u.last_sign_in || '')}</td>
-              <td>${esc(u.created_at || '')}</td>
+  <td class="nz-dt" data-ts="${u.last_sign_in || ''}"></td>
+  <td class="nz-dt" data-ts="${u.created_on || u.created_at || ''}"></td>
               <td>
                 <div>${esc(u.last_sign_ip || '')}</div>
                 ${alert}

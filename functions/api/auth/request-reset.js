@@ -32,12 +32,15 @@ export async function onRequest({ request, env }) {
     const origin = new URL(request.url).origin;
     const link = `${origin}/reset.html?token=${encodeURIComponent(token)}`;
     const subject = 'Reset your CESW Hub password';
-    const text = `If you requested a password reset, use this link within 3 hours:\n\n${link}\n\nIf you didn’t request this, ignore this email.`;
+    const text = `CESW Hub Password Reset. If you requested a password reset, use this link within 3 hours:\n\n${link}\n\nOtherwise, ignore this email.`;
     const html = `
-      <p>If you requested a password reset, click the button below within <b>3 hours</b>.</p>
+    <h1>CESW Hub Password Reset</h1>  
+    <p>If you requested a password reset, click the button below within</p>
       <p><a href="${link}" style="display:inline-block;padding:10px 14px;background:#00625f;color:#fff;border-radius:6px;text-decoration:none">Reset Password</a></p>
-      <p>Or paste this link:<br><a href="${link}">${link}</a></p>
-      <p>If you didn’t request this, you can ignore this email.</p>
+      <p>Note the link will expire in 3 hours</p>
+      <p>If this wasn't you, ignore this email.</p>
+      <br>
+      <p>Contact <a href="mailto:ITSupport@kotakureo.school.nz">ITSupport@kotakureo.school.nz</a> for assistance if required</p>
     `;
     try { await sendEmail({ env, to: email, subject, html, text }); }
     catch (e) { console.error('sendEmail failed', e); /* still return ok */ }
