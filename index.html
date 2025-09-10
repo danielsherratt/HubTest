@@ -110,7 +110,11 @@
 
         <button class="btn" id="submitBtn" type="submit" disabled>Log In</button>
 
-        <div id="error-msg" class="error" role="alert"></div>
+        <div id="error-msg" class="error" role="alert">
+          <p class="muted" style="margin-top:.5rem;">
+  <a href="#" id="forgotLink">Forgot your password?</a>
+</p>
+        </div>
       </form>
     </section>
   </main>
@@ -119,6 +123,23 @@
 
   <script>
     (function () {
+
+      // Forgot password flow (generic response)
+document.getElementById('forgotLink').addEventListener('click', async (e) => {
+  e.preventDefault();
+  const email = prompt('Enter your email address:');
+  if (!email) return;
+  try {
+    await fetch('/api/auth/request-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() })
+    });
+  } catch {}
+  alert('If an account exists for that email, you will receive a reset link shortly.');
+});
+
+
       const form = document.getElementById('login-form');
       const submitBtn = document.getElementById('submitBtn');
       const errorEl = document.getElementById('error-msg');

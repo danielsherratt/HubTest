@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Reset Password – CESW Hub</title>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --brand:#00625f; --error:#b00020; }
+    *{ box-sizing:border-box; } body{ margin:0; font-family:"Noto Sans",system-ui; background:#f6f7f8; color:#1f2d2e; }
+    .wrap{ min-height:100vh; display:grid; place-items:center; padding:2rem 1rem; }
+    .card{ width:100%; max-width:380px; background:#fff; border-radius:10px; padding:1.25rem; box-shadow:0 10px 25px rgba(0,0,0,.08); }
+    h1{ font-size:1.2rem; margin:0 0 .5rem; color:var(--brand); text-align:center; }
+    form > * + * { margin-top:.9rem; }
+    .field{ border:1px solid #d0d6d9; border-radius:8px; padding:.2rem .6rem; background:#fff; }
+    .field input{ border:0; outline:0; padding:.7rem .2rem; font-size:1rem; width:100%; background:transparent; }
+    .btn{ width:100%; border:0; border-radius:8px; padding:.8rem 1rem; font-size:1rem; font-weight:600; cursor:pointer; background:var(--brand); color:#fff; }
+    .btn[disabled]{ opacity:.6; cursor:not-allowed; }
+    .msg{ text-align:center; min-height:1.25rem; }
+    .error{ color:var(--error); }
+    .ok{ color:#0b7; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Reset your password</h1>
+      <form id="reset-form">
+        <div class="field">
+          <input id="pwd1" type="password" placeholder="New password" required minlength="6" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <input id="pwd2" type="password" placeholder="Confirm new password" required minlength="6" autocomplete="new-password">
+        </div>
+        <button class="btn" id="submitBtn" type="submit">Set Password</button>
+        <div id="msg" class="msg"></div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token') || '';
+
+    const form = document.getElementById('reset-form');
+    const msg = document.getElementById('msg');
+    const btn = document.getElementById('submitBtn');
+
+    function showMessage(text, ok=false){
+      msg.textContent = text;
+      msg.className = 'msg ' + (ok ? 'ok' : 'error');
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const p1 = document.getElementById('pwd1').value;
+      const p2 = document.getElementById('pwd2').value;
+      if (p1 !== p2) return showMessage('Passwords do not match.');
+      if (!token) return showMessage('Invalid or missing token.');
+      btn.disabled = true;
+      btn.textContent = 'Setting…';
+      try {
+        const r = await fetch('/api/auth/reset', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ token, password: p1 })
+        });
+        if (r.ok) {
+          showMessage('Password updated! You can now sign in.', true);
+          setTimeout(() => location.href = '/index.html', 1200);
+        } else {
+          const data = await r.json().catch(()=>({}));
+          showMessage(data?.error || 'Reset failed.');
+        }
+      } catch {
+        showMessage('Network error.');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Set Password';
+      }
+    });
+  </script>
+</body>
+</html>
