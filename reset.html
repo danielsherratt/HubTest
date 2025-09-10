@@ -3,63 +3,231 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Reset Password – CESW Hub</title>
+  <title>CESW Hub – Reset Password</title>
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon"/>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="light only" />
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+
   <style>
-    :root { --brand:#00625f; --error:#b00020; }
-    *{ box-sizing:border-box; } body{ margin:0; font-family:"Noto Sans",system-ui; background:#f6f7f8; color:#1f2d2e; }
-    .wrap{ min-height:100vh; display:grid; place-items:center; padding:2rem 1rem; }
-    .card{ width:100%; max-width:380px; background:#fff; border-radius:10px; padding:1.25rem; box-shadow:0 10px 25px rgba(0,0,0,.08); }
-    h1{ font-size:1.2rem; margin:0 0 .5rem; color:var(--brand); text-align:center; }
-    form > * + * { margin-top:.9rem; }
-    .field{ border:1px solid #d0d6d9; border-radius:8px; padding:.2rem .6rem; background:#fff; }
-    .field input{ border:0; outline:0; padding:.7rem .2rem; font-size:1rem; width:100%; background:transparent; }
-    .btn{ width:100%; border:0; border-radius:8px; padding:.8rem 1rem; font-size:1rem; font-weight:600; cursor:pointer; background:var(--brand); color:#fff; }
-    .btn[disabled]{ opacity:.6; cursor:not-allowed; }
-    .msg{ text-align:center; min-height:1.25rem; }
-    .error{ color:var(--error); }
-    .ok{ color:#0b7; }
+    :root {
+      --brand: #00625f;
+      --brand-700: #00514e;
+      --bg: #f6f7f8;
+      --text: #1f2d2e;
+      --muted: #6b7c80;
+      --border: #d0d6d9;
+      --error: #b00020;
+      --ok: #0a7a51;
+      --radius: 10px;
+      --shadow: 0 10px 25px rgba(0,0,0,.08);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .banner {
+      width: 100%;
+      height: 170px;
+      background: url('assets/banner.jpg') center/cover no-repeat;
+    }
+    .wrap {
+      flex: 1;
+      display: grid;
+      place-items: start center;
+      padding: 2rem 1rem 3rem;
+    }
+    .card {
+      width: 100%;
+      max-width: 380px;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem 1.25rem 1.5rem;
+      animation: floatIn .25s ease-out;
+    }
+    @keyframes floatIn { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    h1 {
+      font-size: 1.25rem;
+      margin: 0 0 .25rem;
+      color: var(--brand);
+      text-align: center;
+      font-weight: 700;
+    }
+    .sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: .95rem;
+      margin-bottom: 1rem;
+    }
+    form > * + * { margin-top: .9rem; }
+    .field {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: .5rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .2rem .5rem .2rem .6rem;
+      background: #fff;
+    }
+    .field input {
+      border: 0; outline: 0; padding: .7rem .2rem; font-size: 1rem; width: 100%; background: transparent;
+    }
+    .icon-btn {
+      border: 0; background: transparent; cursor: pointer; padding: .4rem .5rem; border-radius: 6px;
+    }
+    .icon-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+    .btn {
+      width: 100%; border: 0; border-radius: 8px; padding: .8rem 1rem;
+      font-size: 1rem; font-weight: 600; cursor: pointer; background: var(--brand); color: #fff;
+    }
+    .btn:hover { background: var(--brand-700); }
+    .btn[disabled] { opacity: .6; cursor: not-allowed; }
+
+    .msg {
+      text-align: center; min-height: 1.25rem; font-size: .95rem;
+    }
+    .msg.error { color: var(--error); }
+    .msg.ok { color: var(--ok); }
+
+    .muted { color: var(--muted); font-size: .9rem; text-align: center; margin-top: .25rem; }
+    .links { display:flex; justify-content: space-between; margin-top: .25rem; font-size:.9rem; }
+    .links a { color: var(--brand); text-decoration: none; font-weight: 600; }
+    .links a:hover { text-decoration: underline; }
+
+    footer {
+      color: var(--muted);
+      text-align: center;
+      font-size: .85rem;
+      padding: 1rem 0 1.25rem;
+    }
   </style>
 </head>
 <body>
+  <div class="banner" role="img" aria-label="CESW banner"></div>
+
   <main class="wrap">
-    <section class="card">
-      <h1>Reset your password</h1>
-      <form id="reset-form">
+    <section class="card" role="region" aria-labelledby="reset-title">
+      <h1 id="reset-title">Reset your password</h1>
+      <p class="sub">Choose a new password for your account</p>
+
+      <form id="reset-form" novalidate>
+        <!-- New password -->
         <div class="field">
-          <input id="pwd1" type="password" placeholder="New password" required minlength="6" autocomplete="new-password">
+          <input
+            id="pwd1"
+            type="password"
+            placeholder="New password"
+            required
+            minlength="6"
+            autocomplete="new-password"
+            aria-label="New password"
+          />
+          <button class="icon-btn" type="button" id="togglePwd1" aria-label="Show password">
+            <i id="pwdIcon1" class="fa-regular fa-eye"></i>
+          </button>
         </div>
+
+        <!-- Confirm password -->
         <div class="field">
-          <input id="pwd2" type="password" placeholder="Confirm new password" required minlength="6" autocomplete="new-password">
+          <input
+            id="pwd2"
+            type="password"
+            placeholder="Confirm new password"
+            required
+            minlength="6"
+            autocomplete="new-password"
+            aria-label="Confirm new password"
+          />
+          <button class="icon-btn" type="button" id="togglePwd2" aria-label="Show password">
+            <i id="pwdIcon2" class="fa-regular fa-eye"></i>
+          </button>
         </div>
+
         <button class="btn" id="submitBtn" type="submit">Set Password</button>
-        <div id="msg" class="msg"></div>
+        <div id="msg" class="msg" role="status" aria-live="polite"></div>
+
+        <div class="links">
+          <a href="index.html"><i class="fa-solid fa-arrow-left-long"></i> Back to sign in</a>
+          <span id="tokenStatus" class="muted"></span>
+        </div>
       </form>
     </section>
   </main>
 
+  <footer>&copy; <span id="year"></span> CESW Hub</footer>
+
   <script>
+    // util
+    function qs(id){ return document.getElementById(id); }
+
     const params = new URLSearchParams(location.search);
     const token = params.get('token') || '';
 
-    const form = document.getElementById('reset-form');
-    const msg = document.getElementById('msg');
-    const btn = document.getElementById('submitBtn');
+    const form = qs('reset-form');
+    const msg = qs('msg');
+    const btn = qs('submitBtn');
+    const tokenStatus = qs('tokenStatus');
 
-    function showMessage(text, ok=false){
-      msg.textContent = text;
-      msg.className = 'msg ' + (ok ? 'ok' : 'error');
+    const pwd1 = qs('pwd1');
+    const pwd2 = qs('pwd2');
+    const togglePwd1 = qs('togglePwd1');
+    const togglePwd2 = qs('togglePwd2');
+    const pwdIcon1 = qs('pwdIcon1');
+    const pwdIcon2 = qs('pwdIcon2');
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // token presence hint (without server round-trip)
+    if (!token) {
+      tokenStatus.textContent = 'Missing or invalid link.';
+      tokenStatus.style.color = '#b00020';
+      btn.disabled = true;
+    } else {
+      tokenStatus.textContent = 'Link valid (subject to expiry).';
     }
+
+    function setMsg(text, ok=false){
+      msg.textContent = text || '';
+      msg.className = 'msg ' + (ok ? 'ok' : (text ? 'error' : ''));
+    }
+
+    function toggleField(field, icon, btnEl) {
+      const isPwd = field.type === 'password';
+      field.type = isPwd ? 'text' : 'password';
+      icon.className = isPwd ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+      btnEl.setAttribute('aria-label', isPwd ? 'Hide password' : 'Show password');
+    }
+
+    togglePwd1.addEventListener('click', () => toggleField(pwd1, pwdIcon1, togglePwd1));
+    togglePwd2.addEventListener('click', () => toggleField(pwd2, pwdIcon2, togglePwd2));
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const p1 = document.getElementById('pwd1').value;
-      const p2 = document.getElementById('pwd2').value;
-      if (p1 !== p2) return showMessage('Passwords do not match.');
-      if (!token) return showMessage('Invalid or missing token.');
+      setMsg('');
+
+      // Simple client validation
+      if (!token) return setMsg('Invalid or missing link.');
+      if (!form.reportValidity()) return;
+
+      const p1 = pwd1.value;
+      const p2 = pwd2.value;
+      if (p1 !== p2) return setMsg('Passwords do not match.');
+      if (p1.length < 6) return setMsg('Password must be at least 6 characters.');
+
       btn.disabled = true;
       btn.textContent = 'Setting…';
+
       try {
         const r = await fetch('/api/auth/reset', {
           method:'POST',
@@ -67,16 +235,19 @@
           body: JSON.stringify({ token, password: p1 })
         });
         if (r.ok) {
-          showMessage('Password updated! You can now sign in.', true);
+          setMsg('Password updated! Redirecting to sign in…', true);
           setTimeout(() => location.href = '/index.html', 1200);
         } else {
           const data = await r.json().catch(()=>({}));
-          showMessage(data?.error || 'Reset failed.');
+          setMsg(data?.error || 'Reset failed.');
         }
       } catch {
-        showMessage('Network error.');
+        setMsg('Network error. Please try again.');
       } finally {
-        btn.disabled = false; btn.textContent = 'Set Password';
+        btn.disabled = false;
+        btn.textContent = 'Set Password';
+        pwd1.value = '';
+        pwd2.value = '';
       }
     });
   </script>
