@@ -29,7 +29,7 @@ export async function onRequest({ request, env }) {
     `).bind(tokenHash).first();
 
     if (!rec || rec.used) {
-      return new Response(JSON.stringify({ error: 'Invalid or used token.' }), {
+      return new Response(JSON.stringify({ error: 'Invalid or expired token.' }), {
         status: 400, headers: { 'Content-Type': 'application/json' }
       });
     }

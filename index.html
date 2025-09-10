@@ -8,54 +8,164 @@
   <meta name="color-scheme" content="light only" />
 
   <!-- Fonts & Icons -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
 
   <style>
     :root {
-      --brand:#00625f; --brand-700:#00514e; --bg:#f6f7f8; --text:#1f2d2e; --muted:#6b7c80;
-      --border:#d0d6d9; --error:#b00020; --radius:10px; --shadow:0 10px 25px rgba(0,0,0,.08);
+      --brand: #00625f;
+      --brand-700: #00514e;
+      --bg: #f6f7f8;
+      --text: #1f2d2e;
+      --muted: #6b7c80;
+      --border: #d0d6d9;
+      --error: #b00020;
+      --radius: 10px;
+      --shadow: 0 10px 25px rgba(0,0,0,.08);
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;font-family:"Noto Sans",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;
-      color:var(--text);background:var(--bg);display:flex;flex-direction:column;min-height:100vh
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
-    .banner{width:100%;height:170px;background:url('assets/banner.jpg') center/cover no-repeat}
-    .wrap{flex:1;display:grid;place-items:start center;padding:2rem 1rem 3rem}
-    .card{width:100%;max-width:380px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:1.25rem 1.25rem 1.5rem;animation:floatIn .25s ease-out}
-    @keyframes floatIn{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
-    h1{font-size:1.25rem;margin:0 0 .25rem;color:var(--brand);text-align:center;font-weight:700}
-    .sub{text-align:center;color:var(--muted);font-size:.95rem;margin-bottom:1rem}
-    form > * + *{margin-top:.9rem}
 
-    .field{display:grid;grid-template-columns:1fr auto;align-items:center;gap:.5rem;border:1px solid var(--border);border-radius:8px;padding:.2rem .5rem .2rem .6rem;background:#fff}
-    .field input{border:0;outline:0;padding:.7rem .2rem;font-size:1rem;width:100%;background:transparent}
-    .icon-btn{border:0;background:transparent;cursor:pointer;padding:.4rem .5rem;border-radius:6px}
-    .icon-btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+    .banner {
+      width: 100%;
+      height: 170px;
+      background: url('assets/banner.jpg') center/cover no-repeat;
+    }
 
-    .btn{width:100%;border:0;border-radius:8px;padding:.8rem 1rem;font-size:1rem;font-weight:600;cursor:pointer;background:var(--brand);color:#fff}
-    .btn:hover{background:var(--brand-700)}
-    .btn[disabled]{opacity:.6;cursor:not-allowed}
+    .wrap {
+      flex: 1;
+      display: grid;
+      place-items: start center;
+      padding: 2rem 1rem 3rem;
+    }
 
-    .error{display:none;color:var(--error);font-size:.95rem;text-align:center;min-height:1.25rem}
+    .card {
+      width: 100%;
+      max-width: 380px;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem 1.25rem 1.5rem;
+      animation: floatIn .25s ease-out;
+    }
 
-    .consent{margin-top:.4rem;border:1px solid var(--border);border-radius:8px;padding:.65rem .7rem;background:#fafbfb}
-    .consent label{display:flex;gap:.5rem;align-items:flex-start;line-height:1.35}
-    .consent a{color:var(--brand);text-decoration:none}
-    .consent a:hover{text-decoration:underline}
+    @keyframes floatIn {
+      from { transform: translateY(8px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
 
-    footer{color:var(--muted);text-align:center;font-size:.85rem;padding:1rem 0 1.25rem}
+    h1 {
+      font-size: 1.25rem;
+      margin: 0 0 .25rem;
+      color: var(--brand);
+      text-align: center;
+      font-weight: 700;
+    }
+    .sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: .95rem;
+      margin-bottom: 1rem;
+    }
+
+    form > * + * { margin-top: .9rem; }
+
+    .field {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: .5rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .2rem .5rem .2rem .6rem;
+      background: #fff;
+    }
+    .field input {
+      border: 0;
+      outline: 0;
+      padding: .7rem .2rem;
+      font-size: 1rem;
+      width: 100%;
+      background: transparent;
+    }
+    .field .icon-btn {
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      padding: .4rem .5rem;
+      border-radius: 6px;
+    }
+    .field .icon-btn:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+    }
+
+    .btn {
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      padding: .8rem 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--brand);
+      color: #fff;
+    }
+    .btn:hover { background: var(--brand-700); }
+    .btn[disabled] { opacity: .6; cursor: not-allowed; }
+
+    .error {
+      display: none;
+      color: var(--error);
+      font-size: .95rem;
+      text-align: center;
+      min-height: 1.25rem;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: .9rem;
+      text-align: center;
+      margin-top: .25rem;
+    }
+
+    .forgot-wrap {
+      display: none; /* hidden until a 401 happens */
+      text-align: center;
+      margin-top: .25rem;
+    }
+    .forgot-wrap a {
+      color: var(--brand);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .forgot-wrap a:hover { text-decoration: underline; }
+
+    footer {
+      color: var(--muted);
+      text-align: center;
+      font-size: .85rem;
+      padding: 1rem 0 1.25rem;
+    }
   </style>
 
-  <!-- If already authenticated, go straight to feed -->
   <script>
+    // If already signed in, go to the app
     (async () => {
       try {
         const r = await fetch('/api/auth/me', { credentials: 'include' });
         if (r.ok) window.location.href = '/feed.html';
-      } catch {}
+      } catch { /* ignore */ }
     })();
   </script>
 </head>
@@ -64,7 +174,8 @@
 
   <main class="wrap">
     <section class="card" role="region" aria-labelledby="signin-title">
-      <h1 id="signin-title"><i class="fa-solid fa-people-group"></i> CESW Hub Login</h1>
+      <h1 id="signin-title">Sign in</h1>
+      <p class="sub">Staff access only</p>
 
       <form id="login-form" novalidate>
         <!-- Email -->
@@ -97,24 +208,16 @@
           </button>
         </div>
 
-        <!-- Required acknowledgement -->
-        <div class="consent">
-          <label>
-            <input type="checkbox" id="accept" required />
-            <span>
-              I have read and agree to the
-              <a href="disclaimer.html" target="_blank" rel="noopener">Disclaimer &amp; Copyright Notice</a>.
-            </span>
-          </label>
-        </div>
+        <button class="btn" id="submitBtn" type="submit">Log In</button>
 
-        <button class="btn" id="submitBtn" type="submit" disabled>Log In</button>
+        <div id="error-msg" class="error" role="alert" aria-live="polite"></div>
 
-        <div id="error-msg" class="error" role="alert">
-          <p class="muted" style="margin-top:.5rem;">
-  <a href="#" id="forgotLink">Forgot your password?</a>
-</p>
-        </div>
+        <!-- Hidden until a 401 occurs -->
+        <p id="forgotWrap" class="forgot-wrap">
+          <a href="#" id="forgotLink">Forgot your password?</a>
+        </p>
+
+        <p class="muted">Having trouble signing in? Contact ICT.</p>
       </form>
     </section>
   </main>
@@ -123,39 +226,15 @@
 
   <script>
     (function () {
-
-      // Forgot password flow (generic response)
-document.getElementById('forgotLink').addEventListener('click', async (e) => {
-  e.preventDefault();
-  const email = prompt('Enter your email address:');
-  if (!email) return;
-  try {
-    await fetch('/api/auth/request-reset', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim() })
-    });
-  } catch {}
-  alert('If an account exists for that email, you will receive a reset link shortly.');
-});
-
-
       const form = document.getElementById('login-form');
       const submitBtn = document.getElementById('submitBtn');
       const errorEl = document.getElementById('error-msg');
       const pwdInput = document.getElementById('password');
       const togglePwd = document.getElementById('togglePwd');
       const pwdIcon = document.getElementById('pwdIcon');
-      const accept = document.getElementById('accept');
-
+      const forgotWrap = document.getElementById('forgotWrap');
+      const forgotLink = document.getElementById('forgotLink');
       document.getElementById('year').textContent = new Date().getFullYear();
-
-      // Enable/disable submit based on acknowledgement
-      function updateSubmitState() {
-        submitBtn.disabled = !accept.checked;
-      }
-      accept.addEventListener('change', updateSubmitState);
-      updateSubmitState();
 
       // Show/hide password
       togglePwd.addEventListener('click', () => {
@@ -173,12 +252,16 @@ document.getElementById('forgotLink').addEventListener('click', async (e) => {
         errorEl.textContent = '';
         errorEl.style.display = 'none';
       }
+      function showForgot() {
+        // only reveal after an actual invalid-credentials response
+        forgotWrap.style.display = 'block';
+      }
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         clearError();
 
-        // HTML5 validation (includes required checkbox)
+        // Basic HTML5 validation gate
         if (!form.reportValidity()) return;
 
         submitBtn.disabled = true;
@@ -198,23 +281,53 @@ document.getElementById('forgotLink').addEventListener('click', async (e) => {
           });
 
           if (res.ok) {
+            // Success → go to app
             window.location.href = '/feed.html';
             return;
           }
 
-          // Show minimal info (avoid leaking details)
-          const message = (res.status === 423)
-            ? 'Too many attempts. Please try again later.'
-            : 'Sign in failed. Please check your details.';
-          showError(message);
+          // Handle errors / lockout message
+          let data = {};
+          try { data = await res.json(); } catch {}
+          if (res.status === 401) {
+            showError('Invalid email or password.');
+            showForgot(); // reveal the link ONLY after a wrong password
+          } else if (res.status === 423) {
+            showError('Too many attempts. Please try again later.');
+            // Do NOT show forgot link for lockouts (per your requirement)
+          } else {
+            showError(data.error || 'Login failed.');
+          }
 
-        } catch {
+        } catch (err) {
           showError('Network error. Please try again.');
         } finally {
-          submitBtn.disabled = !accept.checked;
+          submitBtn.disabled = false;
           submitBtn.textContent = 'Log In';
+          // Clear password for safety
           form.password.value = '';
         }
+      });
+
+      // Forgot password flow (generic response)
+      forgotLink.addEventListener('click', async (e) => {
+        e.preventDefault();
+        // Prefer the email already typed; if empty, prompt the user
+        let email = (form.email.value || '').trim();
+        if (!email) {
+          email = prompt('Enter your email address:') || '';
+          email = email.trim();
+        }
+        if (!email) return;
+
+        try {
+          await fetch('/api/auth/request-reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+          });
+        } catch {}
+        alert('If an account exists for that email, you will receive a password reset link shortly.');
       });
     })();
   </script>
