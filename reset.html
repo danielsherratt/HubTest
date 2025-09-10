@@ -118,7 +118,7 @@
 
   <main class="wrap">
     <section class="card" role="region" aria-labelledby="reset-title">
-      <h1 id="reset-title">Reset your password</h1>
+    <h1><i class="fa-solid fa-people-group"></i> CESW Hub - Reset Password</h1>
       <p class="sub">Choose a new password for your account</p>
 
       <form id="reset-form" novalidate>
@@ -194,7 +194,7 @@
       tokenStatus.style.color = '#b00020';
       btn.disabled = true;
     } else {
-      tokenStatus.textContent = 'Link valid (subject to expiry).';
+      tokenStatus.textContent = '';
     }
 
     function setMsg(text, ok=false){
