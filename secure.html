@@ -546,7 +546,7 @@ function nzDateTime(value, { withTime = true } = {}) {
               <td>${esc(u.email)}</td>
               <td><span class="chip">${esc(u.role)}</span></td>
 <td>${nzDateTime(u.last_sign_in)}</td>
-<td>${nzDateTime(u.created_on ?? u.created_at)}</td>
+<td>${nzDateTime(u.created_at)}</td>
               <td>
                 <div>${esc(u.last_sign_ip || '')}</div>
                 ${alert}
