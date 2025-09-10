@@ -3,7 +3,6 @@ export async function sendEmail({ env, to, subject, html, text }) {
   const key = env.RESEND_API_KEY;
   const from = env.FROM_EMAIL || 'no-reply@example.com';
   if (!key) {
-    // Fallback: log instead of failing hard
     console.log('[EMAIL MOCK]', { to, subject, text, html });
     return { ok: true, mock: true };
   }

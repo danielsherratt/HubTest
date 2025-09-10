@@ -1,11 +1,16 @@
 // functions/api/users/[id].js
 import { verifyJWT, pbkdf2Hash } from '../../lib/auth.js';
+import { passwordPolicyError } from '../../lib/validators.js';
+
+function getTokenFromCookie(request) {
+  const cookie = request.headers.get('Cookie') || '';
+  const m = cookie.match(/(?:^|;\s*)token=([^;]+)/);
+  return m && m[1];
+}
 
 export async function onRequest({ request, env, params }) {
   const db = env.POSTS_DB;
-  const cookie = request.headers.get('Cookie') || '';
-  const m = cookie.match(/(?:^|;\s*)token=([^;]+)/);
-  const token = m && m[1];
+  const token = getTokenFromCookie(request);
   const me = token && await verifyJWT(token, env.JWT_SECRET);
   if (!me) return new Response('Unauthorized', { status: 401 });
   if (me.role !== 'admin') return new Response('Forbidden', { status: 403 });
@@ -14,15 +19,17 @@ export async function onRequest({ request, env, params }) {
   if (!/^\d+$/.test(String(id))) return new Response('Bad Request', { status: 400 });
 
   if (request.method === 'PUT') {
-    // Reset password
+    // Admin reset password
     const body = await request.json().catch(() => ({}));
     const password = String(body.password || '');
-    if (!password || password.length < 6) {
-      return new Response(JSON.stringify({ error: 'Password must be at least 6 characters.' }), {
+
+    const perr = passwordPolicyError(password);
+    if (perr) {
+      return new Response(JSON.stringify({ error: perr }), {
         status: 400, headers: { 'Content-Type': 'application/json' }
       });
     }
-    // Generate new salt & hash (PBKDF2-SHA256 @ 100k, 32 bytes)
+
     const salt = new Uint8Array(16); crypto.getRandomValues(salt);
     const saltB64 = btoa(String.fromCharCode(...salt));
     const hashB64 = await pbkdf2Hash(password, saltB64, 100000, 32);

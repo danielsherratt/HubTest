@@ -2,6 +2,7 @@
 import { verifyJWT, pbkdf2Hash } from '../../lib/auth.js';
 import { generateResetToken, sha256Base64Url } from '../../lib/tokens.js';
 import { sendEmail } from '../../lib/email.js';
+import { passwordPolicyError, generatePolicyPassword } from '../../lib/validators.js';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -29,7 +30,7 @@ export async function onRequest({ request, env }) {
 
   const { method } = request;
 
-  // ───────────────────────────────── GET /api/users ─────────────────────────────────
+  // GET: list/search/sort top 10 users (with optional distinct_ips_24h if table exists)
   if (method === 'GET') {
     const url = new URL(request.url);
     const q   = (url.searchParams.get('q') || '').trim().toLowerCase();
@@ -37,7 +38,6 @@ export async function onRequest({ request, env }) {
     const dirParam  = (url.searchParams.get('dir')  || 'desc').toLowerCase();
     const dir = dirParam === 'asc' ? 'ASC' : 'DESC';
 
-    // Allowlist to avoid SQL injection in ORDER BY
     const allowedSort = new Set(['email', 'role', 'last_sign_in', 'created_at']);
     const orderCol = allowedSort.has(sortParam) ? sortParam : 'created_at';
 
@@ -45,7 +45,6 @@ export async function onRequest({ request, env }) {
     let binds = [];
     if (q) { where = 'WHERE LOWER(u.email) LIKE ?'; binds.push(`%${q}%`); }
 
-    // Note: requires optional table user_signins for distinct IPs metric (safe if absent -> 0 via COALESCE with subquery guarded)
     const stmt = `
       SELECT
         u.id,
@@ -70,25 +69,23 @@ export async function onRequest({ request, env }) {
     return json(results || []);
   }
 
-  // ───────────────────────────────── POST /api/users ────────────────────────────────
-  // Create user, email temp password + 3h reset link
+  // POST: create user, email temp password + 3h reset link
   if (method === 'POST') {
     const body = await request.json().catch(() => ({}));
     const email = String(body.email || '').trim().toLowerCase();
-    let password = String(body.password || ''); // if not provided, we will generate one
+    let password = String(body.password || '');
     const role = (String(body.role || 'user').trim().toLowerCase() === 'admin') ? 'admin' : 'user';
 
     if (!email) return json({ error: 'Email is required.' }, 400);
 
-    // Generate a strong temp password if none provided
     if (!password) {
-      const bytes = new Uint8Array(12);
-      crypto.getRandomValues(bytes);
-      const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      password = Array.from(bytes, b => alphabet[b % alphabet.length]).join('');
+      password = generatePolicyPassword(); // compliant random temp password
+    } else {
+      const perr = passwordPolicyError(password);
+      if (perr) return json({ error: perr }, 400);
     }
 
-    // Hash password (PBKDF2-SHA256 @ 100k, 32 bytes)
+    // Hash password
     const salt = new Uint8Array(16); crypto.getRandomValues(salt);
     const saltB64 = btoa(String.fromCharCode(...salt));
     const hashB64 = await pbkdf2Hash(password, saltB64, 100000, 32);
@@ -106,16 +103,16 @@ export async function onRequest({ request, env }) {
       return json({ error: 'Failed to create user.' }, 500);
     }
 
-    // Create a 3-hour password reset token and email user
+    // Create 3-hour reset link & email user (temp password + link)
     try {
       const userRow = await db.prepare(`SELECT id FROM users WHERE email = ?`).bind(email).first();
       if (userRow?.id) {
         const token = generateResetToken();
         const tokenHash = await sha256Base64Url(token);
         const now = new Date();
-        const expires = new Date(now.getTime() + 3 * 60 * 60 * 1000); // 3 hours
+        const expires = new Date(now.getTime() + 3 * 60 * 60 * 1000);
 
-        // Optional: invalidate previous unused tokens for this user (uncomment if desired)
+        // optional: invalidate previous tokens
         // await db.prepare(`UPDATE password_resets SET used = 1 WHERE user_id = ? AND used = 0`).bind(userRow.id).run();
 
         await db.prepare(`
@@ -143,11 +140,9 @@ If you didn’t expect this, you can ignore the email.`;
           <p>If the button doesn't work, paste this link:<br><a href="${link}">${link}</a></p>
         `;
 
-        // Will use RESEND_API_KEY / FROM_EMAIL if configured; otherwise logs as mock
         await sendEmail({ env, to: email, subject, html, text });
       }
     } catch (e) {
-      // Don't fail user creation if email fails; just log
       console.error('Create user: email/reset link creation failed', e);
     }
 

@@ -94,9 +94,7 @@
     .btn:hover { background: var(--brand-700); }
     .btn[disabled] { opacity: .6; cursor: not-allowed; }
 
-    .msg {
-      text-align: center; min-height: 1.25rem; font-size: .95rem;
-    }
+    .msg { text-align: center; min-height: 1.25rem; font-size: .95rem; }
     .msg.error { color: var(--error); }
     .msg.ok { color: var(--ok); }
 
@@ -105,12 +103,7 @@
     .links a { color: var(--brand); text-decoration: none; font-weight: 600; }
     .links a:hover { text-decoration: underline; }
 
-    footer {
-      color: var(--muted);
-      text-align: center;
-      font-size: .85rem;
-      padding: 1rem 0 1.25rem;
-    }
+    footer { color: var(--muted); text-align: center; font-size: .85rem; padding: 1rem 0 1.25rem; }
   </style>
 </head>
 <body>
@@ -118,8 +111,8 @@
 
   <main class="wrap">
     <section class="card" role="region" aria-labelledby="reset-title">
-    <h1><i class="fa-solid fa-people-group"></i> CESW Hub - Reset Password</h1>
-      <p class="sub">Choose a new password for your account</p>
+    <h1><i class="fa-solid fa-people-group"></i> CESW Hub - Password Reset</h1>
+
 
       <form id="reset-form" novalidate>
         <!-- New password -->
@@ -129,9 +122,10 @@
             type="password"
             placeholder="New password"
             required
-            minlength="6"
+            minlength="8"
             autocomplete="new-password"
             aria-label="New password"
+            title="At least 8 characters, incl. one uppercase and one number"
           />
           <button class="icon-btn" type="button" id="togglePwd1" aria-label="Show password">
             <i id="pwdIcon1" class="fa-regular fa-eye"></i>
@@ -145,9 +139,10 @@
             type="password"
             placeholder="Confirm new password"
             required
-            minlength="6"
+            minlength="8"
             autocomplete="new-password"
             aria-label="Confirm new password"
+            title="At least 8 characters, incl. one uppercase and one number"
           />
           <button class="icon-btn" type="button" id="togglePwd2" aria-label="Show password">
             <i id="pwdIcon2" class="fa-regular fa-eye"></i>
@@ -159,7 +154,6 @@
 
         <div class="links">
           <a href="index.html"><i class="fa-solid fa-arrow-left-long"></i> Back to sign in</a>
-          <span id="tokenStatus" class="muted"></span>
         </div>
       </form>
     </section>
@@ -168,8 +162,7 @@
   <footer>&copy; <span id="year"></span> CESW Hub</footer>
 
   <script>
-    // util
-    function qs(id){ return document.getElementById(id); }
+    const qs = (id) => document.getElementById(id);
 
     const params = new URLSearchParams(location.search);
     const token = params.get('token') || '';
@@ -188,13 +181,13 @@
 
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // token presence hint (without server round-trip)
+    // token presence hint (client-side only; server validates properly)
     if (!token) {
       tokenStatus.textContent = 'Missing or invalid link.';
       tokenStatus.style.color = '#b00020';
       btn.disabled = true;
     } else {
-      tokenStatus.textContent = '';
+      tokenStatus.textContent = 'Link present (expires after 3 hours).';
     }
 
     function setMsg(text, ok=false){
@@ -209,6 +202,13 @@
       btnEl.setAttribute('aria-label', isPwd ? 'Hide password' : 'Show password');
     }
 
+    function passwordPolicyError(p) {
+      if (!p || p.length < 8) return 'Password must be at least 8 characters.';
+      if (!/[A-Z]/.test(p))   return 'Include at least one uppercase letter (A–Z).';
+      if (!/\d/.test(p))      return 'Include at least one number (0–9).';
+      return '';
+    }
+
     togglePwd1.addEventListener('click', () => toggleField(pwd1, pwdIcon1, togglePwd1));
     togglePwd2.addEventListener('click', () => toggleField(pwd2, pwdIcon2, togglePwd2));
 
@@ -216,14 +216,14 @@
       e.preventDefault();
       setMsg('');
 
-      // Simple client validation
       if (!token) return setMsg('Invalid or missing link.');
       if (!form.reportValidity()) return;
 
       const p1 = pwd1.value;
       const p2 = pwd2.value;
       if (p1 !== p2) return setMsg('Passwords do not match.');
-      if (p1.length < 6) return setMsg('Password must be at least 6 characters.');
+      const perr = passwordPolicyError(p1);
+      if (perr) return setMsg(perr);
 
       btn.disabled = true;
       btn.textContent = 'Setting…';

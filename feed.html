@@ -17,7 +17,7 @@
     .card { position: relative; }
     .fav-btn {
       position: absolute;
-      top: 10px; right: 10px;
+      bottom: 5px; right: 5px;
       background: none; border: none; cursor: pointer;
       font-size: 1.15rem; color: #c9c9c9;
     }
@@ -123,12 +123,13 @@
         div.dataset.id = key;
 
         div.innerHTML = `
-          <button type="button" class="fav-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove from favourites' : 'Add to favourites'}" aria-pressed="${isFav}">
-            <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-star"></i>
-          </button>
+          
           <h1>${p.title}</h1>
           <div>${p.body}</div>
           <br><i>${new Date(p.created_at).toLocaleDateString()} ${p.category}</i>
+          <button type="button" class="fav-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove from favourites' : 'Add to favourites'}" aria-pressed="${isFav}">
+            <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-star"></i>
+          </button>
         `;
         container.append(div);
       });

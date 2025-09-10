@@ -14,5 +14,5 @@ export async function sha256Base64Url(str) {
 export function generateResetToken() {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
-  return base64urlEncode(bytes); // URL-safe
+  return base64urlEncode(bytes); // URL-safe random token
 }
