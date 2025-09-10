@@ -44,7 +44,8 @@ h2 {margin-top:80px;}
     #resource-title,
     #resource-url,
     #search-resources,
-    #search-posts {
+    #search-posts,
+    #um-email, #um-search, #um-password, #um-role{
       padding: 0.5rem;
       margin-bottom: 0.75rem;
       border: 1px solid #ccc;
