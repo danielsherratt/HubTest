@@ -25,7 +25,8 @@
     .icon-btn:focus-visible{ outline:2px solid var(--brand); outline-offset:2px; }
     .btn{ width:100%; border:0; border-radius:8px; padding:.8rem 1rem; font-size:1rem; font-weight:600; cursor:pointer; background:var(--brand); color:#fff; }
     .btn:hover{ background:var(--brand-700); } .btn[disabled]{ opacity:.6; cursor:not-allowed; }
-    .msg{ text-align:center; min-height:1.25rem; font-size:.95rem; } .msg.error{ color:var(--error);} .msg.ok{ color:var(--ok);}
+    .msg{ text-align:center; min-height:1.25rem; font-size:.95rem; }
+    .msg.error{ color:var(--error);} .msg.ok{ color:var(--ok);}
     .muted{ color:var(--muted); font-size:.9rem; text-align:center; margin-top:.25rem;}
     .links{ display:flex; justify-content:space-between; margin-top:.25rem; font-size:.9rem; }
     .links a{ color:var(--brand); text-decoration:none; font-weight:600; } .links a:hover{ text-decoration:underline; }
@@ -41,10 +42,10 @@
 
   <main class="wrap">
     <section class="card" role="region" aria-labelledby="reset-title">
-    <h1><i class="fa-solid fa-people-group"></i> CESW Hub - Password Reset</h1>
+      <h1 id="reset-title">Reset your password</h1>
+      <p class="sub">At least 8 characters, including 1 uppercase and 1 number</p>
 
       <form id="reset-form" novalidate>
-        <!-- New password -->
         <div class="field">
           <input id="pwd1" type="password" placeholder="New password" required minlength="8"
                  autocomplete="new-password" aria-label="New password"
@@ -61,7 +62,6 @@
           <li id="reqNum"><span class="icon">○</span> At least 1 number</li>
         </ul>
 
-        <!-- Confirm password -->
         <div class="field">
           <input id="pwd2" type="password" placeholder="Confirm new password" required minlength="8"
                  autocomplete="new-password" aria-label="Confirm new password"
@@ -75,6 +75,10 @@
         <button class="btn" id="submitBtn" type="submit" disabled>Set Password</button>
         <div id="msg" class="msg" role="status" aria-live="polite"></div>
 
+        <div class="links">
+          <a href="index.html"><i class="fa-solid fa-arrow-left-long"></i> Back to sign in</a>
+          <span id="tokenStatus" class="muted"></span>
+        </div>
       </form>
     </section>
   </main>
@@ -82,107 +86,129 @@
   <footer>&copy; <span id="year"></span> CESW Hub</footer>
 
   <script>
-    const qs = (id) => document.getElementById(id);
-    const params = new URLSearchParams(location.search);
-    const token = params.get('token') || '';
+    // Run after DOM is ready to avoid "null textContent" errors
+    document.addEventListener('DOMContentLoaded', () => {
+      const $ = (id) => document.getElementById(id) || null;
+      const safeText = (id, text) => { const el = $(id); if (el) el.textContent = text; };
+      const setClass = (el, cls, on) => { if (el) el.classList.toggle(cls, !!on); };
 
-    const form = qs('reset-form');
-    const msg = qs('msg');
-    const btn = qs('submitBtn');
-    const tokenStatus = qs('tokenStatus');
-    const pwd1 = qs('pwd1'), pwd2 = qs('pwd2');
-    const togglePwd1 = qs('togglePwd1'), togglePwd2 = qs('togglePwd2');
-    const pwdIcon1 = qs('pwdIcon1'), pwdIcon2 = qs('pwdIcon2');
-    const reqLen = qs('reqLen'), reqUpper = qs('reqUpper'), reqNum = qs('reqNum'), matchMsg = qs('matchMsg');
+      const params = new URLSearchParams(location.search);
+      const token = params.get('token') || '';
 
-    document.getElementById('year').textContent = new Date().getFullYear();
+      const form = $('reset-form');
+      const msg = $('msg');
+      const btn = $('submitBtn');
+      const tokenStatus = $('tokenStatus');
+      const pwd1 = $('pwd1'), pwd2 = $('pwd2');
+      const togglePwd1 = $('togglePwd1'), togglePwd2 = $('togglePwd2');
+      const pwdIcon1 = $('pwdIcon1'), pwdIcon2 = $('pwdIcon2');
+      const reqLen = $('reqLen'), reqUpper = $('reqUpper'), reqNum = $('reqNum'), matchMsg = $('matchMsg');
 
-    // token hint (actual validity checked server-side)
-    if (!token) { tokenStatus.textContent = 'Missing or invalid link.'; tokenStatus.style.color = '#b00020'; btn.disabled = true; }
-    else tokenStatus.textContent = 'Link present (expires after 3 hours).';
+      // footer year (guarded)
+      safeText('year', new Date().getFullYear());
 
-    function setMsg(text, ok=false){ msg.textContent = text || ''; msg.className = 'msg ' + (ok ? 'ok' : (text ? 'error' : '')); }
-    function toggleField(field, icon, btnEl){
-      const isPwd = field.type === 'password';
-      field.type = isPwd ? 'text' : 'password';
-      icon.className = isPwd ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
-      btnEl.setAttribute('aria-label', isPwd ? 'Hide password' : 'Show password');
-    }
-    function policy(p){
-      return {
-        len: !!p && p.length >= 8,
-        upper: /[A-Z]/.test(p),
-        num: /\d/.test(p)
-      };
-    }
-    function renderPolicy(p){
-      const ok = (el, on) => {
-        el.classList.toggle('ok', on);
-        el.querySelector('.icon').textContent = on ? '✓' : '○';
-      };
-      const st = policy(p);
-      ok(reqLen, st.len); ok(reqUpper, st.upper); ok(reqNum, st.num);
-      return st.len && st.upper && st.num;
-    }
-    function renderMatch(p1, p2){
-      if (!p2) { matchMsg.textContent = ''; matchMsg.className = 'match'; return false; }
-      const same = p1 === p2;
-      matchMsg.textContent = same ? 'Passwords match.' : 'Passwords do not match.';
-      matchMsg.className = 'match ' + (same ? 'ok' : 'err');
-      return same;
-    }
-    function evaluate(){
-      const okPolicy = renderPolicy(pwd1.value);
-      const okMatch  = renderMatch(pwd1.value, pwd2.value);
-      btn.disabled = !(okPolicy && okMatch && !!token);
-    }
-
-    togglePwd1.addEventListener('click', () => toggleField(pwd1, pwdIcon1, togglePwd1));
-    togglePwd2.addEventListener('click', () => toggleField(pwd2, pwdIcon2, togglePwd2));
-    pwd1.addEventListener('input', evaluate);
-    pwd2.addEventListener('input', evaluate);
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      setMsg('');
-      evaluate();
-      if (btn.disabled) return;
-
-      const newPass = pwd1.value;
-      btn.disabled = true; btn.textContent = 'Setting…';
-      try {
-        const r = await fetch('/api/auth/reset', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ token, password: newPass })
-        });
-        const data = await r.json().catch(()=> ({}));
-        if (!r.ok) {
-          setMsg(data?.error || 'Reset failed.');
-        } else {
-          // Auto-login using returned email (server change below returns { ok:true, email })
-          if (data?.email) {
-            const login = await fetch('/api/auth/login', {
-              method:'POST',
-              headers:{'Content-Type':'application/json'},
-              credentials:'include',
-              body: JSON.stringify({ email: data.email, password: newPass })
-            });
-            if (login.ok) {
-              setMsg('Password updated! Logging you in…', true);
-              location.href = '/feed.html';
-              return;
-            }
-          }
-          // Fallback if auto-login not available
-          setMsg('Password updated! Please sign in.', true);
-          setTimeout(() => location.href = '/index.html', 1100);
-        }
-      } catch {
-        setMsg('Network error. Please try again.');
-      } finally {
-        btn.disabled = false; btn.textContent = 'Set Password';
+      // token hint (server still validates)
+      if (tokenStatus) {
+        if (!token) { tokenStatus.textContent = 'Missing or invalid link.'; tokenStatus.style.color = '#b00020'; }
+        else tokenStatus.textContent = 'Link present (expires after 3 hours).';
       }
+      if (btn && !token) btn.disabled = true;
+
+      function setMsg(text, ok=false){
+        if (!msg) return;
+        msg.textContent = text || '';
+        msg.className = 'msg ' + (ok ? 'ok' : (text ? 'error' : ''));
+      }
+      function toggleField(field, icon, btnEl){
+        if (!field || !icon || !btnEl) return;
+        const isPwd = field.type === 'password';
+        field.type = isPwd ? 'text' : 'password';
+        icon.className = isPwd ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+        btnEl.setAttribute('aria-label', isPwd ? 'Hide password' : 'Show password');
+      }
+      function policy(p){
+        return { len: !!p && p.length >= 8, upper: /[A-Z]/.test(p), num: /\d/.test(p) };
+      }
+      function renderPolicy(p){
+        const st = policy(p);
+        if (reqLen) { setClass(reqLen, 'ok', st.len); const ic = reqLen.querySelector?.('.icon'); if (ic) ic.textContent = st.len ? '✓' : '○'; }
+        if (reqUpper){ setClass(reqUpper, 'ok', st.upper); const ic = reqUpper.querySelector?.('.icon'); if (ic) ic.textContent = st.upper ? '✓' : '○'; }
+        if (reqNum){ setClass(reqNum, 'ok', st.num); const ic = reqNum.querySelector?.('.icon'); if (ic) ic.textContent = st.num ? '✓' : '○'; }
+        return st.len && st.upper && st.num;
+      }
+      function renderMatch(p1, p2){
+        if (!matchMsg) return p1 === p2 && !!p2;
+        if (!p2) { matchMsg.textContent = ''; matchMsg.className = 'match'; return false; }
+        const same = p1 === p2;
+        matchMsg.textContent = same ? 'Passwords match.' : 'Passwords do not match.';
+        matchMsg.className = 'match ' + (same ? 'ok' : 'err');
+        return same;
+      }
+      function evaluate(){
+        const okPolicy = renderPolicy(pwd1?.value || '');
+        const okMatch  = renderMatch(pwd1?.value || '', pwd2?.value || '');
+        if (btn) btn.disabled = !(okPolicy && okMatch && !!token);
+      }
+
+      // Hook up listeners if nodes exist
+      if (togglePwd1 && pwd1 && pwdIcon1) togglePwd1.addEventListener('click', () => toggleField(pwd1, pwdIcon1, togglePwd1));
+      if (togglePwd2 && pwd2 && pwdIcon2) togglePwd2.addEventListener('click', () => toggleField(pwd2, pwdIcon2, togglePwd2));
+      if (pwd1) pwd1.addEventListener('input', evaluate);
+      if (pwd2) pwd2.addEventListener('input', evaluate);
+
+      // Initial evaluation
+      evaluate();
+
+      // Submit handler
+      if (form) form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setMsg('');
+        evaluate();
+        if (btn && btn.disabled) return;
+
+        const newPass = pwd1?.value || '';
+        if (!token) { setMsg('Invalid or missing link.'); return; }
+
+        if (btn) { btn.disabled = true; btn.textContent = 'Setting…'; }
+        try {
+          const r = await fetch('/api/auth/reset', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ token, password: newPass })
+          });
+
+          // Try to parse JSON safely
+          let data = null;
+          try { data = await r.json(); } catch { data = null; }
+
+          if (!r.ok) {
+            setMsg((data && data.error) || 'Reset failed.');
+          } else {
+            // Auto-login using returned email, if provided by the API
+            const email = data && data.email;
+            if (email) {
+              const login = await fetch('/api/auth/login', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                credentials:'include',
+                body: JSON.stringify({ email, password: newPass })
+              });
+              if (login.ok) {
+                setMsg('Password updated! Logging you in…', true);
+                location.href = '/feed.html';
+                return;
+              }
+            }
+            // Fallback if auto-login not available
+            setMsg('Password updated! Please sign in.', true);
+            setTimeout(() => location.href = '/index.html', 1100);
+          }
+        } catch {
+          setMsg('Network error. Please try again.');
+        } finally {
+          if (btn) { btn.disabled = false; btn.textContent = 'Set Password'; }
+        }
+      });
     });
   </script>
 </body>
