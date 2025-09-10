@@ -204,11 +204,26 @@
 
   <script>
 
-    function applyNZ(selector = '.nz-dt') {
-  document.querySelectorAll(selector).forEach(el => {
-    const raw = el.getAttribute('data-ts') || el.textContent;
-    el.textContent = nzDateTime(raw);
-  });
+// Render any UTC-ish timestamp in NZ time.
+// Accepts ISO strings or SQLite "YYYY-MM-DD HH:MM:SS" (UTC).
+function nzDateTime(value, { withTime = true } = {}) {
+  if (!value) return '';
+  let iso = String(value).trim();
+
+  // If it's a SQLite-like "YYYY-MM-DD HH:MM:SS" without timezone, treat as UTC.
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(iso) && !/[zZ]|[+\-]\d{2}:\d{2}$/.test(iso)) {
+    iso = iso.replace(' ', 'T') + 'Z';
+  }
+
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return value;
+
+  const opts = withTime
+    ? { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }
+    : { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit' };
+
+  // 'en-NZ' gives NZ ordering; trim comma for cleaner look
+  return d.toLocaleString('en-NZ', opts).replace(',', '');
 }
     
     // ───────────────────── Quill editor ─────────────────────
@@ -530,8 +545,8 @@
             <tr data-id="${u.id}">
               <td>${esc(u.email)}</td>
               <td><span class="chip">${esc(u.role)}</span></td>
-              <td class="nz-dt" data-ts="${esc(u.last_sign_in || '')}"></td>
-              <td class="nz-dt" data-ts="${esc(u.created_at || '')}"></td>
+<td>${nzDateTime(u.last_sign_in)}</td>
+<td>${nzDateTime(u.created_on ?? u.created_at)}</td>
               <td>
                 <div>${esc(u.last_sign_ip || '')}</div>
                 ${alert}
