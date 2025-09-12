@@ -3,130 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
   <title>CESW Hub - Feed</title>
-
-  <link rel="stylesheet" href="assets/style.css">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
   <style>
-    body { display: none; }
-
-    /* Navbar with center links & right actions */
-    .navbar {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      padding: .5rem 1rem;
-      background: #fff;
-      border-bottom: 1px solid #e6ecee;
+  body { display: none; }
+</style>
+<script>
+(async () => {
+  try {
+    const res = await fetch('/api/auth/me', {
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('Not authorized');
+    const data = await res.json();
+    if (!['user', 'admin'].includes(data.role)) {
+      window.location.href = '/index.html';
     }
-    .nav-left  { justify-self: start;  display:flex; align-items:center; gap:.5rem; }
-    .nav-center{ justify-self: center; }
-    .nav-right { justify-self: end;    display:flex; align-items:center; gap:.5rem; }
+document.body.style.display = 'block';
+  } catch (err) {
+    window.location.href = '/index.html';
+  }
+})();
+</script>
 
-    .menu-icon { cursor:pointer; font-size:1.25rem; }
-    .nav-links { display:flex; gap:1rem; align-items:center; }
-    .nav-item {
-      background:none; border:0; padding:.35rem .6rem; cursor:pointer; border-radius:6px;
-      text-decoration:none; color:#0f1f20; font-weight:600;
-    }
-    .nav-item:hover { background:#f2f5f6; }
-    #signOutBtn { color:#b00020; }
 
-    /* Cards */
-    .card { position: relative; }
-
-    /* Favourites star */
-    .fav-btn {
-      position: absolute; top: 10px; right: 10px;
-      background: none; border: none; cursor: pointer;
-      font-size: 1.1rem; color: #c9c9c9;
-    }
-    .fav-btn.active i { color: gold !important; }
-
-    /* Comments */
-    .comments { margin-top: .75rem; border-top: 1px solid #eaeaea; padding-top: .75rem; }
-    .c-header { display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem; }
-    .c-count { font-weight:700; }
-    .c-list { display:flex; flex-direction:column; gap:.5rem; }
-    .comment { border:1px solid #e9ecef; border-radius:8px; padding:.5rem .6rem; background:#fff; }
-    .meta { font-size:.85rem; color:#667; display:flex; gap:.5rem; align-items:center; }
-    .c-body { margin:.3rem 0 .4rem; }
-    .c-actions { display:flex; gap:.5rem; }
-    .c-actions button { background:none; border:0; color:#00625f; cursor:pointer; padding:.1rem .25rem; border-radius:6px; }
-    .c-actions button:hover { background:#eef5f5; }
-    .reply { margin-left: 1.25rem; border-left: 2px solid #eef2f3; padding-left: .6rem; }
-    .c-editor { display:flex; gap:.5rem; margin-top:.5rem; }
-    .c-editor textarea { flex:1; min-height: 60px; resize: vertical; }
-    .muted { color:#789; font-size:.9rem; }
-  </style>
-
-  <!-- Auth gate + build right-side nav actions -->
-  <script>
-    async function signOut(){
-      try { await fetch('/api/auth/logout',{method:'POST',credentials:'include'}); }
-      finally { location.href='/index.html'; }
-    }
-
-    let ME = null;
-    (async () => {
-      try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        if (!res.ok) throw 0;
-        ME = await res.json();
-        if (!['user','admin'].includes(ME.role)) throw 0;
-
-        document.body.style.display = 'block';
-
-        // Add Admin (if role=admin) and Sign out (always) to the right side
-        const right = document.querySelector('.nav-right');
-        if (ME.role === 'admin' && !right.querySelector('a[href="secure.html"]')) {
-          const a = document.createElement('a');
-          a.className = 'nav-item';
-          a.href = 'secure.html';
-          a.textContent = 'Admin';
-          right.appendChild(a);
-        }
-        if (!document.getElementById('signOutBtn')) {
-          const b = document.createElement('button');
-          b.id = 'signOutBtn';
-          b.className = 'nav-item';
-          b.textContent = 'Sign out';
-          b.onclick = signOut;
-          right.appendChild(b);
-        }
-      } catch {
-        location.href = '/index.html';
-      }
-    })();
-  </script>
+  <link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
-  <div class="navbar">
-    <div class="nav-left">
-      <span class="menu-icon">&#9776;</span>
+<div class="navbar">
+	<span class="menu-icon">&#9776;</span>
+<div class="nav-links">
+		<div class="nav-links">
+      <a class="nav-item" href="resources.html">Resources</a>
+      <a class="nav-item" href="feed.html">Feed</a>
+      <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e">Calendar</a>
+		</div>
+		</div>
     </div>
-    <div class="nav-center">
-      <div class="nav-links">
-        <a class="nav-item" href="feed.html">Feed</a>
-        <a class="nav-item" href="resources.html">Resources</a>
-        <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
-      </div>
-    </div>
-    <div class="nav-right"><!-- Admin + Sign out injected by script --></div>
-  </div>
-
-  <div class="banner"></div>
-  <h2 class="title"><i class="fa-solid fa-list-ul"></i> Feed</h2>
-
-  <main>
+    <div class="banner"></div>
+    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Feed</h2>  
+    
+<main>	
     <div id="search-container">
       <input type="text" id="searchBar" placeholder="Find a post">
       <select id="category-select">
         <option value="">All</option>
-        <option value="favourites">My Favourites</option>
         <option value="pinned">Pinned</option>
         <option value="general">General</option>
         <option value="faq">FAQ</option>
@@ -138,307 +59,87 @@
     <div id="noResults">
       Mmm no post found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category
     </div>
-
     <div class="card-container"></div>
 
     <a href="mailto:ITSupport@kotakureo.school.nz" id="contact" class="link-nochange">
       <i class="fa fa-envelope"></i> Contact
     </a>
-    <button id="backToTop"><i class="fa-solid fa-angle-up"></i> Back to Top</button>
+    <button id="backToTop">
+      <i class="fa-solid fa-angle-up"></i> Back to Top
+    </button>
   </main>
 
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    /* ---------- Utils ---------- */
-    function nzDateTime(value){
-      const d = new Date(value);
-      if (isNaN(d)) return '';
-      return d.toLocaleString('en-NZ', {
-        timeZone:'Pacific/Auckland',
-        year:'numeric', month:'short', day:'2-digit',
-        hour:'2-digit', minute:'2-digit'
-      }).replace(',', '');
-    }
-    function escapeHTML(s){
-      return String(s ?? '').replace(/[&<>"']/g, m => (
-        {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]
-      ));
-    }
-
-    /* ---------- Server favourites (account-based) ---------- */
-    let favIds = new Set();
-    async function loadFavs() {
-      const r = await fetch('/api/favourites?type=post', { credentials:'include' });
-      const ids = r.ok ? await r.json() : [];
-      favIds = new Set(ids.map(String));
-    }
-    async function setFav(id, on) {
-      await fetch('/api/favourites', {
-        method:'POST', credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ entity_type: 'post', entity_id: Number(id), on })
-      });
-      if (on) favIds.add(String(id)); else favIds.delete(String(id));
-    }
-
-    /* ---------- Load & render posts ---------- */
-    let posts = [];
-
     async function loadPosts() {
-      const res = await fetch('/api/posts', { credentials: 'include' });
-      posts = await res.json();
-      await loadFavs();
-      renderPosts();
-      filterCards();
-    }
+      const res = await fetch('/api/posts');
+      const posts = await res.json();
 
-    function renderPosts() {
+      // Server already ordered by pinned & date
       const container = document.querySelector('.card-container');
       container.innerHTML = '';
+
       posts.forEach(p => {
-        const key = String(p.id ?? (p.title || '').toLowerCase());
-        const isFav = favIds.has(key);
-        const cat = (p.category || '').toLowerCase();
-
+        const displayCat = p.category.toLowerCase();
         const div = document.createElement('div');
-        div.className = 'card';
-        div.dataset.id = key;
-        div.dataset.name = (p.title || '').toLowerCase();
-        div.dataset.category = cat;
-
+        div.className         = 'card';
+        div.dataset.name      = p.title.toLowerCase();
+        div.dataset.category  = displayCat;
         div.innerHTML = `
-          <button type="button" class="fav-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove from favourites' : 'Add to favourites'}" aria-pressed="${isFav}">
-            <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-star"></i>
-          </button>
           <h1>${p.title}</h1>
           <div>${p.body}</div>
           <br><i>${new Date(p.created_at).toLocaleDateString()} ${p.category}</i>
-
-          <div class="comments" data-post="${p.id}">
-            <div class="c-header">
-              <span class="c-count" id="cc-${p.id}">Comments</span>
-              <button class="c-toggle" data-post="${p.id}"><i class="fa-regular fa-comments"></i> View</button>
-            </div>
-            <div class="c-list" id="cl-${p.id}" style="display:none;"></div>
-            <div class="c-editor" id="ce-${p.id}" style="display:none;">
-              <textarea placeholder="Write a comment…"></textarea>
-              <button class="c-send" data-post="${p.id}"><i class="fa-solid fa-paper-plane"></i> Post</button>
-            </div>
-          </div>
         `;
         container.append(div);
-
-        // lazy update comments count
-        loadComments(p.id, { countOnly:true });
       });
+
+      filterCards();
     }
 
-    /* ---------- Comments UI & API ---------- */
-    const commentCache = new Map(); // postId → array
-
-    function byParentTree(list) {
-      const map = new Map(); list.forEach(c => map.set(c.id, { ...c, replies:[] }));
-      const roots = [];
-      map.forEach(c => {
-        if (c.parent_id) {
-          const p = map.get(c.parent_id);
-          if (p) p.replies.push(c); else roots.push(c);
-        } else roots.push(c);
-      });
-      return roots;
-    }
-
-    async function loadComments(postId, { countOnly = false } = {}) {
-      const r = await fetch(`/api/comments?post_id=${postId}`, { credentials:'include' });
-      const arr = r.ok ? await r.json() : [];
-      commentCache.set(postId, arr);
-
-      const count = arr.filter(c => !c.deleted_at).length;
-      const cc = document.getElementById(`cc-${postId}`);
-      if (cc) cc.textContent = `Comments (${count})`;
-
-      if (countOnly) return;
-      renderComments(postId);
-    }
-
-    function renderComments(postId) {
-      const list = commentCache.get(postId) || [];
-      const tree = byParentTree(list);
-
-      const wrap = document.getElementById(`cl-${postId}`);
-      if (!wrap) return;
-      wrap.innerHTML = tree.map(c => renderCommentHTML(c)).join('');
-    }
-
-    function canEditComment(c){
-      if (!ME) return false;
-      return ME.role === 'admin' || ME.email === c.author_email;
-    }
-
-    function renderCommentHTML(c) {
-      const del = !!c.deleted_at;
-      const meta = `<div class="meta"><strong>${c.author_email}</strong><span>${nzDateTime(c.created_at)}</span></div>`;
-      const body = del ? `<div class="muted"><i>deleted</i></div>` : `<div class="c-body">${escapeHTML(c.body)}</div>`;
-      const actions = del ? '' : `
-        <div class="c-actions">
-          <button class="c-reply" data-id="${c.id}" data-post="${c.post_id}">Reply</button>
-          ${canEditComment(c) ? `
-            <button class="c-edit" data-id="${c.id}" data-post="${c.post_id}">Edit</button>
-            <button class="c-del"  data-id="${c.id}" data-post="${c.post_id}">Delete</button>
-          ` : ''}
-        </div>`;
-
-      const replies = (c.replies || []).map(r => `<div class="reply">${renderCommentHTML(r)}</div>`).join('');
-
-      return `
-        <div class="comment" data-cid="${c.id}">
-          ${meta}
-          ${body}
-          ${actions}
-          ${replies}
-        </div>
-      `;
-    }
-
-    /* ---------- Search & filter ---------- */
     function filterCards() {
-      const val = ($('#searchBar').val() || '').toLowerCase();
-      const cat = ($('#category-select').val() || '').toLowerCase();
+      let val = $('#searchBar').val().toLowerCase();
+      const cat = $('#category-select').val().toLowerCase();
       let shown = 0;
 
+
+
       $('.card').each(function() {
-        const $card = $(this);
-        const name = $card.data('name');
-        const c    = String($card.data('category') || '');
-        const id   = String($card.data('id') || '');
-        const matchesSearch = name.includes(val);
-
-        let matchesCategory = true;
-        if (cat) {
-          if (cat === 'favourites') matchesCategory = favIds.has(id);
-          else matchesCategory = c.includes(cat);
-        }
-
-        const ok = matchesSearch && matchesCategory;
-        $card.toggle(ok);
+        const name = $(this).data('name');
+        const c    = $(this).data('category');
+        const ok   = name.includes(val) && (!cat || c.includes(cat));
+        $(this).toggle(ok);
         if (ok) shown++;
       });
+
       $('#noResults').toggle(shown === 0);
     }
-
-    /* ---------- Events ---------- */
-    $(document).on('click', '.menu-icon', () => $('.nav-links').toggleClass('active'));
-
-    // Favourites toggle
-    $(document).on('click', '.fav-btn', async function(e){
-      e.preventDefault();
-      const btn = this;
-      const card = btn.closest('.card');
-      const id = card.dataset.id;
-      const nowOn = !btn.classList.contains('active');
-      await setFav(id, nowOn);
-      btn.classList.toggle('active', nowOn);
-      btn.setAttribute('aria-pressed', String(nowOn));
-      btn.title = nowOn ? 'Remove from favourites' : 'Add to favourites';
-      btn.querySelector('i').className = nowOn ? 'fa-solid fa-star' : 'fa-regular fa-star';
-      filterCards(); // refresh favourites filter if active
+        // Toggle menu
+    $('.menu-icon').click(function () {
+        $('.nav-links').toggleClass('active');
     });
 
-    // Toggle view comments
-    $(document).on('click', '.c-toggle', function(){
-      const postId = Number(this.dataset.post);
-      const list = document.getElementById(`cl-${postId}`);
-      const editor = document.getElementById(`ce-${postId}`);
-      const open = list.style.display !== 'none';
-      if (open) { list.style.display='none'; editor.style.display='none'; return; }
-      loadComments(postId, { countOnly:false });
-      list.style.display='block';
-      editor.style.display='flex';
-    });
-
-    // New comment
-    $(document).on('click', '.c-send', async function(){
-      const postId = Number(this.dataset.post);
-      const editor = document.querySelector(`#ce-${postId} textarea`);
-      const text = editor.value.trim();
-      if (!text) return;
-      await fetch('/api/comments', {
-        method:'POST', credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ post_id: postId, body: text })
-      });
-      editor.value = '';
-      loadComments(postId, { countOnly:false });
-    });
-
-    // Reply / Edit / Delete via delegation
-    $(document).on('click', '.c-reply', function(){
-      const postId = Number(this.dataset.post);
-      const commentId = Number(this.dataset.id);
-      const parentEl = this.closest('.comment');
-      if (parentEl.querySelector('textarea')) return;
-      const box = document.createElement('div');
-      box.className = 'c-editor';
-      box.innerHTML = `<textarea placeholder="Write a reply…"></textarea><button class="c-send-reply" data-post="${postId}" data-parent="${commentId}">Reply</button>`;
-      parentEl.appendChild(box);
-    });
-
-    $(document).on('click', '.c-send-reply', async function(){
-      const postId = Number(this.dataset.post);
-      const parentId = Number(this.dataset.parent);
-      const ta = this.previousElementSibling;
-      const text = ta.value.trim();
-      if (!text) return;
-      await fetch('/api/comments', {
-        method:'POST', credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ post_id: postId, parent_id: parentId, body: text })
-      });
-      loadComments(postId, { countOnly:false });
-    });
-
-    $(document).on('click', '.c-edit', function(){
-      const postId = Number(this.dataset.post);
-      const cid = Number(this.dataset.id);
-      const wrap = this.closest('.comment');
-      const body = wrap.querySelector('.c-body');
-      if (!body) return;
-      const current = body.textContent;
-      body.outerHTML = `<div class="c-editor"><textarea>${current}</textarea><button class="c-save" data-post="${postId}" data-id="${cid}">Save</button></div>`;
-    });
-
-    $(document).on('click', '.c-save', async function(){
-      const postId = Number(this.dataset.post);
-      const cid = Number(this.dataset.id);
-      const ta = this.previousElementSibling;
-      const text = ta.value.trim();
-      if (!text) return;
-      await fetch(`/api/comments/${cid}`, {
-        method:'PUT', credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ body: text })
-      });
-      loadComments(postId, { countOnly:false });
-    });
-
-    $(document).on('click', '.c-del', async function(){
-      const postId = Number(this.dataset.post);
-      const cid = Number(this.dataset.id);
-      if (!confirm('Delete this comment?')) return;
-      await fetch(`/api/comments/${cid}`, { method:'DELETE', credentials:'include' });
-      loadComments(postId, { countOnly:false });
-    });
-
-    // Search / category filter
-    $(document).ready(function(){
+    $(document).ready(function() {
       loadPosts();
-      $('#searchBar').on('keyup input', filterCards);
+      $('#searchBar')
+        .focus()
+        .on('keyup input', filterCards)
+        .on('input', function() {
+          clearTimeout($.data(this,'timer'));
+          const self = this;
+          $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
+        })
+        .on('keydown', function() {
+          clearTimeout($.data(this,'timer'));
+        });
       $('#category-select').on('change', filterCards);
 
       $(window).on('scroll', () => {
         const scrolled = $(window).scrollTop() > 100;
         $('#backToTop, #contact').toggle(scrolled);
       });
-      $('#backToTop').on('click', () => $('html, body').animate({ scrollTop: 0 }, 'fast'));
+      $('#backToTop').on('click', () =>
+        $('html, body').animate({ scrollTop: 0 }, 'fast')
+      );
     });
   </script>
 </body>

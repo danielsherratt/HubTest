@@ -1,4 +1,4 @@
-// functions/api/users/[id].js
+// functions/api/users.js
 
 function base64urlToUint8Array(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -51,7 +51,7 @@ function randomSalt(len=16){
 }
 
 
-export async function onRequest({ request, env, params }) {
+export async function onRequest({ request, env }) {
   const db = env.POSTS_DB;
   const cookie = request.headers.get('Cookie') || '';
   const m = cookie.match(/(?:^|;\s*)token=([^;]+)/);
@@ -59,29 +59,48 @@ export async function onRequest({ request, env, params }) {
   const me = token && await verifyJWT(token, env.JWT_SECRET);
   if (!me || me.role !== 'admin') return new Response('Forbidden', { status:403 });
 
-  const id = params.id;
+  const url = new URL(request.url);
   const method = request.method;
 
-  if (method === 'PUT') {
-    const body = await request.json();
-    if (body.password) {
-      const salt = randomSalt(16);
-      const hash = await pbkdf2Hash(body.password, salt, 100000);
-      await db.prepare(`UPDATE users SET password_hash=?, password_salt=? WHERE id=?`).bind(hash, salt, id).run();
-    }
-    if (body.role) {
-      const role = body.role === 'admin' ? 'admin' : 'user';
-      await db.prepare(`UPDATE users SET role=? WHERE id=?`).bind(role, id).run();
-    }
-    if (body.first_name !== undefined || body.last_name !== undefined) {
-      await db.prepare(`UPDATE users SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name) WHERE id=?`).bind(body.first_name, body.last_name, id).run();
-    }
-    return new Response(null, { status:204 });
+  if (method === 'GET') {
+    const q = (url.searchParams.get('q') || '').toLowerCase();
+    const sort = (url.searchParams.get('sort') || 'created_at');
+    const dir = (url.searchParams.get('dir') || 'desc').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    const rows = await db.prepare(`
+      SELECT id, email, role, first_name, last_name, last_sign_in, last_sign_ip, created_at
+        FROM users
+       WHERE (email LIKE ? OR first_name LIKE ? OR last_name LIKE ?)
+       ORDER BY CASE WHEN ?='email' THEN email
+                     WHEN ?='role' THEN role
+                     WHEN ?='last_sign_in' THEN last_sign_in
+                     ELSE created_at END ${dir}
+    `).bind(f'%{q}%', f'%{q}%', f'%{q}%', sort, sort, sort).all();
+    // attach multi-IP alert metric (last 24h, requires user_signins table if present)
+    let results = rows.results;
+    try {
+      for (const r of results) {
+        const one = await db.prepare(`SELECT COUNT(DISTINCT ip) as c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-1 day')`).bind(r.id).first();
+        r.distinct_ips_24h = one?.c || 0;
+      }
+    } catch { /* ignore if table missing */ }
+    return new Response(JSON.stringify(results), { headers:{'Content-Type':'application/json'} });
   }
 
-  if (method === 'DELETE') {
-    await db.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
-    return new Response(null, { status:204 });
+  if (method === 'POST') {
+    const body = await request.json();
+    const email = String(body.email || '').toLowerCase().trim();
+    const password = String(body.password || '');
+    const role = body.role === 'admin' ? 'admin' : 'user';
+    const first = String(body.first_name || '').trim();
+    const last  = String(body.last_name || '').trim();
+    if (!email || !password) return new Response('Missing', { status:400 });
+    const exists = await db.prepare(`SELECT id FROM users WHERE email = ?`).bind(email).first();
+    if (exists) return new Response(JSON.stringify({ error:'Email exists' }), { status:409, headers:{'Content-Type':'application/json'} });
+    const salt = randomSalt(16);
+    const hash = await pbkdf2Hash(password, salt, 100000);
+    await db.prepare(`INSERT INTO users (email, role, password_hash, password_salt, first_name, last_name, created_at) VALUES (?,?,?,?,?,?, datetime('now'))`)
+      .bind(email, role, hash, salt, first, last).run();
+    return new Response(JSON.stringify({ ok:true }), { status:201, headers:{'Content-Type':'application/json'} });
   }
 
   return new Response('Method Not Allowed', { status:405 });
