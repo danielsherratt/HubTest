@@ -1,93 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<<<<<<< HEAD
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CESW Hub - Login</title>
-  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap');
-    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css');
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-
-    body {
-    font-family: 'Noto Sans', sans-serif;
-      background: #f0f4f8;
-      color: #333;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .banner {
-      width: 100%;
-      height: 170px;
-      background: url('assets/banner.jpg') no-repeat center center;
-      background-size: cover;
-    }
-
-    .login-card {
-      background: white;
-      max-width: 360px;
-      margin: 2rem auto;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .login-card h1 {
-      margin-bottom: 1.5rem;
-      font-size: 1.25rem;
-      text-align: center;
-      color: #00625f;
-    }
-
-    .login-card form > * + * {
-      margin-top: 1rem;
-    }
-
-    .login-card input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #ccd0d5;
-      border-radius: 4px;
-      font-size: 1rem;
-    }
-
-    .login-card button {
-      width: 100%;
-      padding: 0.75rem;
-      background: #00625f;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .login-card button:hover {
-      background: #004c48;
-    }
-
-    .login-card .error {
-      margin-top: 0.5rem;
-      color: #c00;
-      font-size: 0.875rem;
-      text-align: center;
-    }
-
-    img {
-      width: 120px;
-      height: 120px;
-        display: block;
-  margin: auto;
-    }
-  </style>
-  <link rel="stylesheet" href="assets/app.css">
-=======
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CESW Hub – Sign in</title>
@@ -111,50 +24,9 @@
     })();
   </script>
   <style>body{display:block}</style>
->>>>>>> 8abdeee9a20c53d12c9132eada69cd35b6425220
 </head>
 <body>
 
-<<<<<<< HEAD
-  <div class="banner"></div>
-
-  <div class="login-card">
-    <img src="assets/logo.png">
-    <h1><i class="fa-solid fa-people-group"></i> CESW Hub Login</h1>
-    <form id="login-form">
-      <input name="pass" type="password" placeholder="Enter Password" required autocomplete="current-password" />
-      <button type="submit">Log In</button>
-      <div class="error" id="error-msg" style="display:none;"></div>
-    </form>
-  </div>
-
-  <script>
-    document.getElementById('login-form').addEventListener('submit', async e => {
-      e.preventDefault();
-      const form = e.target;
-      const error = document.getElementById('error-msg');
-      error.style.display = 'none';
-
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ pass: form.pass.value })
-      });
-
-      if (res.ok) {
-        const { role } = await res.json();
-        if (role === 'admin') {
-          window.location.href = '/secure.html';
-        } else {
-          window.location.href = '/resources.html';
-        }
-      } else {
-        error.textContent = 'Invalid password.';
-        error.style.display = 'block';
-      }
-    });
-=======
   <main class="wrap" style="display:grid;place-items:start center;padding:2rem 1rem 3rem;">
     <section class="login-card" role="region" aria-labelledby="signin-title">
       <h1 id="signin-title" style="text-align:center;color:var(--brand);margin:.25rem 0 .35rem;">Sign in</h1>
@@ -293,7 +165,6 @@
         }
       });
     })();
->>>>>>> 8abdeee9a20c53d12c9132eada69cd35b6425220
   </script>
 </body>
 </html>
