@@ -3,106 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
   <title>CESW Hub - Resources</title>
 
-  <link rel="stylesheet" href="assets/resources.css">
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="assets/app.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-  <style>
-    body { display: none; }
-
-    /* Navbar with centered links and right actions */
-    .navbar {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      padding: .5rem 1rem;
-      background: #fff;
-      border-bottom: 1px solid #e6ecee;
-    }
-    .nav-left  { justify-self: start;  display:flex; align-items:center; gap:.5rem; }
-    .nav-center{ justify-self: center; }
-    .nav-right { justify-self: end;    display:flex; align-items:center; gap:.5rem; }
-
-    .menu-icon { cursor:pointer; font-size:1.25rem; }
-    .nav-links { display:flex; gap:1rem; align-items:center; }
-    .nav-item {
-      background:none; border:0; padding:.35rem .6rem; cursor:pointer; border-radius:6px;
-      text-decoration:none; color:#0f1f20; font-weight:600;
-    }
-    .nav-item:hover { background:#f2f5f6; }
-    #signOutBtn { color:#b00020; }
-
-    /* Layout */
-    #category-container { display:flex; flex-wrap:wrap; gap: 1em; margin: 1em 0; }
-    .category-card { cursor: pointer; border-radius: 10px; overflow: hidden; border: 1px solid #ddd; }
-    .category-card img { display:block; width: 220px; height: 120px; object-fit: cover; transition: opacity .2s ease; opacity:.95; }
-    .category-card img.loaded { opacity: 1; }
-
-    .card-container { display:flex; flex-wrap:wrap; gap: 12px; }
-
-    .card {
-      display:flex; position:relative;
-      flex-direction: column; justify-content: space-between; align-items: center;
-      border: 1px solid #ccc; border-radius: 10px; padding: 15px; margin: 4px;
-      width: 220px; height: 260px; text-align: center;
-      box-shadow: 2px 2px 10px rgba(0,0,0,.08);
-      transition: background-color .2s ease; background:#fff;
-    }
-    .card a.link-nochange { color: inherit; text-decoration: none; display:block; width:100%; }
-    .card p { margin: 0 0 .6rem; font-weight: 600; min-height: 2.5em; overflow: hidden; }
-    .card img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; }
-
-    /* favourite star */
-    .fav-btn {
-      position: absolute; bottom: 6px; right: 6px;
-      background: none; border: none; cursor: pointer;
-      font-size: 1.2em; color: #dbdbdb !important;
-    }
-    .fav-btn:hover { color: #bdbdbd !important; }
-    .fav-btn.active i { color: gold !important; }
-
-    /* controls */
-    #search-container { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
-    #clearSearch, #ShowFavs, #ShowAll, #backToCategories {
-      padding: 8px 15px; margin-left: 5px; font-size: 16px; cursor: pointer; color:#000 !important;
-      border: 1px solid #ddd; border-radius: 6px; background:#fff;
-    }
-
-    #noResults, #noFavourites { display:none; text-align:center; margin:20px; color:#666; }
-  </style>
-
-  <!-- Auth gate + right-side nav actions -->
+  <style>body{display:none}</style>
   <script>
     async function signOut(){
       try { await fetch('/api/auth/logout', { method:'POST', credentials:'include' }); }
       finally { location.href = '/index.html'; }
     }
     let ME = null;
+
     (async () => {
       try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        if (!res.ok) throw 0;
-        ME = await res.json();
+        const r = await fetch('/api/auth/me', { credentials:'include' });
+        if (!r.ok) throw 0;
+        ME = await r.json();
         if (!['user','admin'].includes(ME.role)) throw 0;
+
+        // Show page
         document.body.style.display = 'block';
 
+        // Right-side nav buttons
         const right = document.querySelector('.nav-right');
         if (ME.role === 'admin' && !right.querySelector('a[href="secure.html"]')) {
           const a = document.createElement('a');
-          a.className = 'nav-item';
-          a.href = 'secure.html';
-          a.textContent = 'Admin';
+          a.className = 'nav-item'; a.href = 'secure.html'; a.textContent = 'Admin';
           right.appendChild(a);
         }
         if (!document.getElementById('signOutBtn')) {
           const b = document.createElement('button');
-          b.id = 'signOutBtn';
-          b.className = 'nav-item';
-          b.textContent = 'Sign out';
-          b.onclick = signOut;
+          b.id = 'signOutBtn'; b.className = 'nav-item'; b.textContent = 'Sign out'; b.onclick = signOut;
           right.appendChild(b);
         }
       } catch {
@@ -112,10 +48,9 @@
   </script>
 </head>
 <body>
+  <!-- NAV -->
   <div class="navbar">
-    <div class="nav-left">
-      <span class="menu-icon">&#9776;</span>
-    </div>
+    <div class="nav-left"><span class="menu-icon">&#9776;</span></div>
     <div class="nav-center">
       <div class="nav-links">
         <a class="nav-item" href="feed.html">Feed</a>
@@ -123,22 +58,21 @@
         <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
       </div>
     </div>
-    <div class="nav-right"><!-- Admin + Sign out injected --></div>
+    <div class="nav-right"></div>
   </div>
 
   <div class="banner"></div>
-
   <h2 class="title"><i class="fa-solid fa-file"></i> Resources</h2>
 
   <main>
-    <div id="search-container">
-      <input type="text" id="searchBar" placeholder="Find a resource">
+    <div id="search-container" class="search-bar-wrap">
+      <input type="text" id="searchBar" placeholder="Find a resource" class="search-bar">
       <button id="clearSearch" title="Clear search"><i class="fa-solid fa-xmark"></i></button>
-      <button id="ShowFavs" title="My Favourites"><i class="fa-solid fa-star"></i></button>
-      <button id="ShowAll"  title="Show all"><i class="fa-solid fa-layer-group"></i></button>
+      <button id="ShowFavs"  title="My Favourites"><i class="fa-solid fa-star"></i></button>
+      <button id="ShowAll"   title="Show all"><i class="fa-solid fa-layer-group"></i></button>
     </div>
 
-    <div id="noFavourites">
+    <div id="noFavourites" class="muted" style="display:none">
       <i class="fa-regular fa-star"></i> You have no favourites yet. Click the star on a resource to add one.
     </div>
 
@@ -148,7 +82,7 @@
       <i class="fa-solid fa-arrow-left"></i> Categories
     </button>
 
-    <div id="noResults">
+    <div id="noResults" class="muted" style="display:none;">
       Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>. Please change your search.
     </div>
 
@@ -161,14 +95,16 @@
   </main>
 
   <script>
-    // ===== Account-based favourites (resources) =====
+    /* -------- Account-based favourites (resources) -------- */
     let resFavIds = new Set();
-    async function loadResFavs() {
+
+    async function loadResFavs(){
       const r = await fetch('/api/favourites?type=resource', { credentials:'include' });
       const ids = r.ok ? await r.json() : [];
       resFavIds = new Set(ids.map(String));
     }
-    async function setResFav(id, on) {
+
+    async function setResFav(id, on){
       await fetch('/api/favourites', {
         method:'POST', credentials:'include',
         headers:{'Content-Type':'application/json'},
@@ -177,7 +113,7 @@
       if (on) resFavIds.add(String(id)); else resFavIds.delete(String(id));
     }
 
-    // ===== State =====
+    /* -------------------- State -------------------- */
     let allResources = [];
     let viewMode = 'categories'; // 'categories' | 'category' | 'search' | 'favs'
     let currentCategory = null;
@@ -188,10 +124,10 @@
     const $noFavourites = $('#noFavourites');
     const $backToCategories = $('#backToCategories');
 
-    const getKey = (r) => String(r?.id ?? (r?.title || '').toLowerCase());
+    const getKey = r => String(r?.id ?? (r?.title||'').toLowerCase());
 
-    // ===== Data load =====
-    async function loadResources() {
+    /* -------------------- Load -------------------- */
+    async function loadResources(){
       const res = await fetch('/api/resourcespull', { credentials:'include' });
       allResources = await res.json();
       await loadResFavs();
@@ -202,51 +138,24 @@
       $noFavourites.hide();
     }
 
-    function renderCategories() {
+    /* -------------------- Categories -------------------- */
+    function renderCategories(){
       const categories = [...new Set(allResources.map(p => p.category).filter(Boolean))];
       $catContainer.empty();
-
       categories.forEach(cat => {
         const $card = $(`
           <div class="category-card" data-cat="${String(cat).toLowerCase()}">
             <img src="https://files.danieltesting.space/uploads/${encodeURIComponent(String(cat).toLowerCase())}.png" alt="${cat}">
-          </div>
-        `);
+          </div>`);
         $card.find('img').on('load', function(){ this.classList.add('loaded'); });
         $card.on('click', () => showCategory(cat));
         $catContainer.append($card);
       });
-
       $catContainer.show();
+      $backToCategories.hide();
     }
 
-    // ===== Rendering =====
-    function renderCards(items) {
-      $cardContainer.empty();
-      if (!items.length) { $noResults.show(); return; }
-      $noResults.hide();
-
-      items.forEach(p => {
-        const key = getKey(p);
-        const isFav = resFavIds.has(key);
-        const thumb = p.thumbnail || 'assets/resource-placeholder.png';
-        const $card = $(`
-          <div class="card" data-id="${key}" data-name="${(p.title || '').toLowerCase()}" data-category="${(p.category || '').toLowerCase()}">
-            <a class="link-nochange" href="${p.url}" target="_blank" rel="noopener">
-              <p>${p.title}</p>
-              <img src="${thumb}" alt="">
-            </a>
-            <button type="button" class="fav-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove from favourites' : 'Add to favourites'}" aria-pressed="${isFav}">
-              <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-star"></i>
-            </button>
-          </div>
-        `);
-        $card.find('img').on('load', function(){ this.classList.add('loaded'); });
-        $cardContainer.append($card);
-      });
-    }
-
-    function showCategory(cat) {
+    function showCategory(cat){
       viewMode = 'category';
       currentCategory = String(cat);
       $('#searchBar').val('');
@@ -257,7 +166,7 @@
       renderCards(filtered);
     }
 
-    function showCategories() {
+    function showCategories(){
       viewMode = 'categories';
       currentCategory = null;
       $catContainer.show();
@@ -267,7 +176,34 @@
       $backToCategories.hide();
     }
 
-    function showFavourites() {
+    /* -------------------- Cards -------------------- */
+    function renderCards(items){
+      $cardContainer.empty();
+      if (!items.length) { $noResults.show(); return; }
+      $noResults.hide();
+
+      items.forEach(p => {
+        const key = getKey(p);
+        const isFav = resFavIds.has(key);
+        const thumb = p.thumbnail || 'assets/resource-placeholder.png';
+
+        const $card = $(`
+          <div class="res-card" data-id="${key}" data-name="${(p.title||'').toLowerCase()}" data-category="${(p.category||'').toLowerCase()}">
+            <a class="link-nochange" href="${p.url}" target="_blank" rel="noopener">
+              <p>${p.title}</p>
+              <img src="${thumb}" alt="">
+            </a>
+            <button type="button" class="fav-btn ${isFav ? 'active':''}" title="${isFav ? 'Remove from favourites':'Add to favourites'}" aria-pressed="${isFav}">
+              <i class="${isFav ? 'fa-solid':'fa-regular'} fa-star"></i>
+            </button>
+          </div>`);
+        $card.find('img').on('load', function(){ this.classList.add('loaded'); });
+        $cardContainer.append($card);
+      });
+    }
+
+    /* -------------------- Views -------------------- */
+    function showFavourites(){
       viewMode = 'favs';
       $('#searchBar').val('');
       $catContainer.hide();
@@ -275,7 +211,6 @@
 
       const favSet = new Set(resFavIds);
       const favItems = allResources.filter(p => favSet.has(getKey(p)));
-
       if (!favItems.length) {
         $cardContainer.html('');
         $noFavourites.show();
@@ -286,7 +221,7 @@
       renderCards(favItems);
     }
 
-    function showAll() {
+    function showAll(){
       viewMode = 'search';
       $('#searchBar').val('');
       $catContainer.hide();
@@ -294,7 +229,7 @@
       renderCards(allResources);
     }
 
-    function filterCards() {
+    function filterCards(){
       const val = ($('#searchBar').val() || '').toLowerCase().trim();
       if (!val) {
         if (viewMode === 'favs') showFavourites();
@@ -308,50 +243,51 @@
       renderCards(matched);
     }
 
-    // ===== Events =====
-    $(document).ready(function () {
+    /* -------------------- Events -------------------- */
+    $(document).ready(function(){
       loadResources();
 
       $('#searchBar').focus().on('keyup input', filterCards);
-      $('#clearSearch').on('click', function () {
+      $('#clearSearch').on('click', function(){
         $('#searchBar').val('').trigger('keyup');
         $noFavourites.hide();
         showCategories();
         $('#searchBar').focus();
       });
-
       $('#ShowFavs').on('click', showFavourites);
       $('#ShowAll').on('click', showAll);
-      $backToCategories.on('click', showCategories);
+      $('#backToCategories').on('click', showCategories);
 
+      // nav menu toggle
       $('.menu-icon').on('click', () => $('.nav-links').toggleClass('active'));
 
+      // scroll helpers
       $(window).on('scroll', () => {
-        const scrolled = $(window).scrollTop() > 100;
-        $('#backToTop, #contact').toggle(scrolled);
+        const s = $(window).scrollTop() > 100;
+        $('#backToTop,#contact').toggle(s);
       });
       $('#backToTop').on('click', () => $('html, body').animate({ scrollTop: 0 }, 'fast'));
     });
 
-    // Delegated favourites toggle
-    $(document).on('click', '.fav-btn', async function (e) {
+    // Favourite toggle (delegated)
+    $(document).on('click', '.fav-btn', async function(e){
       e.preventDefault(); e.stopPropagation();
-      const $btn  = $(this);
-      const $card = $btn.closest('.card');
-      const id    = String($card.data('id'));
+      const $btn = $(this);
+      const $card = $btn.closest('.res-card');
+      const id = String($card.data('id'));
       const nowOn = !$btn.hasClass('active');
+
       await setResFav(id, nowOn);
+
       $btn.toggleClass('active', nowOn)
           .attr('aria-pressed', String(nowOn))
           .attr('title', nowOn ? 'Remove from favourites' : 'Add to favourites')
           .find('i').toggleClass('fa-solid', nowOn).toggleClass('fa-regular', !nowOn);
 
+      // If viewing My Favourites, remove card when unfaved
       if (viewMode === 'favs' && !nowOn) {
         $card.remove();
-        if ($('.card').length === 0) {
-          $noFavourites.show();
-          $noResults.hide();
-        }
+        if ($('.res-card').length === 0) { $noFavourites.show(); $noResults.hide(); }
       }
     });
   </script>
