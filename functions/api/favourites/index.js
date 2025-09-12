@@ -1,6 +1,6 @@
 // GET ?type=post|resource         → [ids]
 // POST { entity_type, entity_id, on }  → add/remove
-import { getMe } from '../../../lib/me.js';
+import { getMe } from '../../lib/me.js';
 
 export async function onRequest({ request, env }) {
   const db = env.POSTS_DB;
