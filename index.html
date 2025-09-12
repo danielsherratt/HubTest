@@ -34,6 +34,9 @@
       flex-direction: column;
       min-height: 100vh;
     }
+
+   .link {text-decoration: none; color: #00625f;}
+   .link:hover {color: #00514e;}
     .banner { width: 100%; height: 170px; background: url('assets/banner.jpg') center/cover no-repeat; }
     .wrap { flex: 1; display: grid; place-items: start center; padding: 2rem 1rem 3rem; }
     .card {
@@ -84,8 +87,9 @@
 
   <main class="wrap">
     <section class="card" role="region" aria-labelledby="signin-title">
-      <h1 id="signin-title">Sign in</h1>
-      <p class="sub">Staff access only</p>
+    <h1><i class="fa-solid fa-people-group"></i> CESW Hub - Login</h1>
+    <br>
+
 
       <form id="login-form" novalidate>
         <!-- Email -->
@@ -97,7 +101,7 @@
             inputmode="email"
             autocomplete="username email"
             required
-            aria-label="Email address"
+
           />
           <i class="fa-solid fa-envelope" aria-hidden="true" style="opacity:.6;margin-right:.3rem"></i>
         </div>
@@ -111,7 +115,7 @@
             placeholder="Password"
             autocomplete="current-password"
             required
-            aria-label="Password"
+
           />
           <button class="icon-btn" type="button" id="togglePwd" aria-label="Show password">
             <i id="pwdIcon" class="fa-regular fa-eye"></i>
@@ -122,15 +126,13 @@
 <label class="disclaimer">
   <input type="checkbox" id="ack" required>
   <span class="text">
-    I understand and agree this system is for authorised staff only.
-    Activity may be monitored and logged. I will follow school ICT policies when accessing resources.
+By signing in, you agree to the <a class="link" href="disclaimer.html">Disclaimer</a>
   </span>
 </label>
 
         <button class="btn" id="submitBtn" type="submit">Log In</button>
 
         <div id="error-msg" class="error" role="alert"></div>
-        <p class="muted">Having trouble signing in? Contact ICT.</p>
       </form>
     </section>
   </main>
