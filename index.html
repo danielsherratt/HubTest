@@ -56,9 +56,17 @@
     .btn[disabled] { opacity: .6; cursor: not-allowed; }
     .error { display: none; color: var(--error); font-size: .95rem; text-align: center; min-height: 1.25rem; }
     .muted { color: var(--muted); font-size: .9rem; text-align: center; margin-top: .25rem; }
-    .disclaimer { font-size:.9rem; color:#445; line-height:1.35; background:#f8fafb; border:1px solid #e3eaec; border-radius:8px; padding:.6rem .7rem; }
-    .disclaimer input { margin-right:.5rem; margin-top:.2rem; }
+    
     footer { color: var(--muted); text-align: center; font-size: .85rem; padding: 1rem 0 1.25rem; }
+  .disclaimer {
+    display:flex; align-items:flex-start; gap:.6rem;
+    font-size:.9rem; color:#445; line-height:1.35;
+    background:#f8fafb; border:1px solid #e3eaec; border-radius:8px;
+    padding:.6rem .7rem;
+  }
+  .disclaimer input[type="checkbox"] { margin-top:.2rem; flex: none; }
+  .disclaimer .text { flex:1; }
+
   </style>
 
   <!-- If already signed in, go straight to Feed -->
@@ -111,13 +119,13 @@
         </div>
 
         <!-- Disclaimer + required ack -->
-        <label class="disclaimer">
-          <input type="checkbox" id="ack" required>
-          <span>
-            I understand and agree this system is for authorised staff only. Activity may be monitored and logged.
-            I will follow school ICT policies when accessing resources.
-          </span>
-        </label>
+<label class="disclaimer">
+  <input type="checkbox" id="ack" required>
+  <span class="text">
+    I understand and agree this system is for authorised staff only.
+    Activity may be monitored and logged. I will follow school ICT policies when accessing resources.
+  </span>
+</label>
 
         <button class="btn" id="submitBtn" type="submit">Log In</button>
 

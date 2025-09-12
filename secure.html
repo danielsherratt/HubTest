@@ -8,83 +8,78 @@
   <link rel="stylesheet" href="assets/admin.css">
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 
   <style>
     body { display: none; }
-    /* Simple navbar (to match the rest of your site) */
-    .navbar { display:flex; align-items:center; gap:1rem; padding:.5rem 1rem; background:#fff; border-bottom:1px solid #e6ecee; }
+
+    /* Navbar with center links & right actions */
+    .navbar {
+      display:grid; grid-template-columns: 1fr auto 1fr; align-items:center;
+      padding:.5rem 1rem; background:#fff; border-bottom:1px solid #e6ecee;
+    }
+    .nav-left  { justify-self:start;  display:flex; align-items:center; gap:.5rem; }
+    .nav-center{ justify-self:center; }
+    .nav-right { justify-self:end;    display:flex; align-items:center; gap:.5rem; }
+
     .menu-icon { cursor:pointer; font-size:1.25rem; }
-    .nav-links { display:flex; gap:1rem; align-items:center; }
-    .nav-links a.nav-item, .nav-links button.nav-item {
+    .nav-links, .nav-right { display:flex; gap:1rem; align-items:center; }
+    .nav-item {
       background:none; border:0; padding:.35rem .6rem; cursor:pointer; border-radius:6px;
       text-decoration:none; color:#0f1f20; font-weight:600;
     }
-    .nav-links a.nav-item:hover, .nav-links button.nav-item:hover { background:#f2f5f6; }
+    .nav-item:hover { background:#f2f5f6; }
     #signOutBtn { color:#b00020; }
+
     .chip { display:inline-block; padding:.15rem .5rem; border-radius:999px; background:#eef3f4; font-size:.85rem; }
-    table#um-table th { user-select:none; }
+    table#um-table th { user-select:none; cursor:pointer; }
+    table#um-table th i { margin-left:.25rem; }
+    .upload-section label { display:inline-flex; align-items:center; gap:.4rem; }
   </style>
 
-  <!-- Gate: admin-only via /api/auth/me -->
+  <!-- Gate: admin-only via /api/auth/me + build right-side nav -->
   <script>
-  (async () => {
-    try {
-      const res = await fetch('/api/auth/me', { credentials: 'include' });
-      if (!res.ok) throw new Error('Not authorized');
-      const me = await res.json();
-      if (!me || me.role !== 'admin') { window.location.href = '/index.html'; return; }
-      document.body.style.display = 'block';
-    } catch {
-      window.location.href = '/index.html';
+    async function signOut(){
+      try { await fetch('/api/auth/logout',{method:'POST',credentials:'include'}); }
+      finally { location.href='/index.html'; }
     }
-  })();
-  </script>
 
-  <!-- Reusable sign-out + add Admin link (not needed here, but keeps navbar consistent) -->
-  <script>
-    async function signOut() {
-      try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); }
-      finally { window.location.href = '/index.html'; }
-    }
     (async () => {
       try {
-        const r = await fetch('/api/auth/me', { credentials: 'include' });
-        if (!r.ok) return;
-        const me = await r.json();
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        if (!res.ok) throw new Error('Not authorized');
+        const me = await res.json();
+        if (!me || me.role !== 'admin') { window.location.href = '/index.html'; return; }
+        document.body.style.display = 'block';
 
-        const nav = document.querySelector('.nav-links');
-        if (!nav) return;
-
-        // Add Admin link if admin (we are on admin already—harmless)
-        if (me.role === 'admin' && !nav.querySelector('a[href="secure.html"]')) {
-          const a = document.createElement('a');
-          a.className = 'nav-item';
-          a.href = 'secure.html';
-          a.textContent = 'Admin';
-          nav.appendChild(a);
+        // Right-side actions
+        const right = document.querySelector('.nav-right');
+        if (!right.querySelector('a[href="secure.html"]')) {
+          const a = document.createElement('a'); a.className='nav-item'; a.href='secure.html'; a.textContent='Admin'; right.appendChild(a);
         }
-        // Add Sign out
         if (!document.getElementById('signOutBtn')) {
-          const btn = document.createElement('button');
-          btn.id = 'signOutBtn';
-          btn.className = 'nav-item';
-          btn.textContent = 'Sign out';
-          btn.onclick = signOut;
-          nav.appendChild(btn);
+          const b = document.createElement('button'); b.id='signOutBtn'; b.className='nav-item'; b.textContent='Sign out'; b.onclick=signOut; right.appendChild(b);
         }
-      } catch {}
+      } catch {
+        window.location.href = '/index.html';
+      }
     })();
   </script>
 </head>
 <body>
   <!-- Navbar -->
   <div class="navbar">
-    <span class="menu-icon">&#9776;</span>
-    <div class="nav-links">
-      <a class="nav-item" href="feed.html">Feed</a>
-      <a class="nav-item" href="resources.html">Resources</a>
-      <!-- Admin + Sign out injected by script above -->
+    <div class="nav-left">
+      <span class="menu-icon">&#9776;</span>
     </div>
+    <div class="nav-center">
+      <div class="nav-links">
+        <a class="nav-item" href="feed.html">Feed</a>
+        <a class="nav-item" href="resources.html">Resources</a>
+        <a class="nav-item" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">Calendar</a>
+      </div>
+    </div>
+    <div class="nav-right"><!-- Admin + Sign out injected --></div>
   </div>
 
   <div class="banner"></div>
@@ -96,7 +91,7 @@
       <i class="fa fa-calendar"></i> Calendar
     </a>
 
-    <!-- ───────────────────────────── Add Resource ───────────────────────────── -->
+    <!-- Add Resource -->
     <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
     <form id="upload-form" class="upload-section" enctype="multipart/form-data">
       <input type="file" id="resource-file" />
@@ -129,7 +124,7 @@
       <button type="submit" id="new-upload-button">Add Resource</button>
     </form>
 
-    <!-- ───────────────────────────── Manage Resources ───────────────────────────── -->
+    <!-- Manage Resources -->
     <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Resources</h2>
     <a href="resources.html" target="_blank" rel="noopener" alt="View Resources"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
     <input type="text" id="search-resources" class="search-bar" placeholder="Search resources...">
@@ -148,7 +143,7 @@
     <i>Latest 10 are shown, search for the exact one you want</i>
     <div style="margin-bottom:1em;"></div>
 
-    <!-- ───────────────────────────── Add Post ───────────────────────────── -->
+    <!-- Add Post -->
     <h2 class="title"><i class="fa-solid fa-plus"></i> Add to Feed</h2>
     <form id="new-post">
       <input name="title" id="new-post-input" placeholder="Title" required />
@@ -169,7 +164,7 @@
       <button type="submit" id="new-post-button">Create Post</button>
     </form>
 
-    <!-- ───────────────────────────── Manage Posts ───────────────────────────── -->
+    <!-- Manage Posts -->
     <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Feed</h2>
     <a href="feed.html" target="_blank" rel="noopener" alt="View Feed"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
     <input type="text" id="search-posts" class="search-bar" placeholder="Search posts...">
@@ -191,7 +186,7 @@
       <i class="fa-solid fa-life-ring"></i> Help
     </a>
 
-    <!-- ───────────────────────────── User Management ───────────────────────────── -->
+    <!-- User Management -->
     <h2 class="title" style="margin-top:2rem;"><i class="fa-solid fa-users-gear"></i> User Management</h2>
 
     <input id="um-search" type="search" placeholder="Search users by email…" class="search-bar" style="margin:.25rem 0 1rem 0; width:100%;">
@@ -239,7 +234,7 @@
     </table>
   </main>
 
-  <!-- Guard noisy DOM mutation listeners -->
+  <!-- Avoid noisy DOM mutation listeners -->
   <script>
     (function() {
       const originalAddEventListener = EventTarget.prototype.addEventListener;
@@ -258,7 +253,7 @@
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
   <script>
-    // ───────────── Utilities ─────────────
+    /* ========== Utils ========== */
     function nzDateTime(value, { withTime = true } = {}) {
       if (!value) return '';
       const d = new Date(value);
@@ -269,10 +264,10 @@
       return d.toLocaleString('en-NZ', opts).replace(',', '');
     }
     function esc(s){
-      return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+      return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
     }
 
-    // ───────────── Quill ─────────────
+    /* ========== Quill ========== */
     const quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
@@ -291,13 +286,12 @@
       if (file) document.getElementById('resource-type').value = 'file';
     });
 
-    // ───────────── Data holders & sorting ─────────────
+    /* ========== Posts & Resources Management ========== */
     let posts = [];
     let resources = [];
     let postSort = { key: 'created_at', asc: false };
     let resourceSort = { key: 'created_date', asc: false };
 
-    // ───────────── Fetch & render posts/resources ─────────────
     async function fetchPosts() {
       const res = await fetch('/api/posts?admin=true', { credentials: 'include' });
       if (res.status === 401) return location.href = '/index.html';
@@ -327,7 +321,7 @@
       const search = document.getElementById('search-posts').value.toLowerCase();
 
       const filtered = posts
-        .filter(p => p.title.toLowerCase().includes(search))
+        .filter(p => (p.title || '').toLowerCase().includes(search))
         .sort(sortBy(postSort.key, postSort.asc))
         .slice(0, 10);
 
@@ -339,9 +333,9 @@
       for (const p of filtered) {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td>${p.title}</td>
-          <td>${nzDateTime(p.created_at)}</td>
-          <td>${p.category}</td>
+          <td>${esc(p.title)}</td>
+          <td>${esc(nzDateTime(p.created_at))}</td>
+          <td>${esc(p.category)}</td>
           <td>
             <button class="pin-btn" onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
               <i class="${p.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${p.pinned ? 'Unpin' : 'Pin'}
@@ -370,9 +364,9 @@
       for (const r of filtered) {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><a href="${r.url}" class="link-nochange" target="_blank" rel="noopener">${r.title}</a></td>
-          <td>${nzDateTime(r.created_date, { withTime:false })}</td>
-          <td>${r.category}</td>
+          <td><a href="${r.url}" class="link-nochange" target="_blank" rel="noopener">${esc(r.title)}</a></td>
+          <td>${esc(nzDateTime(r.created_date, { withTime:false }))}</td>
+          <td>${esc(r.category)}</td>
           <td>
             <button class="pinresource-btn" onclick="togglePinResource(${r.id}, ${r.pinned})">
               <i class="${r.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${r.pinned ? 'Unpin' : 'Pin'}
@@ -464,6 +458,7 @@
         }
       } else {
         formData.append('url', urlInput);
+        // Attempt a Microlink screenshot thumbnail
         const thumbnailUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
         try {
           const response = await fetch(thumbnailUrl);
@@ -522,7 +517,7 @@
       })
     );
 
-    // ───────────── User Management (search + sort + top10 + alerts + reset + force sign-out) ─────────────
+    /* ========== User Management ========== */
     const umRows = document.getElementById('um-rows');
     const umForm = document.getElementById('um-create-form');
     const umMsg  = document.getElementById('um-create-msg');
@@ -547,7 +542,8 @@
         if(!r.ok){ umRows.innerHTML = '<tr><td colspan="6">Failed to load users.</td></tr>'; return; }
         let data = await r.json();
         if (!Array.isArray(data)) data = [];
-        data = data.slice(0, 10); // safety cap
+        // Only show the 10 most recent (expect backend sort to match; otherwise this slice still caps list)
+        data = data.slice(0, 10);
 
         if(!data.length){ umRows.innerHTML = '<tr><td colspan="6">No users.</td></tr>'; return; }
 
@@ -586,6 +582,34 @@
       umSortHeaders.forEach(th => { umSortIcon(th, th.dataset.sort === umSortKey, umSortAsc); });
     }
 
+    // Create user
+    umForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      umMsg.textContent = '';
+      const email = (document.getElementById('um-email').value || '').trim();
+      const password = document.getElementById('um-password').value;
+      const role = document.getElementById('um-role').value || 'user';
+      if (!email || !password) { umMsg.textContent = 'Email and password required.'; return; }
+      try {
+        const r = await fetch('/api/users', {
+          method: 'POST', credentials:'include',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ email, password, role })
+        });
+        if (r.ok) {
+          umMsg.textContent = 'User created.';
+          e.target.reset();
+          umLoadUsers();
+        } else {
+          const data = await r.json().catch(()=>({}));
+          umMsg.textContent = 'Create failed: ' + (data?.error || r.status);
+        }
+      } catch {
+        umMsg.textContent = 'Network error creating user.';
+      }
+    });
+
+    // Table interactions: reset password / force logout / delete
     umRows.addEventListener('click', async (e)=>{
       const logoutBtn = e.target.closest('button[data-logout]');
       const delBtn    = e.target.closest('button[data-del]');
@@ -637,49 +661,15 @@
       }
     });
 
-    umForm.addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      umMsg.textContent = '';
-      const email = document.getElementById('um-email').value.trim();
-      const password = document.getElementById('um-password').value;
-      const role = document.getElementById('um-role').value;
-      try{
-        const r = await fetch('/api/users', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          credentials:'include',
-          body: JSON.stringify({ email, password, role })
-        });
-        if(r.ok){
-          umMsg.style.color = '#00625f';
-          umMsg.textContent = 'User created.';
-          e.target.reset();
-          umLoadUsers();
-        } else {
-          let data={}; try{ data = await r.json(); }catch{}
-          umMsg.style.color = '#b00020';
-          umMsg.textContent = data?.error || 'Create failed.';
-        }
-      }catch{
-        umMsg.style.color = '#b00020';
-        umMsg.textContent = 'Network error.';
-      }
-    });
+    // Sorting, searching
+    document.getElementById('um-search').addEventListener('input', () => umLoadUsers());
+    document.querySelectorAll('.um-sort').forEach(th => th.addEventListener('click', () => {
+      const key = th.dataset.sort;
+      if (key === umSortKey) umSortAsc = !umSortAsc; else { umSortKey = key; umSortAsc = true; }
+      umLoadUsers();
+    }));
 
-    // Search / sort
-    let umT;
-    umSearch.addEventListener('input', () => { clearTimeout(umT); umT = setTimeout(umLoadUsers, 200); });
-    document.querySelectorAll('.um-sort').forEach(th => {
-      th.style.cursor = 'pointer';
-      th.addEventListener('click', () => {
-        const key = th.dataset.sort;
-        if (key === umSortKey) umSortAsc = !umSortAsc;
-        else { umSortKey = key; umSortAsc = (key === 'email' || key === 'role'); }
-        umLoadUsers();
-      });
-    });
-
-    // Initial loads
+    /* ========== Init loads ========== */
     document.addEventListener('DOMContentLoaded', () => {
       fetchPosts();
       fetchResources();
