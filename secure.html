@@ -439,6 +439,7 @@
     const umMsg  = document.getElementById('um-create-msg');
     const umSearch = document.getElementById('um-search');
 
+    // Declare ONCE (fixes your error)
     let umSortKey = 'last_sign_in';
     let umSortAsc = false;
 
@@ -593,8 +594,6 @@
 
     // Sorting / search
     document.getElementById('um-search').addEventListener('input', umLoadUsers);
-    let umSortKey = 'last_sign_in';
-    let umSortAsc = false;
     document.querySelectorAll('.um-sort').forEach(th => th.addEventListener('click', () => {
       const key = th.dataset.sort;
       if (key === umSortKey) umSortAsc = !umSortAsc; else { umSortKey = key; umSortAsc = true; }
