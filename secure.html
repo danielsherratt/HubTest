@@ -9,7 +9,14 @@
   <link rel="stylesheet" href="assets/cesw.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
 
-  <style>body{display:none}</style>
+  <!-- Make admin page look like the original: content centered, text left-aligned -->
+  <style>
+    body{display:none}
+    main.admin { max-width: 1000px; margin: auto; text-align: left; }
+    main.admin .title { text-align: left; }
+    .calendarbutton { margin: .25rem 0 1rem 0; }
+  </style>
+
   <script>
     async function signOut(){
       try { await fetch('/api/auth/logout',{ method:'POST', credentials:'include' }); }
@@ -53,6 +60,7 @@
       <div class="nav-links">
         <a class="nav-item" href="feed.html">Feed</a>
         <a class="nav-item" href="resources.html">Resources</a>
+        <!-- NOTE: Navbar calendar (as per earlier) -->
         <a class="nav-item" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">Calendar</a>
       </div>
     </div>
@@ -61,8 +69,12 @@
 
   <div class="banner"></div>
 
-  <main style="max-width: 1000px; margin: auto;">
+  <main class="admin">
     <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub - Admin</h1>
+    <!-- Dedicated calendar button under heading (different link is OK) -->
+    <a class="calendarbutton" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">
+      <i class="fa fa-calendar"></i> Calendar
+    </a>
 
     <!-- Add Resource -->
     <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>

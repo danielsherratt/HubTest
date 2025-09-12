@@ -59,6 +59,7 @@
       <input type="text" id="searchBar" placeholder="Find a resource">
       <button id="clearSearch" title="Clear"><i class="fa-solid fa-xmark"></i></button>
       <button id="ShowFavs" title="Favourites"><i class="fa-solid fa-star"></i></button>
+      <button id="ShowAll" title="Show all">Show All</button>
     </div>
 
     <div id="noFavourites" style="display:none; text-align:center; margin:20px;">
@@ -116,6 +117,7 @@
 
     function showCategory(cat) {
       $('#searchBar').val('');
+      $('#noFavourites').hide();
       document.getElementById('category-container').style.display = 'none';
       document.getElementById('backToCategories').style.display = 'inline-block';
 
@@ -138,6 +140,7 @@
       if (!val) {
         container.innerHTML = '';
         catCards.style.display = 'flex';
+        $('#noFavourites').hide();
         $('#noResults').hide();
         return;
       }
@@ -221,16 +224,33 @@
 
       // Show Favourites only
       $('#ShowFavs').click(function () {
-        if (!favourites.length) {
-          $('.card').hide();
+        const container = document.querySelector('.card-container');
+        const any = favourites.length > 0;
+        if (!any) {
+          container.innerHTML = ''; // hide cards
           $('#noFavourites').show();
-        } else {
-          $('#noFavourites').hide();
-          $('.card').each(function () {
-            const title = $(this).data('name') || '';
-            $(this).toggle(favourites.includes(title));
-          });
+          document.getElementById('category-container').style.display = 'none';
+          document.getElementById('backToCategories').style.display = 'none';
+          $('#noResults').hide();
+          return;
         }
+        $('#noFavourites').hide();
+        document.getElementById('category-container').style.display = 'none';
+        document.getElementById('backToCategories').style.display = 'inline-block';
+
+        // Build list from favourites
+        const subset = allPosts.filter(p => favourites.includes((p.title||'').toLowerCase()));
+        renderCards(subset);
+      });
+
+      // Show All
+      $('#ShowAll').click(function () {
+        $('#searchBar').val('');
+        $('#noFavourites').hide();
+        document.getElementById('backToCategories').style.display = 'none';
+        document.getElementById('category-container').style.display = 'flex';
+        document.querySelector('.card-container').innerHTML = '';
+        $('#noResults').hide();
       });
 
       // Scroll helpers
