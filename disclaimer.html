@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>CESW Hub – Disclaimer</title>
+
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="assets/app.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <style>body{display:block}</style>
+  <script>
+    async function signOut(){
+      try { await fetch('/api/auth/logout',{method:'POST',credentials:'include'}); }
+      finally { location.href='/index.html'; }
+    }
+    (async () => {
+      try {
+        const r = await fetch('/api/auth/me',{credentials:'include'});
+        if (!r.ok) throw 0;
+        const me = await r.json();
+        const right = document.querySelector('.nav-right');
+        if (me.role === 'admin' && !right.querySelector('a[href="secure.html"]')) {
+          const a=document.createElement('a'); a.className='nav-item'; a.href='secure.html'; a.textContent='Admin'; right.appendChild(a);
+        }
+        if (!document.getElementById('signOutBtn')) {
+          const b=document.createElement('button'); b.id='signOutBtn'; b.className='nav-item'; b.textContent='Sign out'; b.onclick=signOut; right.appendChild(b);
+        }
+      } catch { /* not signed in; show page anyway */ }
+    })();
+  </script>
+</head>
+<body>
+  <!-- NAV -->
+  <div class="navbar">
+    <div class="nav-left"><span class="menu-icon">&#9776;</span></div>
+    <div class="nav-center">
+      <div class="nav-links">
+        <a class="nav-item" href="feed.html">Feed</a>
+        <a class="nav-item" href="resources.html">Resources</a>
+        <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
+      </div>
+    </div>
+    <div class="nav-right"></div>
+  </div>
+
+  <div class="banner"></div>
+  <h2 class="title"><i class="fa-solid fa-shield"></i> CESW Staff Hub Disclaimer</h2>
+
+  <main>
+    <div class="card" style="max-width:900px;margin:0 auto;">
+      <p class="muted">Last updated: <span id="updated"></span></p>
+
+      <h3>1) Staff Use Only</h3>
+      <p>The CESW Staff Hub is provided for authorised staff use. Access is restricted to current staff members and approved administrators.</p>
+
+      <h3>2) Appropriate Use</h3>
+      <p>You must use the Hub in line with school policies and applicable laws. Do not post or upload content that is confidential, unlawful, offensive, or infringes third-party rights.</p>
+
+      <h3>3) Monitoring & Logging</h3>
+      <p>For security and support, the system may log sign-ins, IP addresses, and activity metadata (e.g., last sign-in time). Logs are used to protect users and the platform.</p>
+
+      <h3>4) Privacy</h3>
+      <p>We collect only what’s necessary to operate the Hub (e.g., name, email, role). Data is handled in accordance with school privacy obligations. Contact ICT if you have privacy questions.</p>
+
+      <h3>5) Accuracy & Availability</h3>
+      <p>While we aim for accuracy and uptime, content may change and services may be interrupted. The Hub is provided “as is” without warranties.</p>
+
+      <h3>6) Third-Party Links</h3>
+      <p>The Hub may link to external sites. We’re not responsible for the content or policies of third-party services.</p>
+
+      <h3>7) Security</h3>
+      <p>Keep your credentials secure. Report suspicious activity to ICT immediately. We may lock accounts after repeated failed sign-in attempts.</p>
+
+      <h3>8) Agreement</h3>
+      <p>By signing in, you acknowledge you’ve read and agree to this Disclaimer.</p>
+
+      <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+        <a class="btn" href="/index.html"><i class="fa-solid fa-right-to-bracket"></i> Back to Sign in</a>
+        <a class="nav-item" href="mailto:ITSupport@kotakureo.school.nz"><i class="fa-solid fa-life-ring"></i> Contact ICT</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('updated').textContent =
+      new Date().toLocaleDateString('en-NZ',{ timeZone:'Pacific/Auckland', year:'numeric', month:'short', day:'2-digit' });
+    $('.menu-icon').on('click',()=>$('.nav-links').toggleClass('active'));
+  </script>
+</body>
+</html>

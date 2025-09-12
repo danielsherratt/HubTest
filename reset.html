@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>CESW Hub – Password Reset</title>
+
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="assets/app.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <style>body{display:block}</style>
+  <script>
+    async function signOut(){
+      try { await fetch('/api/auth/logout',{method:'POST',credentials:'include'}); }
+      finally { location.href='/index.html'; }
+    }
+    (async () => {
+      try {
+        const r = await fetch('/api/auth/me',{credentials:'include'});
+        if (!r.ok) throw 0;
+        const me = await r.json();
+        const right = document.querySelector('.nav-right');
+        if (me.role === 'admin' && !right.querySelector('a[href="secure.html"]')) {
+          const a=document.createElement('a'); a.className='nav-item'; a.href='secure.html'; a.textContent='Admin'; right.appendChild(a);
+        }
+        if (!document.getElementById('signOutBtn')) {
+          const b=document.createElement('button'); b.id='signOutBtn'; b.className='nav-item'; b.textContent='Sign out'; b.onclick=signOut; right.appendChild(b);
+        }
+      } catch { /* not signed in; fine */ }
+    })();
+  </script>
+</head>
+<body>
+  <!-- NAV -->
+  <div class="navbar">
+    <div class="nav-left"><span class="menu-icon">&#9776;</span></div>
+    <div class="nav-center">
+      <div class="nav-links">
+        <a class="nav-item" href="feed.html">Feed</a>
+        <a class="nav-item" href="resources.html">Resources</a>
+        <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
+      </div>
+    </div>
+    <div class="nav-right"></div>
+  </div>
+
+  <div class="banner"></div>
+  <h2 class="title"><i class="fa-solid fa-key"></i> Password Reset</h2>
+
+  <main class="wrap" style="display:grid;place-items:start center;padding:1rem 1rem 2rem;">
+    <section class="login-card" style="max-width:480px;width:100%;">
+      <!-- Request reset (no token) -->
+      <div id="request-view" style="display:none">
+        <p class="muted">Enter your work email and we’ll send a password reset link.</p>
+        <form id="request-form" novalidate>
+          <div class="field">
+            <input type="email" id="req-email" placeholder="Email address" required autocomplete="email">
+            <i class="fa-solid fa-envelope" aria-hidden="true" style="opacity:.6;margin-right:.3rem"></i>
+          </div>
+          <button class="btn" id="req-btn" type="submit">Send reset link</button>
+          <div id="req-msg" class="muted" style="margin-top:.5rem;min-height:1.25rem"></div>
+        </form>
+        <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+          <a class="nav-item" href="/index.html"><i class="fa-solid fa-right-to-bracket"></i> Back to Sign in</a>
+          <a class="nav-item" href="/disclaimer.html" target="_blank" rel="noopener">Disclaimer</a>
+        </div>
+      </div>
+
+      <!-- Finalise reset (token) -->
+      <div id="reset-view" style="display:none">
+        <p class="muted">Set a new password for your account.</p>
+        <form id="reset-form" novalidate>
+          <div class="field">
+            <input type="password" id="new-pass" placeholder="New password" required autocomplete="new-password" minlength="8">
+            <button class="icon-btn" type="button" id="toggleNew"><i id="iconNew" class="fa-regular fa-eye"></i></button>
+          </div>
+          <div class="field">
+            <input type="password" id="new-pass2" placeholder="Confirm new password" required autocomplete="new-password" minlength="8">
+            <button class="icon-btn" type="button" id="toggleNew2"><i id="iconNew2" class="fa-regular fa-eye"></i></button>
+          </div>
+          <button class="btn" id="set-btn" type="submit">Set password</button>
+          <div id="set-msg" class="muted" style="margin-top:.5rem;min-height:1.25rem"></div>
+        </form>
+        <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+          <a class="nav-item" href="/index.html"><i class="fa-solid fa-right-to-bracket"></i> Back to Sign in</a>
+          <a class="nav-item" href="/disclaimer.html" target="_blank" rel="noopener">Disclaimer</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const qs = new URLSearchParams(location.search);
+    const token = qs.get('token');
+
+    const reqView  = document.getElementById('request-view');
+    const resetView= document.getElementById('reset-view');
+
+    // Toggle views
+    if (token) resetView.style.display='block';
+    else reqView.style.display='block';
+
+    // Menu
+    $('.menu-icon').on('click',()=>$('.nav-links').toggleClass('active'));
+
+    // Request reset
+    document.getElementById('request-form')?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const email = document.getElementById('req-email').value.trim();
+      const btn = document.getElementById('req-btn');
+      const msg = document.getElementById('req-msg');
+      if (!email) { msg.textContent='Please enter your email.'; return; }
+      btn.disabled = true; btn.textContent='Sending…'; msg.textContent='';
+      try{
+        const r = await fetch('/api/auth/request_reset', {
+          method:'POST', credentials:'include',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ email })
+        });
+        if (!r.ok) {
+          let d={}; try{ d=await r.json(); }catch{}
+          throw new Error(d.error || 'Could not send reset link.');
+        }
+        msg.textContent='If that email is registered, a reset link has been sent.';
+      }catch(err){ msg.textContent = err.message || 'Something went wrong.'; }
+      finally{ btn.disabled=false; btn.textContent='Send reset link'; }
+    });
+
+    // Show/hide toggles
+    function toggleVisibility(inputId, iconId){
+      const inp = document.getElementById(inputId);
+      const icn = document.getElementById(iconId);
+      const isPwd = inp.type === 'password';
+      inp.type = isPwd ? 'text' : 'password';
+      icn.className = isPwd ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+    }
+    document.getElementById('toggleNew')?.addEventListener('click',()=>toggleVisibility('new-pass','iconNew'));
+    document.getElementById('toggleNew2')?.addEventListener('click',()=>toggleVisibility('new-pass2','iconNew2'));
+
+    // Finalise reset
+    document.getElementById('reset-form')?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const pass1 = document.getElementById('new-pass').value;
+      const pass2 = document.getElementById('new-pass2').value;
+      const btn = document.getElementById('set-btn');
+      const msg = document.getElementById('set-msg');
+
+      if (pass1.length < 8) { msg.textContent='Password must be at least 8 characters.'; return; }
+      if (pass1 !== pass2)  { msg.textContent='Passwords do not match.'; return; }
+
+      btn.disabled=true; btn.textContent='Updating…'; msg.textContent='';
+      try{
+        const r = await fetch('/api/auth/reset', {
+          method:'POST', credentials:'include',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ token, password: pass1 })
+        });
+        if (!r.ok) {
+          let d={}; try{ d=await r.json(); }catch{}
+          throw new Error(d.error || 'Reset failed.');
+        }
+        msg.textContent='Password updated. Redirecting to sign in…';
+        setTimeout(()=>location.href='/index.html', 1200);
+      }catch(err){ msg.textContent = err.message || 'Something went wrong.'; }
+      finally{ btn.disabled=false; btn.textContent='Set password'; }
+    });
+  </script>
+</body>
+</html>
