@@ -4,82 +4,74 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CESW Hub - Resources</title>
-
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="assets/cesw.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-
+  <link rel="stylesheet" href="assets/style.css">
   <style>body{display:none}</style>
   <script>
-    async function signOut(){
-      try { await fetch('/api/auth/logout', { method:'POST', credentials:'include' }); }
-      finally { location.href='/index.html'; }
-    }
-    // Gate: user or admin; build right-side nav actions
-    (async () => {
-      try {
+    async function signOut(){ try{ await fetch('/api/auth/logout',{method:'POST',credentials:'include'});}finally{location.href='/index.html';}}
+    (async ()=>{
+      try{
         const r = await fetch('/api/auth/me', { credentials:'include' });
         if (!r.ok) throw 0;
         const me = await r.json();
         if (!['user','admin'].includes(me.role)) throw 0;
-        document.body.style.display = 'block';
-
-        const right = document.querySelector('.nav-right');
-        if (me.role === 'admin') {
-          const a=document.createElement('a'); a.className='nav-item'; a.href='secure.html';
-          a.innerHTML='<i class="fa-solid fa-gear"></i> Admin';
-          right.appendChild(a);
-        }
-        const b=document.createElement('button'); b.id='signOutBtn'; b.className='nav-item';
-        b.type='button'; b.innerHTML='<i class="fa-solid fa-right-from-bracket"></i> Sign out';
-        b.onclick=signOut; right.appendChild(b);
-      } catch { location.href='/index.html'; }
+        document.body.style.display='block';
+        const right=document.querySelector('.nav-right');
+        if (me.role==='admin'){ const a=document.createElement('a'); a.className='nav-item'; a.href='secure.html'; a.innerHTML='<i class="fa-solid fa-gear"></i> Admin'; right.appendChild(a); }
+        const b=document.createElement('a'); b.className='nav-item'; b.href='#'; b.innerHTML='<i class="fa-solid fa-right-from-bracket"></i> Sign out'; b.onclick=(e)=>{e.preventDefault();signOut()}; right.appendChild(b);
+      }catch{ location.href='/index.html'; }
     })();
   </script>
 </head>
 <body>
   <!-- NAV -->
   <div class="navbar">
-    <div class="nav-left"></div>
-    <div class="nav-center">
-      <div class="nav-links">
-        <a class="nav-item" href="feed.html">Feed</a>
-        <a class="nav-item" href="resources.html">Resources</a>
-        <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
+    <div class="nav-inner">
+      <div class="nav-left"></div>
+      <div class="nav-center">
+        <div class="nav-links">
+          <a class="nav-item" href="feed.html">Feed</a>
+          <a class="nav-item" href="resources.html">Resources</a>
+          <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
+        </div>
       </div>
+      <div class="nav-right"></div>
     </div>
-    <div class="nav-right"></div>
   </div>
 
-  <div class="banner"></div>
+  <!-- Banner -->
+  <div class="banner" role="img" aria-label="CESW banner"></div>
+
   <h2 class="title"><i class="fa-solid fa-file"></i> Resources</h2>
 
   <main>
     <div id="search-container">
-      <input type="text" id="searchBar" placeholder="Find a resource">
-      <button id="clearSearch" title="Clear"><i class="fa-solid fa-xmark"></i></button>
-      <button id="ShowFavs" title="Favourites"><i class="fa-solid fa-star"></i></button>
+      <input type="text" id="searchBar" class="search-bar" placeholder="Find a resource">
+      <button id="clearSearch" class="btn-ghost" title="Clear"><i class="fa-solid fa-xmark"></i></button>
+      <button id="ShowFavs" class="btn" title="Favourites"><i class="fa-solid fa-star"></i></button>
+      <button id="ShowAll" class="btn" title="Show all">Show All</button>
     </div>
 
-    <div id="noFavourites" style="display:none; text-align:center; margin:20px;">
+    <div id="noFavourites" style="display:none;">
       <i class="fa-regular fa-star"></i> You have no favourites yet. Click the star on a resource to add one.
     </div>
 
     <div id="category-container"></div>
-    <button id="backToCategories" style="display:none; margin:1em 0;">
+    <button id="backToCategories" class="btn" style="display:none; margin: 1em 0;">
       <i class="fa-solid fa-arrow-left"></i> Categories
     </button>
 
-    <div id="noResults">
-      Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search
-    </div>
+    <div id="noResults">Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</div>
 
     <div class="card-container"></div>
 
     <a href="mailto:ITSupport@kotakureo.school.nz" id="contact" class="link-nochange">
       <i class="fa fa-envelope"></i> Contact
     </a>
-    <button id="backToTop"><i class="fa-solid fa-angle-up"></i> Back to Top</button>
+    <button id="backToTop" class="btn"><i class="fa-solid fa-angle-up"></i> Back to Top</button>
   </main>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -88,157 +80,146 @@
     const RES_FAV_KEY = 'resources_favourites';
     let favourites = JSON.parse(localStorage.getItem(RES_FAV_KEY)) || [];
 
-    async function loadPosts() {
+    async function loadPosts(){
       const res = await fetch('/api/resourcespull', { credentials:'include' });
       allPosts = await res.json();
 
-      // Build categories
+      // categories
       const categories = [...new Set(allPosts.map(p => p.category).filter(Boolean))];
       const catContainer = document.getElementById('category-container');
       catContainer.innerHTML = '';
-
-      categories.forEach(cat => {
-        const card = document.createElement('div');
-        card.className = 'category-card';
-        card.dataset.cat = (cat || '').toLowerCase();
-
+      categories.forEach(cat=>{
+        const card=document.createElement('div');
+        card.className='category-card';
+        card.dataset.cat=(cat||'').toLowerCase();
         const imageUrl = `https://files.danieltesting.space/uploads/${encodeURIComponent((cat||'').toLowerCase())}.png`;
-        card.innerHTML = `<img src="${imageUrl}" onload="this.classList.add('loaded')">`;
-
-        card.addEventListener('click', () => showCategory(cat));
+        card.innerHTML=`<img src="${imageUrl}" alt="">`;
+        card.addEventListener('click',()=>showCategory(cat));
         catContainer.appendChild(card);
       });
 
-      // Default: categories visible; cards empty
-      document.querySelector('.card-container').innerHTML = '';
-      $('#noResults').hide();
+      document.querySelector('.card-container').innerHTML='';
+      $('#noResults').hide(); $('#noFavourites').hide();
     }
 
-    function showCategory(cat) {
+    function showCategory(cat){
       $('#searchBar').val('');
-      document.getElementById('category-container').style.display = 'none';
-      document.getElementById('backToCategories').style.display = 'inline-block';
-
-      const filtered = allPosts.filter(p => (p.category || '').toLowerCase() === (cat||'').toLowerCase());
+      $('#noFavourites').hide();
+      document.getElementById('category-container').style.display='none';
+      document.getElementById('backToCategories').style.display='inline-block';
+      const filtered = allPosts.filter(p => (p.category||'').toLowerCase()===(cat||'').toLowerCase());
       renderCards(filtered);
     }
 
-    document.getElementById('backToCategories').addEventListener('click', () => {
-      document.getElementById('category-container').style.display = 'flex';
-      document.getElementById('backToCategories').style.display = 'none';
-      document.querySelector('.card-container').innerHTML = '';
-      $('#noResults').hide();
+    document.getElementById('backToCategories').addEventListener('click', ()=>{
+      document.getElementById('category-container').style.display='flex';
+      document.getElementById('backToCategories').style.display='none';
+      document.querySelector('.card-container').innerHTML='';
+      $('#noResults').hide(); $('#noFavourites').hide();
     });
 
-    function filterCards() {
-      const val = $('#searchBar').val().toLowerCase().trim();
+    function filterCards(){
+      const val = ($('#searchBar').val()||'').toLowerCase().trim();
       const container = document.querySelector('.card-container');
       const catCards = document.getElementById('category-container');
 
-      if (!val) {
-        container.innerHTML = '';
-        catCards.style.display = 'flex';
-        $('#noResults').hide();
-        return;
+      if (!val){
+        container.innerHTML=''; catCards.style.display='flex';
+        $('#noFavourites').hide(); $('#noResults').hide(); return;
       }
-
-      catCards.style.display = 'none';
-      const matched = allPosts.filter(p => (p.title || '').toLowerCase().includes(val));
+      catCards.style.display='none';
+      const matched = allPosts.filter(p => (p.title||'').toLowerCase().includes(val));
       renderCards(matched);
     }
 
-    function renderCards(posts) {
+    function renderCards(posts){
       const container = document.querySelector('.card-container');
-      container.innerHTML = '';
+      container.innerHTML='';
 
-      if (!posts.length) {
-        $('#noResults').show();
-        return;
-      }
+      if (!posts.length){ $('#noResults').show(); return; }
       $('#noResults').hide();
 
-      posts.forEach(p => {
-        const div = document.createElement('div');
-        div.innerHTML = `
+      posts.forEach(p=>{
+        const div=document.createElement('div');
+        div.innerHTML=`
 <a class="link-nochange" href="${p.url}" target="_blank" rel="noopener">
   <div class="card" data-name="${(p.title||'').toLowerCase()}" data-category="${(p.category||'').toLowerCase()}">
-    <p>${p.title || ''}</p>
-    <img src="${p.thumbnail || ''}" onload="this.classList.add('loaded')">
+    <p>${p.title||''}</p>
+    <img src="${p.thumbnail||''}" alt="">
     <button class="fav-btn" title="Add to favourites"><i class="fa-regular fa-star"></i></button>
   </div>
 </a>`;
         container.appendChild(div);
       });
 
-      // Initialize favourites on current render
-      $('.card').each(function () {
-        const title = $(this).data('name') || '';
-        if (favourites.includes(title)) {
-          $(this).find('.fav-btn').addClass('active')
-            .find('i').removeClass('fa-regular').addClass('fa-solid');
+      // init favs
+      $('.card').each(function(){
+        const title = $(this).data('name')||'';
+        if (favourites.includes(title)){
+          $(this).find('.fav-btn').addClass('active').find('i').removeClass('fa-regular').addClass('fa-solid');
         }
       });
 
-      // Toggle favourite
-      $('.fav-btn').off('click').on('click', function (e) {
+      // toggle fav
+      $('.fav-btn').off('click').on('click', function(e){
         e.preventDefault(); e.stopPropagation();
-        const card = $(this).closest('.card');
-        const title = card.data('name') || '';
-
-        if (favourites.includes(title)) {
-          favourites = favourites.filter(f => f !== title);
-          $(this).removeClass('active')
-            .find('i').removeClass('fa-solid').addClass('fa-regular');
+        const card=$(this).closest('.card'); const title=card.data('name')||'';
+        if (favourites.includes(title)){
+          favourites=favourites.filter(f=>f!==title);
+          $(this).removeClass('active').find('i').removeClass('fa-solid').addClass('fa-regular');
         } else {
           favourites.push(title);
-          $(this).addClass('active')
-            .find('i').removeClass('fa-regular').addClass('fa-solid');
+          $(this).addClass('active').find('i').removeClass('fa-regular').addClass('fa-solid');
         }
         localStorage.setItem(RES_FAV_KEY, JSON.stringify(favourites));
       });
     }
 
-    $(document).ready(function () {
+    $(document).ready(function(){
       loadPosts();
 
-      $('#searchBar')
-        .focus()
-        .on('keyup input', filterCards)
-        .on('input', function () {
-          clearTimeout($.data(this, 'timer'));
-          const self = this;
-          $.data(this, 'timer', setTimeout(() => $(self).blur(), 10000));
-        })
-        .on('keydown', function () { clearTimeout($.data(this, 'timer')); });
+      $('#searchBar').focus().on('keyup input', filterCards)
+        .on('input', function(){
+          clearTimeout($.data(this,'timer'));
+          const self=this; $.data(this,'timer', setTimeout(()=>$(self).blur(), 10000));
+        }).on('keydown', function(){ clearTimeout($.data(this,'timer')); });
 
-      // Clear search
-      $('#clearSearch').click(function () {
+      $('#clearSearch').click(function(){
         $('#searchBar').val('').trigger('keyup');
-        $('#noFavourites').hide();
-        $('#searchBar').focus();
-        document.getElementById('backToCategories').style.display = 'none';
+        $('#noFavourites').hide(); $('#searchBar').focus();
+        document.getElementById('backToCategories').style.display='none';
+        document.getElementById('category-container').style.display='flex';
+        document.querySelector('.card-container').innerHTML='';
+        $('#noResults').hide();
       });
 
-      // Show Favourites only
-      $('#ShowFavs').click(function () {
-        if (!favourites.length) {
-          $('.card').hide();
-          $('#noFavourites').show();
-        } else {
-          $('#noFavourites').hide();
-          $('.card').each(function () {
-            const title = $(this).data('name') || '';
-            $(this).toggle(favourites.includes(title));
-          });
+      $('#ShowFavs').click(function(){
+        const any = favourites.length>0;
+        const container = document.querySelector('.card-container');
+        if (!any){
+          container.innerHTML=''; $('#noFavourites').show();
+          document.getElementById('category-container').style.display='none';
+          document.getElementById('backToCategories').style.display='none';
+          $('#noResults').hide(); return;
         }
+        $('#noFavourites').hide();
+        document.getElementById('category-container').style.display='none';
+        document.getElementById('backToCategories').style.display='inline-block';
+        const subset = allPosts.filter(p => favourites.includes((p.title||'').toLowerCase()));
+        renderCards(subset);
       });
 
-      // Scroll helpers
-      $(window).on('scroll', () => {
-        const scrolled = $(window).scrollTop() > 100;
-        $('#backToTop, #contact').toggle(scrolled);
+      // Show all -> show all cards (not categories)
+      $('#ShowAll').click(function(){
+        $('#searchBar').val('');
+        $('#noFavourites').hide();
+        document.getElementById('backToCategories').style.display='inline-block';
+        document.getElementById('category-container').style.display='none';
+        renderCards(allPosts);
       });
-      $('#backToTop').click(() => $('html, body').animate({ scrollTop: 0 }, 'fast'));
+
+      $(window).on('scroll', ()=>{ const sc=$(window).scrollTop()>100; $('#backToTop, #contact').toggle(sc); });
+      $('#backToTop').click(()=> $('html, body').animate({scrollTop:0}, 'fast'));
     });
   </script>
 </body>

@@ -1,41 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CESW Hub - Feed</title>
-
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="assets/cesw.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-
+  <link rel="stylesheet" href="assets/style.css">
   <style>body{display:none}</style>
   <script>
     let CURRENT_USER = null;
-
-    async function signOut(){
-      try { await fetch('/api/auth/logout', { method:'POST', credentials:'include' }); }
-      finally { location.href='/index.html'; }
-    }
-    // Gate: user or admin; build right-side nav actions
+    async function signOut(){ try{ await fetch('/api/auth/logout',{method:'POST',credentials:'include'});}finally{location.href='/index.html';}}
     (async () => {
       try {
         const r = await fetch('/api/auth/me', { credentials:'include' });
         if (!r.ok) throw 0;
         const me = await r.json();
         if (!['user','admin'].includes(me.role)) throw 0;
-        CURRENT_USER = me;
-        document.body.style.display = 'block';
-
+        CURRENT_USER = me; document.body.style.display = 'block';
+        // build right-side controls
         const right = document.querySelector('.nav-right');
         if (me.role === 'admin') {
-          const a=document.createElement('a'); a.className='nav-item'; a.href='secure.html';
-          a.innerHTML='<i class="fa-solid fa-gear"></i> Admin';
-          right.appendChild(a);
+          const admin = document.createElement('a'); admin.className='nav-item'; admin.href='secure.html';
+          admin.innerHTML = '<i class="fa-solid fa-gear"></i> Admin'; right.appendChild(admin);
         }
-        const b=document.createElement('button'); b.id='signOutBtn'; b.className='nav-item';
-        b.type='button'; b.innerHTML='<i class="fa-solid fa-right-from-bracket"></i> Sign out';
-        b.onclick=signOut; right.appendChild(b);
+        const out = document.createElement('a'); out.href='#'; out.className='nav-item';
+        out.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Sign out';
+        out.onclick=(e)=>{e.preventDefault();signOut()}; right.appendChild(out);
       } catch { location.href='/index.html'; }
     })();
   </script>
@@ -43,26 +36,28 @@
 <body>
   <!-- NAV -->
   <div class="navbar">
-    <div class="nav-left"></div>
-    <div class="nav-center">
-      <div class="nav-links">
-        <a class="nav-item" href="feed.html">Feed</a>
-        <a class="nav-item" href="resources.html">Resources</a>
-        <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
+    <div class="nav-inner">
+      <div class="nav-left"></div>
+      <div class="nav-center">
+        <div class="nav-links">
+          <a class="nav-item" href="feed.html">Feed</a>
+          <a class="nav-item" href="resources.html">Resources</a>
+          <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
+        </div>
       </div>
+      <div class="nav-right"></div>
     </div>
-    <div class="nav-right"></div>
   </div>
 
-  <!-- Banner (absolute path so it always resolves) -->
-  <div class="banner" role="img" aria-label="CESW banner" style="background-image:url('/assets/banner.jpg')"></div>
+  <!-- Banner -->
+  <div class="banner" role="img" aria-label="CESW banner"></div>
 
   <h2 class="title"><i class="fa-solid fa-list-ul"></i> Feed</h2>
 
   <main>
     <div id="search-container">
-      <input type="text" id="searchBar" placeholder="Find a post">
-      <select id="category-select">
+      <input type="text" id="searchBar" class="search-bar" placeholder="Find a post">
+      <select id="category-select" class="search-bar" style="max-width:220px;">
         <option value="">All</option>
         <option value="favourites">My Favourites</option>
         <option value="pinned">Pinned</option>
@@ -73,107 +68,93 @@
       </select>
     </div>
 
-    <div id="noResults">
-      Mmm no post found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category
-    </div>
+    <div id="noResults">Mmm no post found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category</div>
 
     <div class="card-container"></div>
 
     <a href="mailto:ITSupport@kotakureo.school.nz" id="contact" class="link-nochange">
       <i class="fa fa-envelope"></i> Contact
     </a>
-    <button id="backToTop">
-      <i class="fa-solid fa-angle-up"></i> Back to Top
-    </button>
+    <button id="backToTop"><i class="fa-solid fa-angle-up"></i> Back to Top</button>
   </main>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
     const FEED_FAV_KEY = 'feed_favourites';
-    let feedFavs = JSON.parse(localStorage.getItem(FEED_FAV_KEY) || '[]'); // store post IDs
+    let feedFavs = JSON.parse(localStorage.getItem(FEED_FAV_KEY) || '[]'); // post IDs
     let posts = [];
 
-    async function loadPosts() {
+    async function loadPosts(){
       const res = await fetch('/api/posts', { credentials:'include' });
       posts = await res.json();
       renderCards(posts);
       filterCards();
     }
 
-    function renderCards(list) {
+    function renderCards(list){
       const container = document.querySelector('.card-container');
       container.innerHTML = '';
 
-      list.forEach(p => {
+      list.forEach(p=>{
         const id = Number(p.id);
         const favActive = feedFavs.includes(id);
-        const cat = (p.category || '').toLowerCase();
+        const cat = (p.category||'').toLowerCase();
 
-        // feed-card avoids resource tile overrides
         const div = document.createElement('div');
         div.className = 'card feed-card';
-        div.dataset.title = (p.title || '').toLowerCase();
-        div.dataset.cat = cat;
+        div.dataset.name = (p.title||'').toLowerCase();
+        div.dataset.category = cat;
         div.dataset.id = id;
 
-        const createdNZ = new Date(p.created_at).toLocaleDateString('en-NZ');
+        const createdNZ = p.created_at ? new Date(p.created_at).toLocaleDateString('en-NZ') : '';
 
         div.innerHTML = `
-          <button class="fav-btn" title="Favourite">
-            <i class="${favActive ? 'fa-solid' : 'fa-regular'} fa-star"></i>
-          </button>
-          <h1>${p.title || ''}</h1>
-          <div>${p.body || ''}</div>
-          <br><i>${createdNZ} ${p.category || ''}</i>
+          <button class="fav-btn" title="Favourite"><i class="${favActive?'fa-solid':'fa-regular'} fa-star"></i></button>
+          <h1>${p.title||''}</h1>
+          <div>${p.body||''}</div>
+          <br><i>${createdNZ} ${p.category||''}</i>
 
           <div class="comments" data-post-id="${id}">
             <div class="c-header">
-              <span class="c-count">Comments</span>
-              <button class="c-toggle" type="button">Show comments</button>
+              <span class="c-count" data-count>Comments</span>
+              <button class="c-toggle" type="button" data-toggle>Show comments</button>
             </div>
-            <div class="c-list hidden"></div>
+            <div class="c-list hidden" data-list></div>
             <div class="c-editor">
               <textarea placeholder="Write a comment…"></textarea>
-              <button class="c-send" type="button">Post</button>
+              <button class="c-send" type="button"><i class="fa-solid fa-paper-plane"></i> Post</button>
             </div>
           </div>
         `;
+        container.appendChild(div);
 
-        container.append(div);
+        // lazy count
+        updateCommentCountLazy(id, div.querySelector('[data-count]'), div.querySelector('[data-toggle]'));
       });
 
-      // Star events
-      $('.fav-btn').off('click').on('click', function (e) {
+      // fav toggle
+      $('.fav-btn').off('click').on('click', function(e){
         e.preventDefault(); e.stopPropagation();
-        const card = $(this).closest('.card');
-        const id = Number(card.data('id'));
-        const isFav = feedFavs.includes(id);
-        if (isFav) {
-          feedFavs = feedFavs.filter(x => x !== id);
-          $(this).removeClass('active').find('i').removeClass('fa-solid').addClass('fa-regular');
-        } else {
-          feedFavs.push(id);
-          $(this).addClass('active').find('i').removeClass('fa-regular').addClass('fa-solid');
-        }
+        const id = Number($(this).closest('.card').data('id'));
+        const on = feedFavs.includes(id);
+        if (on) { feedFavs = feedFavs.filter(x=>x!==id); $(this).find('i').removeClass('fa-solid').addClass('fa-regular'); }
+        else    { feedFavs.push(id); $(this).find('i').removeClass('fa-regular').addClass('fa-solid'); }
         localStorage.setItem(FEED_FAV_KEY, JSON.stringify(feedFavs));
       });
 
-      // Initialize star state
-      $('.card').each(function () {
+      // init stars
+      $('.card').each(function(){
         const id = Number($(this).data('id'));
-        if (feedFavs.includes(id)) {
-          $(this).find('.fav-btn').addClass('active')
-            .find('i').removeClass('fa-regular').addClass('fa-solid');
-        }
+        if (feedFavs.includes(id)) $(this).find('.fav-btn i').removeClass('fa-regular').addClass('fa-solid');
       });
 
-      // Comments toggling + load
+      // comments
       $('.c-toggle').off('click').on('click', async function(){
-        const commentsRoot = $(this).closest('.comments');
-        const list = commentsRoot.find('.c-list');
-        const postId = Number(commentsRoot.data('post-id'));
+        const root = $(this).closest('.comments');
+        const list = root.find('[data-list]');
+        const pid = Number(root.data('post-id'));
         if (list.hasClass('hidden')) {
-          await loadComments(postId, list[0]);
+          await loadComments(pid, list[0], root[0]);
           list.removeClass('hidden');
           this.textContent = 'Hide comments';
         } else {
@@ -181,166 +162,154 @@
           this.textContent = 'Show comments';
         }
       });
-
-      // Post comment
       $('.c-send').off('click').on('click', async function(){
         const root = $(this).closest('.comments');
-        const postId = Number(root.data('post-id'));
+        const pid = Number(root.data('post-id'));
         const textarea = root.find('textarea');
-        const body = textarea.val().trim();
+        const body = (textarea.val()||'').trim();
         if (!body) return;
-        const ok = await apiCreateComment(postId, body);
+        const ok = await apiCreateComment(pid, body);
         if (ok) {
           textarea.val('');
-          const list = root.find('.c-list')[0];
-          await loadComments(postId, list);
-          root.find('.c-list').removeClass('hidden');
-          root.find('.c-toggle')[0].textContent = 'Hide comments';
+          const list = root.find('[data-list]')[0];
+          await loadComments(pid, list, root[0]);
+          root.find('[data-list]').removeClass('hidden');
+          root.find('[data-toggle]')[0].textContent='Hide comments';
         } else {
-          alert('Failed to post comment (API not available).');
+          alert('Failed to post comment.');
         }
       });
     }
 
-    // ---- Comments API with fallbacks ----
+    // Comment APIs (with fallbacks)
     async function apiGetComments(postId){
-      // try /api/comments?post_id=
       let r = await fetch(`/api/comments?post_id=${postId}`, { credentials:'include' });
       if (r.ok) return await r.json();
-      // fallback /api/posts/:id/comments
       r = await fetch(`/api/posts/${postId}/comments`, { credentials:'include' });
       if (r.ok) return await r.json();
       return null;
     }
     async function apiCreateComment(postId, body){
       let r = await fetch('/api/comments', {
-        method:'POST', credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ post_id: postId, body })
+        method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ post_id:postId, body })
       });
       if (r.ok) return true;
       r = await fetch(`/api/posts/${postId}/comments`, {
-        method:'POST', credentials:'include',
-        headers:{'Content-Type':'application/json'},
+        method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ body })
       });
       return r.ok;
     }
     async function apiUpdateComment(id, body){
-      let r = await fetch(`/api/comments/${id}`, {
-        method:'PUT', credentials:'include',
-        headers:{'Content-Type':'application/json'},
+      const r = await fetch(`/api/comments/${id}`, {
+        method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ body })
       });
       return r.ok;
     }
     async function apiDeleteComment(id){
-      let r = await fetch(`/api/comments/${id}`, { method:'DELETE', credentials:'include' });
+      const r = await fetch(`/api/comments/${id}`, { method:'DELETE', credentials:'include' });
       return r.ok;
     }
-
-    async function loadComments(postId, listEl){
+    async function apiCountComments(postId){
+      let r = await fetch(`/api/comments/count?post_id=${postId}`, { credentials:'include' });
+      if (r.ok) { const j = await r.json().catch(()=>null); if (j && typeof j.count==='number') return j.count; }
+      r = await fetch(`/api/posts/${postId}/comments/count`, { credentials:'include' });
+      if (r.ok) { const j = await r.json().catch(()=>null); if (j && typeof j.count==='number') return j.count; }
+      return null;
+    }
+    function setCommentsUI(rootEl, count){
+      const n = (typeof count==='number') ? count : null;
+      const countEl = rootEl.querySelector('[data-count]');
+      const toggleEl = rootEl.querySelector('[data-toggle]');
+      if (countEl) countEl.textContent = n===null ? 'Comments' : `Comments (${n})`;
+      if (toggleEl) {
+        const showing = !rootEl.querySelector('[data-list]').classList.contains('hidden');
+        toggleEl.textContent = (showing ? 'Hide comments' : 'Show comments') + (n===null ? '' : ` (${n})`);
+      }
+    }
+    async function updateCommentCountLazy(postId, countEl, toggleEl){
+      const count = await apiCountComments(postId);
+      if (countEl) countEl.textContent = (count===null)?'Comments':`Comments (${count})`;
+      if (toggleEl) toggleEl.textContent = (count===null)?'Show comments':`Show comments (${count})`;
+    }
+    async function loadComments(postId, listEl, rootEl){
       const data = await apiGetComments(postId);
       if (data === null) {
         listEl.innerHTML = '<div class="comment"><em>Comments unavailable.</em></div>';
-        return;
+        setCommentsUI(rootEl, null); return;
       }
-      renderComments(listEl, data);
-    }
-
-    function renderComments(listEl, comments){
       listEl.innerHTML = '';
-      if (!Array.isArray(comments) || comments.length === 0) {
+      if (!Array.isArray(data) || !data.length) {
         listEl.innerHTML = '<div class="comment"><em>No comments yet.</em></div>';
-        return;
+        setCommentsUI(rootEl, 0); return;
       }
-      comments.forEach(c => {
+      data.forEach(c=>{
         const name = (c.author && (c.author.first_name || c.author.last_name))
           ? `${c.author.first_name||''} ${c.author.last_name||''}`.trim()
           : 'User';
-        const when = c.created_at ? new Date(c.created_at).toLocaleString('en-NZ', { timeZone:'Pacific/Auckland' }) : '';
-        const canEdit = CURRENT_USER && (CURRENT_USER.role === 'admin' || CURRENT_USER.id === c.user_id);
-
-        const wrap = document.createElement('div');
-        wrap.className = 'comment';
-        wrap.innerHTML = `
+        const when = c.created_at ? new Date(c.created_at).toLocaleString('en-NZ',{ timeZone:'Pacific/Auckland' }) : '';
+        const canEdit = CURRENT_USER && (CURRENT_USER.role==='admin' || CURRENT_USER.id === c.user_id);
+        const row = document.createElement('div');
+        row.className='comment';
+        row.innerHTML = `
           <div class="meta"><strong>${name}</strong> • <span>${when}</span></div>
-          <div class="c-body">${c.body || ''}</div>
+          <div class="c-body">${c.body||''}</div>
           <div class="c-actions">
-            ${canEdit ? `<button class="c-edit" data-id="${c.id}">Edit</button>
-                         <button class="c-del" data-id="${c.id}">Delete</button>` : ''}
-          </div>
-        `;
-        listEl.appendChild(wrap);
+            ${canEdit?`<button class="c-edit" data-id="${c.id}">Edit</button>
+                       <button class="c-del" data-id="${c.id}">Delete</button>`:''}
+          </div>`;
+        listEl.appendChild(row);
       });
-
-      // edit / delete
-      listEl.querySelectorAll('.c-del').forEach(btn => {
-        btn.onclick = async () => {
-          const id = btn.getAttribute('data-id');
+      // actions
+      listEl.querySelectorAll('.c-del').forEach(btn=>{
+        btn.onclick = async ()=>{
           if (!confirm('Delete this comment?')) return;
-          const ok = await apiDeleteComment(id);
-          if (ok) btn.closest('.comment').remove();
-          else alert('Delete failed (API not available).');
+          const ok = await apiDeleteComment(btn.dataset.id);
+          if (ok) btn.closest('.comment').remove(); else alert('Delete failed.');
         };
       });
-      listEl.querySelectorAll('.c-edit').forEach(btn => {
-        btn.onclick = async () => {
-          const id = btn.getAttribute('data-id');
-          const commentEl = btn.closest('.comment');
-          const bodyEl = commentEl.querySelector('.c-body');
-          const current = bodyEl.textContent;
-          const next = prompt('Edit comment:', current);
-          if (next == null || !next.trim()) return;
-          const ok = await apiUpdateComment(id, next.trim());
-          if (ok) bodyEl.textContent = next.trim();
-          else alert('Update failed (API not available).');
+      listEl.querySelectorAll('.c-edit').forEach(btn=>{
+        btn.onclick = async ()=>{
+          const bodyEl = btn.closest('.comment').querySelector('.c-body');
+          const curr = bodyEl.textContent;
+          const next = prompt('Edit comment:', curr);
+          if (next==null || !next.trim()) return;
+          const ok = await apiUpdateComment(btn.dataset.id, next.trim());
+          if (ok) bodyEl.textContent = next.trim(); else alert('Update failed.');
         };
       });
+      setCommentsUI(rootEl, data.length);
     }
 
-    function filterCards() {
-      const val = ($('#searchBar').val() || '').toLowerCase();
-      const cat = ($('#category-select').val() || '').toLowerCase();
+    function filterCards(){
+      const val = ($('#searchBar').val()||'').toLowerCase();
+      const cat = ($('#category-select').val()||'').toLowerCase();
       let shown = 0;
-
-      $('.card').each(function() {
-        const title = ($(this).data('title') || '');
-        const c     = ($(this).data('cat') || '');
-        const id    = Number($(this).data('id'));
-        let ok = title.includes(val);
-
-        if (ok && cat) {
-          if (cat === 'favourites') ok = feedFavs.includes(id);
-          else ok = c.includes(cat);
-        }
-
+      $('.card').each(function(){
+        const name = ($(this).data('name')||'');
+        const c = ($(this).data('category')||'');
+        const id = Number($(this).data('id'));
+        let ok = name.includes(val);
+        if (ok && cat) ok = (cat==='favourites') ? feedFavs.includes(id) : c.includes(cat);
         $(this).toggle(ok);
         if (ok) shown++;
       });
-
-      $('#noResults').toggle(shown === 0);
+      $('#noResults').toggle(shown===0);
     }
 
-    $(document).ready(function() {
+    $(document).ready(function(){
       loadPosts();
-
-      $('#searchBar')
-        .focus()
-        .on('keyup input', filterCards)
+      $('#searchBar').focus().on('keyup input', filterCards)
         .on('input', function(){
           clearTimeout($.data(this,'timer'));
           const self=this; $.data(this,'timer', setTimeout(()=>$(self).blur(), 10000));
-        })
-        .on('keydown', function(){ clearTimeout($.data(this,'timer')); });
-
+        }).on('keydown', function(){ clearTimeout($.data(this,'timer'));});
       $('#category-select').on('change', filterCards);
 
-      $(window).on('scroll', () => {
-        const scrolled = $(window).scrollTop() > 100;
-        $('#backToTop, #contact').toggle(scrolled);
-      });
-      $('#backToTop').on('click', () => $('html, body').animate({ scrollTop: 0 }, 'fast'));
+      $(window).on('scroll', ()=>{ const sc = $(window).scrollTop()>100; $('#backToTop, #contact').toggle(sc);});
+      $('#backToTop').on('click', ()=> $('html, body').animate({scrollTop:0}, 'fast'));
     });
   </script>
 </body>
