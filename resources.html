@@ -1,98 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
   <title>CESW Hub - Resources</title>
 
-  <link rel="stylesheet" href="assets/resources.css">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="assets/cesw.css">
 
-  <style>
-    body { display: none; }
-
-
-    #signOutBtn { color:#b00020; }
-
-    /* Layout */
-    #category-container { display:flex; flex-wrap:wrap; gap: 1em; margin: 1em 0; }
-    .category-card { cursor: pointer; border-radius: 10px; overflow: hidden; border: 1px solid #ddd; }
-    .category-card img { display:block; width: 220px; height: 120px; object-fit: cover; transition: opacity .2s ease; opacity:.95; }
-    .category-card img.loaded { opacity: 1; }
-
-    .card-container { display:flex; flex-wrap:wrap; gap: 12px; }
-
-    .card {
-      display:flex; position:relative;
-      flex-direction: column; justify-content: space-between; align-items: center;
-      border: 1px solid #ccc; border-radius: 10px; padding: 15px; margin: 4px;
-      width: 220px; height: 260px; text-align: center;
-      box-shadow: 2px 2px 10px rgba(0,0,0,.08);
-      transition: background-color .2s ease; background:#fff;
-    }
-    .card a.link-nochange { color: inherit; text-decoration: none; display:block; width:100%; }
-    .card p { margin: 0 0 .6rem; font-weight: 600; min-height: 2.5em; overflow: hidden; }
-    .card img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; }
-
-    /* favourite star */
-    .fav-btn {
-      position: absolute; bottom: 6px; right: 6px;
-      background: none; border: none; cursor: pointer;
-      font-size: 1.2em; color: #dbdbdb !important;
-    }
-    .fav-btn:hover { color: #bdbdbd !important; }
-    .fav-btn.active i { color: gold !important; }
-
-    /* controls */
-    #search-container { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
-    #clearSearch, #ShowFavs, #ShowAll, #backToCategories {
-      padding: 8px 15px; margin-left: 5px; font-size: 16px; cursor: pointer; color:#000 !important;
-      border: 1px solid #ddd; border-radius: 6px; background:#fff;
-    }
-
-    #noResults, #noFavourites { display:none; text-align:center; margin:20px; color:#666; }
-  </style>
-
-  <!-- Auth gate + right-side nav actions -->
+  <style>body{display:none}</style>
   <script>
     async function signOut(){
       try { await fetch('/api/auth/logout', { method:'POST', credentials:'include' }); }
-      finally { location.href = '/index.html'; }
+      finally { location.href='/index.html'; }
     }
-    let ME = null;
+    // Gate: user or admin; build right-side nav actions
     (async () => {
       try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        if (!res.ok) throw 0;
-        ME = await res.json();
-        if (!['user','admin'].includes(ME.role)) throw 0;
+        const r = await fetch('/api/auth/me', { credentials:'include' });
+        if (!r.ok) throw 0;
+        const me = await r.json();
+        if (!['user','admin'].includes(me.role)) throw 0;
         document.body.style.display = 'block';
 
         const right = document.querySelector('.nav-right');
-        if (ME.role === 'admin' && !right.querySelector('a[href="secure.html"]')) {
-          const a = document.createElement('a');
-          a.className = 'nav-item';
-          a.href = 'secure.html';
-          a.textContent = 'Admin';
+        if (me.role === 'admin') {
+          const a=document.createElement('a'); a.className='nav-item'; a.href='secure.html';
+          a.innerHTML='<i class="fa-solid fa-gear"></i> Admin';
           right.appendChild(a);
         }
-        if (!document.getElementById('signOutBtn')) {
-          const b = document.createElement('button');
-          b.id = 'signOutBtn';
-          b.className = 'nav-item';
-          b.textContent = 'Sign out';
-          b.onclick = signOut;
-          right.appendChild(b);
-        }
-      } catch {
-        location.href = '/index.html';
-      }
+        const b=document.createElement('button'); b.id='signOutBtn'; b.className='nav-item';
+        b.type='button'; b.innerHTML='<i class="fa-solid fa-right-from-bracket"></i> Sign out';
+        b.onclick=signOut; right.appendChild(b);
+      } catch { location.href='/index.html'; }
     })();
   </script>
 </head>
 <body>
+  <!-- NAV -->
   <div class="navbar">
     <div class="nav-center">
       <div class="nav-links">
@@ -101,33 +46,30 @@
         <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
       </div>
     </div>
-    <div class="nav-right"><!-- Admin + Sign out injected --></div>
+    <div class="nav-right"></div>
   </div>
 
   <div class="banner"></div>
-
   <h2 class="title"><i class="fa-solid fa-file"></i> Resources</h2>
 
   <main>
     <div id="search-container">
       <input type="text" id="searchBar" placeholder="Find a resource">
-      <button id="clearSearch" title="Clear search"><i class="fa-solid fa-xmark"></i></button>
-      <button id="ShowFavs" title="My Favourites"><i class="fa-solid fa-star"></i></button>
-      <button id="ShowAll"  title="Show all"><i class="fa-solid fa-layer-group"></i></button>
+      <button id="clearSearch" title="Clear"><i class="fa-solid fa-xmark"></i></button>
+      <button id="ShowFavs" title="Favourites"><i class="fa-solid fa-star"></i></button>
     </div>
 
-    <div id="noFavourites">
+    <div id="noFavourites" style="display:none; text-align:center; margin:20px;">
       <i class="fa-regular fa-star"></i> You have no favourites yet. Click the star on a resource to add one.
     </div>
 
     <div id="category-container"></div>
-
-    <button id="backToCategories" style="display:none; margin: 1em 0;">
+    <button id="backToCategories" style="display:none; margin:1em 0;">
       <i class="fa-solid fa-arrow-left"></i> Categories
     </button>
 
     <div id="noResults">
-      Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>. Please change your search.
+      Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search
     </div>
 
     <div class="card-container"></div>
@@ -138,199 +80,162 @@
     <button id="backToTop"><i class="fa-solid fa-angle-up"></i> Back to Top</button>
   </main>
 
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    // ===== Account-based favourites (resources) =====
-    let resFavIds = new Set();
-    async function loadResFavs() {
-      const r = await fetch('/api/favourites?type=resource', { credentials:'include' });
-      const ids = r.ok ? await r.json() : [];
-      resFavIds = new Set(ids.map(String));
-    }
-    async function setResFav(id, on) {
-      await fetch('/api/favourites', {
-        method:'POST', credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ entity_type:'resource', entity_id:Number(id), on })
-      });
-      if (on) resFavIds.add(String(id)); else resFavIds.delete(String(id));
-    }
+    let allPosts = [];
+    let favourites = JSON.parse(localStorage.getItem('favourites')) || [];
 
-    // ===== State =====
-    let allResources = [];
-    let viewMode = 'categories'; // 'categories' | 'category' | 'search' | 'favs'
-    let currentCategory = null;
-
-    const $catContainer = $('#category-container');
-    const $cardContainer = $('.card-container');
-    const $noResults = $('#noResults');
-    const $noFavourites = $('#noFavourites');
-    const $backToCategories = $('#backToCategories');
-
-    const getKey = (r) => String(r?.id ?? (r?.title || '').toLowerCase());
-
-    // ===== Data load =====
-    async function loadResources() {
+    async function loadPosts() {
       const res = await fetch('/api/resourcespull', { credentials:'include' });
-      allResources = await res.json();
-      await loadResFavs();
+      allPosts = await res.json();
 
-      renderCategories();
-      $cardContainer.html('');
-      $noResults.hide();
-      $noFavourites.hide();
-    }
-
-    function renderCategories() {
-      const categories = [...new Set(allResources.map(p => p.category).filter(Boolean))];
-      $catContainer.empty();
+      // Build categories (unique)
+      const categories = [...new Set(allPosts.map(p => p.category).filter(Boolean))];
+      const catContainer = document.getElementById('category-container');
+      catContainer.innerHTML = '';
 
       categories.forEach(cat => {
-        const $card = $(`
-          <div class="category-card" data-cat="${String(cat).toLowerCase()}">
-            <img src="https://files.danieltesting.space/uploads/${encodeURIComponent(String(cat).toLowerCase())}.png" alt="${cat}">
-          </div>
-        `);
-        $card.find('img').on('load', function(){ this.classList.add('loaded'); });
-        $card.on('click', () => showCategory(cat));
-        $catContainer.append($card);
+        const card = document.createElement('div');
+        card.className = 'category-card';
+        card.dataset.cat = (cat || '').toLowerCase();
+
+        const imageUrl = `https://files.danieltesting.space/uploads/${encodeURIComponent((cat||'').toLowerCase())}.png`;
+        card.innerHTML = `<img src="${imageUrl}" onload="this.classList.add('loaded')">`;
+
+        card.addEventListener('click', () => showCategory(cat));
+        catContainer.appendChild(card);
       });
 
-      $catContainer.show();
-    }
-
-    // ===== Rendering =====
-    function renderCards(items) {
-      $cardContainer.empty();
-      if (!items.length) { $noResults.show(); return; }
-      $noResults.hide();
-
-      items.forEach(p => {
-        const key = getKey(p);
-        const isFav = resFavIds.has(key);
-        const thumb = p.thumbnail || 'assets/resource-placeholder.png';
-        const $card = $(`
-          <div class="card" data-id="${key}" data-name="${(p.title || '').toLowerCase()}" data-category="${(p.category || '').toLowerCase()}">
-            <a class="link-nochange" href="${p.url}" target="_blank" rel="noopener">
-              <p>${p.title}</p>
-              <img src="${thumb}" alt="">
-            </a>
-            <button type="button" class="fav-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove from favourites' : 'Add to favourites'}" aria-pressed="${isFav}">
-              <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-star"></i>
-            </button>
-          </div>
-        `);
-        $card.find('img').on('load', function(){ this.classList.add('loaded'); });
-        $cardContainer.append($card);
-      });
+      // Default: show categories; cards area empty
+      document.querySelector('.card-container').innerHTML = '';
+      $('#noResults').hide();
     }
 
     function showCategory(cat) {
-      viewMode = 'category';
-      currentCategory = String(cat);
       $('#searchBar').val('');
-      $catContainer.hide();
-      $backToCategories.show();
+      document.getElementById('category-container').style.display = 'none';
+      document.getElementById('backToCategories').style.display = 'inline-block';
 
-      const filtered = allResources.filter(p => (p.category || '').toLowerCase() === String(cat).toLowerCase());
+      const filtered = allPosts.filter(p => (p.category || '').toLowerCase() === (cat||'').toLowerCase());
       renderCards(filtered);
     }
 
-    function showCategories() {
-      viewMode = 'categories';
-      currentCategory = null;
-      $catContainer.show();
-      $cardContainer.html('');
-      $noResults.hide();
-      $noFavourites.hide();
-      $backToCategories.hide();
-    }
-
-    function showFavourites() {
-      viewMode = 'favs';
-      $('#searchBar').val('');
-      $catContainer.hide();
-      $backToCategories.show();
-
-      const favSet = new Set(resFavIds);
-      const favItems = allResources.filter(p => favSet.has(getKey(p)));
-
-      if (!favItems.length) {
-        $cardContainer.html('');
-        $noFavourites.show();
-        $noResults.hide();
-        return;
-      }
-      $noFavourites.hide();
-      renderCards(favItems);
-    }
-
-    function showAll() {
-      viewMode = 'search';
-      $('#searchBar').val('');
-      $catContainer.hide();
-      $backToCategories.show();
-      renderCards(allResources);
-    }
+    document.getElementById('backToCategories').addEventListener('click', () => {
+      document.getElementById('category-container').style.display = 'flex';
+      document.getElementById('backToCategories').style.display = 'none';
+      document.querySelector('.card-container').innerHTML = '';
+      $('#noResults').hide();
+    });
 
     function filterCards() {
-      const val = ($('#searchBar').val() || '').toLowerCase().trim();
+      const val = $('#searchBar').val().toLowerCase().trim();
+      const container = document.querySelector('.card-container');
+      const catCards = document.getElementById('category-container');
+
       if (!val) {
-        if (viewMode === 'favs') showFavourites();
-        else showCategories();
+        container.innerHTML = '';
+        catCards.style.display = 'flex';
+        $('#noResults').hide();
         return;
       }
-      viewMode = 'search';
-      $catContainer.hide();
-      $backToCategories.show();
-      const matched = allResources.filter(p => (p.title || '').toLowerCase().includes(val));
+
+      catCards.style.display = 'none';
+      const matched = allPosts.filter(p => (p.title || '').toLowerCase().includes(val));
       renderCards(matched);
     }
 
-    // ===== Events =====
-    $(document).ready(function () {
-      loadResources();
+    function renderCards(posts) {
+      const container = document.querySelector('.card-container');
+      container.innerHTML = '';
 
-      $('#searchBar').focus().on('keyup input', filterCards);
-      $('#clearSearch').on('click', function () {
-        $('#searchBar').val('').trigger('keyup');
-        $noFavourites.hide();
-        showCategories();
-        $('#searchBar').focus();
+      if (!posts.length) {
+        $('#noResults').show();
+        return;
+      }
+      $('#noResults').hide();
+
+      posts.forEach(p => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+<a class="link-nochange" href="${p.url}" target="_blank" rel="noopener">
+  <div class="card" data-name="${(p.title||'').toLowerCase()}" data-category="${(p.category||'').toLowerCase()}">
+    <p>${p.title || ''}</p>
+    <img src="${p.thumbnail || ''}" onload="this.classList.add('loaded')">
+    <button class="fav-btn" title="Add to favourites"><i class="fa-regular fa-star"></i></button>
+  </div>
+</a>`;
+        container.appendChild(div);
       });
 
-      $('#ShowFavs').on('click', showFavourites);
-      $('#ShowAll').on('click', showAll);
-      $backToCategories.on('click', showCategories);
+      // Initialize favourites UI for newly rendered cards
+      $('.card').each(function () {
+        const title = $(this).data('name') || '';
+        if (favourites.includes(title)) {
+          $(this).find('.fav-btn').addClass('active')
+            .find('i').removeClass('fa-regular').addClass('fa-solid');
+        }
+      });
 
-      $('.menu-icon').on('click', () => $('.nav-links').toggleClass('active'));
+      // Fav toggle (stop link)
+      $('.fav-btn').off('click').on('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        const card = $(this).closest('.card');
+        const title = card.data('name') || '';
 
+        if (favourites.includes(title)) {
+          favourites = favourites.filter(f => f !== title);
+          $(this).removeClass('active')
+            .find('i').removeClass('fa-solid').addClass('fa-regular');
+        } else {
+          favourites.push(title);
+          $(this).addClass('active')
+            .find('i').removeClass('fa-regular').addClass('fa-solid');
+        }
+        localStorage.setItem('favourites', JSON.stringify(favourites));
+      });
+    }
+
+    $(document).ready(function () {
+      loadPosts();
+
+      $('#searchBar')
+        .focus()
+        .on('keyup input', filterCards)
+        .on('input', function () {
+          clearTimeout($.data(this, 'timer'));
+          const self = this;
+          $.data(this, 'timer', setTimeout(() => $(self).blur(), 10000));
+        })
+        .on('keydown', function () { clearTimeout($.data(this, 'timer')); });
+
+      // Clear search
+      $('#clearSearch').click(function () {
+        $('#searchBar').val('').trigger('keyup');
+        $('#noFavourites').hide();
+        $('#searchBar').focus();
+        document.getElementById('backToCategories').style.display = 'none';
+      });
+
+      // Show favourites only
+      $('#ShowFavs').click(function () {
+        if (!favourites.length) {
+          $('.card').hide();
+          $('#noFavourites').show();
+        } else {
+          $('#noFavourites').hide();
+          $('.card').each(function () {
+            const title = $(this).data('name') || '';
+            $(this).toggle(favourites.includes(title));
+          });
+        }
+      });
+
+      // Scroll helpers
       $(window).on('scroll', () => {
         const scrolled = $(window).scrollTop() > 100;
         $('#backToTop, #contact').toggle(scrolled);
       });
-      $('#backToTop').on('click', () => $('html, body').animate({ scrollTop: 0 }, 'fast'));
-    });
-
-    // Delegated favourites toggle
-    $(document).on('click', '.fav-btn', async function (e) {
-      e.preventDefault(); e.stopPropagation();
-      const $btn  = $(this);
-      const $card = $btn.closest('.card');
-      const id    = String($card.data('id'));
-      const nowOn = !$btn.hasClass('active');
-      await setResFav(id, nowOn);
-      $btn.toggleClass('active', nowOn)
-          .attr('aria-pressed', String(nowOn))
-          .attr('title', nowOn ? 'Remove from favourites' : 'Add to favourites')
-          .find('i').toggleClass('fa-solid', nowOn).toggleClass('fa-regular', !nowOn);
-
-      if (viewMode === 'favs' && !nowOn) {
-        $card.remove();
-        if ($('.card').length === 0) {
-          $noFavourites.show();
-          $noResults.hide();
-        }
-      }
+      $('#backToTop').click(() => $('html, body').animate({ scrollTop: 0 }, 'fast'));
     });
   </script>
 </body>
