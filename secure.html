@@ -9,10 +9,23 @@
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
 
-  <!-- Hide page until admin verified -->
-  <style> body{ display:none; } </style>
+  <style>
+    body { display: none; }
+    /* Simple navbar (to match the rest of your site) */
+    .navbar { display:flex; align-items:center; gap:1rem; padding:.5rem 1rem; background:#fff; border-bottom:1px solid #e6ecee; }
+    .menu-icon { cursor:pointer; font-size:1.25rem; }
+    .nav-links { display:flex; gap:1rem; align-items:center; }
+    .nav-links a.nav-item, .nav-links button.nav-item {
+      background:none; border:0; padding:.35rem .6rem; cursor:pointer; border-radius:6px;
+      text-decoration:none; color:#0f1f20; font-weight:600;
+    }
+    .nav-links a.nav-item:hover, .nav-links button.nav-item:hover { background:#f2f5f6; }
+    #signOutBtn { color:#b00020; }
+    .chip { display:inline-block; padding:.15rem .5rem; border-radius:999px; background:#eef3f4; font-size:.85rem; }
+    table#um-table th { user-select:none; }
+  </style>
 
-  <!-- Admin gate: verify cookie + admin role via /api/auth/me -->
+  <!-- Gate: admin-only via /api/auth/me -->
   <script>
   (async () => {
     try {
@@ -26,8 +39,54 @@
     }
   })();
   </script>
+
+  <!-- Reusable sign-out + add Admin link (not needed here, but keeps navbar consistent) -->
+  <script>
+    async function signOut() {
+      try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); }
+      finally { window.location.href = '/index.html'; }
+    }
+    (async () => {
+      try {
+        const r = await fetch('/api/auth/me', { credentials: 'include' });
+        if (!r.ok) return;
+        const me = await r.json();
+
+        const nav = document.querySelector('.nav-links');
+        if (!nav) return;
+
+        // Add Admin link if admin (we are on admin already—harmless)
+        if (me.role === 'admin' && !nav.querySelector('a[href="secure.html"]')) {
+          const a = document.createElement('a');
+          a.className = 'nav-item';
+          a.href = 'secure.html';
+          a.textContent = 'Admin';
+          nav.appendChild(a);
+        }
+        // Add Sign out
+        if (!document.getElementById('signOutBtn')) {
+          const btn = document.createElement('button');
+          btn.id = 'signOutBtn';
+          btn.className = 'nav-item';
+          btn.textContent = 'Sign out';
+          btn.onclick = signOut;
+          nav.appendChild(btn);
+        }
+      } catch {}
+    })();
+  </script>
 </head>
 <body>
+  <!-- Navbar -->
+  <div class="navbar">
+    <span class="menu-icon">&#9776;</span>
+    <div class="nav-links">
+      <a class="nav-item" href="feed.html">Feed</a>
+      <a class="nav-item" href="resources.html">Resources</a>
+      <!-- Admin + Sign out injected by script above -->
+    </div>
+  </div>
+
   <div class="banner"></div>
 
   <main style="max-width: 1000px; margin: auto;">
@@ -37,14 +96,12 @@
       <i class="fa fa-calendar"></i> Calendar
     </a>
 
-    <!-- ───────────────────────────── Upload Resource ───────────────────────────── -->
+    <!-- ───────────────────────────── Add Resource ───────────────────────────── -->
     <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
     <form id="upload-form" class="upload-section" enctype="multipart/form-data">
-      <!-- Either File or URL -->
       <input type="file" id="resource-file" />
       <input type="url" id="resource-url" placeholder="Or paste a link instead"><br>
 
-      <!-- Type dropdown -->
       <select id="resource-type" required>
         <option value="">Select resource type</option>
         <option value="file">File</option>
@@ -62,7 +119,6 @@
 
       <input type="text" id="resource-title" placeholder="Resource title" required /><br>
 
-      <!-- Pinned checkbox -->
       <label class="star-checkbox">
         <input type="checkbox" id="resource-pinned" />
         <i class="fa-regular fa-star unchecked"></i>
@@ -135,21 +191,21 @@
       <i class="fa-solid fa-life-ring"></i> Help
     </a>
 
-    <!-- ───────────────────────────── User Management (searchable/sortable, top 10, alerts + RESET PASSWORD) ───────────────────────────── -->
-    <h2 class="title"><i class="fa-solid fa-users-gear"></i> User Management</h2>
+    <!-- ───────────────────────────── User Management ───────────────────────────── -->
+    <h2 class="title" style="margin-top:2rem;"><i class="fa-solid fa-users-gear"></i> User Management</h2>
 
-    <!-- Search box -->
-    <input id="um-search" type="search" placeholder="Search users by email…" class="search-bar">
+    <input id="um-search" type="search" placeholder="Search users by email…" class="search-bar" style="margin:.25rem 0 1rem 0; width:100%;">
 
-    <!-- Create user -->
     <section class="upload-section" style="padding:1rem;border:1px solid #e8ecee;border-radius:10px;margin-bottom:1rem;">
       <form id="um-create-form" autocomplete="off">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.5rem;align-items:end;">
           <div>
-            <input id="um-email" type="email" class="search-bar" placeholder="Email" required />
+            <label for="um-email">Email</label>
+            <input id="um-email" type="email" placeholder="user@example.com" required />
           </div>
           <div>
-            <input id="um-password" type="password" class="search-bar" placeholder="Password" required />
+            <label for="um-password">Password</label>
+            <input id="um-password" type="password" placeholder="Set a password" required />
           </div>
           <div>
             <label for="um-role">Role</label>
@@ -166,7 +222,6 @@
       </form>
     </section>
 
-    <!-- Users table -->
     <table id="um-table">
       <thead>
         <tr>
@@ -184,7 +239,7 @@
     </table>
   </main>
 
-  <!-- EventTarget guard -->
+  <!-- Guard noisy DOM mutation listeners -->
   <script>
     (function() {
       const originalAddEventListener = EventTarget.prototype.addEventListener;
@@ -203,30 +258,21 @@
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
   <script>
+    // ───────────── Utilities ─────────────
+    function nzDateTime(value, { withTime = true } = {}) {
+      if (!value) return '';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      const opts = withTime
+        ? { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }
+        : { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit' };
+      return d.toLocaleString('en-NZ', opts).replace(',', '');
+    }
+    function esc(s){
+      return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
 
-// Render any UTC-ish timestamp in NZ time.
-// Accepts ISO strings or SQLite "YYYY-MM-DD HH:MM:SS" (UTC).
-function nzDateTime(value, { withTime = true } = {}) {
-  if (!value) return '';
-  let iso = String(value).trim();
-
-  // If it's a SQLite-like "YYYY-MM-DD HH:MM:SS" without timezone, treat as UTC.
-  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(iso) && !/[zZ]|[+\-]\d{2}:\d{2}$/.test(iso)) {
-    iso = iso.replace(' ', 'T') + 'Z';
-  }
-
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return value;
-
-  const opts = withTime
-    ? { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }
-    : { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit' };
-
-  // 'en-NZ' gives NZ ordering; trim comma for cleaner look
-  return d.toLocaleString('en-NZ', opts).replace(',', '');
-}
-    
-    // ───────────────────── Quill editor ─────────────────────
+    // ───────────── Quill ─────────────
     const quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
@@ -239,30 +285,40 @@ function nzDateTime(value, { withTime = true } = {}) {
       }
     });
 
-    // Set resource type to "file" when file chosen
+    // Set resource type automatically when file chosen
     document.getElementById('resource-file').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) document.getElementById('resource-type').value = 'file';
     });
 
+    // ───────────── Data holders & sorting ─────────────
     let posts = [];
     let resources = [];
     let postSort = { key: 'created_at', asc: false };
     let resourceSort = { key: 'created_date', asc: false };
 
-    // ───────────────────── Fetch posts/resources ─────────────────────
+    // ───────────── Fetch & render posts/resources ─────────────
     async function fetchPosts() {
       const res = await fetch('/api/posts?admin=true', { credentials: 'include' });
       if (res.status === 401) return location.href = '/index.html';
       posts = await res.json();
       renderPosts();
     }
-
     async function fetchResources() {
       const res = await fetch('/api/resourcespull', { credentials: 'include' });
       if (res.status === 401) return location.href = '/index.html';
       resources = await res.json();
       renderResources();
+    }
+
+    function sortBy(key, asc) {
+      return (a, b) => {
+        const valA = a[key]?.toLowerCase?.() || a[key];
+        const valB = b[key]?.toLowerCase?.() || b[key];
+        if (valA < valB) return asc ? -1 : 1;
+        if (valA > valB) return asc ? 1 : -1;
+        return 0;
+      };
     }
 
     function renderPosts() {
@@ -277,18 +333,14 @@ function nzDateTime(value, { withTime = true } = {}) {
 
       tbody.innerHTML = '';
 
-      if (filtered.length === 0) {
-        emptyMsg.style.display = 'block';
-        return;
-      } else {
-        emptyMsg.style.display = 'none';
-      }
+      if (!filtered.length) { emptyMsg.style.display = 'block'; return; }
+      emptyMsg.style.display = 'none';
 
       for (const p of filtered) {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${p.title}</td>
-          <td>${new Date(p.created_at).toLocaleDateString()}</td>
+          <td>${nzDateTime(p.created_at)}</td>
           <td>${p.category}</td>
           <td>
             <button class="pin-btn" onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
@@ -306,24 +358,20 @@ function nzDateTime(value, { withTime = true } = {}) {
       const search = document.getElementById('search-resources').value.toLowerCase();
 
       const filtered = resources
-        .filter(r => r.title.toLowerCase().includes(search))
+        .filter(r => (r.title || '').toLowerCase().includes(search))
         .sort(sortBy(resourceSort.key, resourceSort.asc))
         .slice(0, 10);
 
       tbody.innerHTML = '';
 
-      if (filtered.length === 0) {
-        emptyMsg.style.display = 'block';
-        return;
-      } else {
-        emptyMsg.style.display = 'none';
-      }
+      if (!filtered.length) { emptyMsg.style.display = 'block'; return; }
+      emptyMsg.style.display = 'none';
 
       for (const r of filtered) {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td><a href="${r.url}" class="link-nochange" target="_blank" rel="noopener">${r.title}</a></td>
-          <td>${new Date(r.created_date).toLocaleDateString()}</td>
+          <td>${nzDateTime(r.created_date, { withTime:false })}</td>
           <td>${r.category}</td>
           <td>
             <button class="pinresource-btn" onclick="togglePinResource(${r.id}, ${r.pinned})">
@@ -335,17 +383,7 @@ function nzDateTime(value, { withTime = true } = {}) {
       }
     }
 
-    function sortBy(key, asc) {
-      return (a, b) => {
-        const valA = a[key]?.toLowerCase?.() || a[key];
-        const valB = b[key]?.toLowerCase?.() || b[key];
-        if (valA < valB) return asc ? -1 : 1;
-        if (valA > valB) return asc ? 1 : -1;
-        return 0;
-      };
-    }
-
-    // ───────────────────── Post actions ─────────────────────
+    // Post actions
     window.togglePinPost = async (id, category, pinned) => {
       const newCat = pinned ? category.replace(/^pinned\s*/i, '') : `pinned ${category}`;
       await fetch(`/api/posts/${id}`, {
@@ -356,7 +394,6 @@ function nzDateTime(value, { withTime = true } = {}) {
       });
       fetchPosts();
     };
-
     window.deletePost = async (id) => {
       if (confirm('Delete this post?')) {
         await fetch(`/api/posts/${id}`, { method: 'DELETE', credentials: 'include' });
@@ -364,7 +401,7 @@ function nzDateTime(value, { withTime = true } = {}) {
       }
     };
 
-    // ───────────────────── Resource actions ─────────────────────
+    // Resource actions
     window.togglePinResource = async (id, pinned) => {
       await fetch(`/api/resources/${id}`, {
         method: 'PUT',
@@ -374,7 +411,6 @@ function nzDateTime(value, { withTime = true } = {}) {
       });
       fetchResources();
     };
-
     window.deleteResource = async (id) => {
       if (confirm('Delete this resource?')) {
         await fetch(`/api/resources/${id}`, { method: 'DELETE', credentials: 'include' });
@@ -382,7 +418,7 @@ function nzDateTime(value, { withTime = true } = {}) {
       }
     };
 
-    // ───────────────────── Create Post submit ─────────────────────
+    // New post
     document.getElementById('new-post').addEventListener('submit', async e => {
       e.preventDefault();
       const form = e.target;
@@ -400,7 +436,7 @@ function nzDateTime(value, { withTime = true } = {}) {
       fetchPosts();
     });
 
-    // ───────────────────── Upload Resource submit ─────────────────────
+    // Upload resource
     document.getElementById('upload-form').addEventListener('submit', async e => {
       e.preventDefault();
 
@@ -423,13 +459,11 @@ function nzDateTime(value, { withTime = true } = {}) {
       if (file) {
         formData.append('file', file);
         if (file.type === "application/pdf") {
-          // Generate thumbnail from PDF
           const pdfThumb = await generatePdfThumbnail(file);
           if (pdfThumb) formData.append('thumbnail', pdfThumb);
         }
       } else {
         formData.append('url', urlInput);
-        // Generate thumbnail via Microlink
         const thumbnailUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
         try {
           const response = await fetch(thumbnailUrl);
@@ -440,9 +474,7 @@ function nzDateTime(value, { withTime = true } = {}) {
             const base64 = await blobToBase64(imageBlob);
             formData.append('thumbnail', base64);
           }
-        } catch (err) {
-          console.warn("Microlink thumbnail failed:", err);
-        }
+        } catch (err) { console.warn("Microlink thumbnail failed:", err); }
       }
 
       await fetch('/api/resources/upload', { method: 'POST', body: formData });
@@ -460,12 +492,8 @@ function nzDateTime(value, { withTime = true } = {}) {
         canvas.width = viewport.width; canvas.height = viewport.height;
         await page.render({ canvasContext: context, viewport }).promise;
         return canvas.toDataURL("image/png");
-      } catch (err) {
-        console.error("PDF thumbnail generation failed:", err);
-        return null;
-      }
+      } catch (err) { console.error("PDF thumbnail generation failed:", err); return null; }
     }
-
     function blobToBase64(blob) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -477,7 +505,6 @@ function nzDateTime(value, { withTime = true } = {}) {
 
     document.getElementById('search-posts').addEventListener('input', renderPosts);
     document.getElementById('search-resources').addEventListener('input', renderResources);
-
     document.querySelectorAll('#posts-table th.sortable').forEach(th =>
       th.addEventListener('click', () => {
         const key = th.dataset.key;
@@ -486,7 +513,6 @@ function nzDateTime(value, { withTime = true } = {}) {
         renderPosts();
       })
     );
-
     document.querySelectorAll('#resources-table th.sortable').forEach(th =>
       th.addEventListener('click', () => {
         const key = th.dataset.key;
@@ -496,14 +522,13 @@ function nzDateTime(value, { withTime = true } = {}) {
       })
     );
 
-    // ───────────────────── User Management logic (search + sort + top 10 + alerts + reset) ─────────────────────
+    // ───────────── User Management (search + sort + top10 + alerts + reset + force sign-out) ─────────────
     const umRows = document.getElementById('um-rows');
     const umForm = document.getElementById('um-create-form');
     const umMsg  = document.getElementById('um-create-msg');
     const umSearch = document.getElementById('um-search');
     const umSortHeaders = document.querySelectorAll('.um-sort');
 
-    // default: top 10 by created_at DESC
     let umSortKey = 'created_at';
     let umSortAsc = false;
 
@@ -514,25 +539,15 @@ function nzDateTime(value, { withTime = true } = {}) {
       i.className = asc ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
     }
 
-    function esc(s){
-      return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-    }
-
     async function umLoadUsers(){
       const q = umSearch.value.trim();
-      const params = new URLSearchParams({
-        q,
-        sort: umSortKey,
-        dir: umSortAsc ? 'asc' : 'desc'
-      });
+      const params = new URLSearchParams({ q, sort: umSortKey, dir: umSortAsc ? 'asc' : 'desc' });
       try{
-        // Server enforces LIMIT 10 and computes distinct_ips_24h
         const r = await fetch('/api/users?' + params.toString(), { credentials:'include' });
         if(!r.ok){ umRows.innerHTML = '<tr><td colspan="6">Failed to load users.</td></tr>'; return; }
         let data = await r.json();
         if (!Array.isArray(data)) data = [];
-        // Safety: cap at 10 if server not yet updated
-        data = data.slice(0, 10);
+        data = data.slice(0, 10); // safety cap
 
         if(!data.length){ umRows.innerHTML = '<tr><td colspan="6">No users.</td></tr>'; return; }
 
@@ -545,8 +560,8 @@ function nzDateTime(value, { withTime = true } = {}) {
             <tr data-id="${u.id}">
               <td>${esc(u.email)}</td>
               <td><span class="chip">${esc(u.role)}</span></td>
-<td>${nzDateTime(u.last_sign_in)}</td>
-<td>${nzDateTime(u.created_at)}</td>
+              <td>${esc(nzDateTime(u.last_sign_in))}</td>
+              <td>${esc(nzDateTime(u.created_at))}</td>
               <td>
                 <div>${esc(u.last_sign_ip || '')}</div>
                 ${alert}
@@ -555,6 +570,9 @@ function nzDateTime(value, { withTime = true } = {}) {
                 <button class="pinresource-btn" data-reset="${u.id}">
                   <i class="fa-solid fa-key"></i> Reset Password
                 </button>
+                <button class="deleteresource-btn" data-logout="${u.id}">
+                  <i class="fa-solid fa-right-from-bracket"></i> Force sign-out
+                </button>
                 <button class="deleteresource-btn" data-del="${u.id}">
                   <i class="fa-solid fa-user-xmark"></i> Delete
                 </button>
@@ -562,21 +580,27 @@ function nzDateTime(value, { withTime = true } = {}) {
             </tr>
           `;
         }).join('');
-
       } catch (e) {
         umRows.innerHTML = '<tr><td colspan="6">Error loading users.</td></tr>';
       }
-
-      // update sort icons
-      umSortHeaders.forEach(th => {
-        umSortIcon(th, th.dataset.sort === umSortKey, umSortAsc);
-      });
+      umSortHeaders.forEach(th => { umSortIcon(th, th.dataset.sort === umSortKey, umSortAsc); });
     }
 
-    // Handle row actions: reset password / delete
     umRows.addEventListener('click', async (e)=>{
-      const resetBtn = e.target.closest('button[data-reset]');
-      const delBtn   = e.target.closest('button[data-del]');
+      const logoutBtn = e.target.closest('button[data-logout]');
+      const delBtn    = e.target.closest('button[data-del]');
+      const resetBtn  = e.target.closest('button[data-reset]');
+
+      if (logoutBtn) {
+        const id = logoutBtn.dataset.logout;
+        if (!confirm('Force sign-out this user from all devices?')) return;
+        try {
+          const r = await fetch('/api/users/' + id + '/logout', { method:'POST', credentials:'include' });
+          if (r.ok) alert('User sessions revoked. They will be signed out on next request.');
+          else alert('Failed to revoke sessions.');
+        } catch { alert('Network error.'); }
+        return;
+      }
 
       if (resetBtn) {
         const id = resetBtn.dataset.reset;
@@ -594,15 +618,9 @@ function nzDateTime(value, { withTime = true } = {}) {
             credentials:'include',
             body: JSON.stringify({ password: p1 })
           });
-          if (r.ok) {
-            alert('Password updated.');
-          } else {
-            const data = await r.json().catch(()=>({}));
-            alert('Reset failed: ' + (data?.error || r.status));
-          }
-        }catch(err){
-          alert('Network error while resetting password.');
-        }
+          if (r.ok) alert('Password updated.');
+          else { const data = await r.json().catch(()=>({})); alert('Reset failed: ' + (data?.error || r.status)); }
+        }catch{ alert('Network error while resetting password.'); }
         return;
       }
 
@@ -614,15 +632,13 @@ function nzDateTime(value, { withTime = true } = {}) {
           if(r.status === 204){ umLoadUsers(); return; }
           const t = await r.text();
           alert('Delete failed: ' + t);
-        }catch(err){ alert('Delete error'); }
+        }catch{ alert('Delete error'); }
         return;
       }
     });
 
-    // Create user
-    document.getElementById('um-create-form').addEventListener('submit', async (e)=>{
+    umForm.addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const umMsg  = document.getElementById('um-create-msg');
       umMsg.textContent = '';
       const email = document.getElementById('um-email').value.trim();
       const password = document.getElementById('um-password').value;
@@ -644,30 +660,21 @@ function nzDateTime(value, { withTime = true } = {}) {
           umMsg.style.color = '#b00020';
           umMsg.textContent = data?.error || 'Create failed.';
         }
-      }catch(err){
+      }catch{
         umMsg.style.color = '#b00020';
         umMsg.textContent = 'Network error.';
       }
     });
 
-    // Search (debounced)
+    // Search / sort
     let umT;
-    document.getElementById('um-search').addEventListener('input', () => {
-      clearTimeout(umT);
-      umT = setTimeout(umLoadUsers, 200);
-    });
-
-    // Sort headers
+    umSearch.addEventListener('input', () => { clearTimeout(umT); umT = setTimeout(umLoadUsers, 200); });
     document.querySelectorAll('.um-sort').forEach(th => {
       th.style.cursor = 'pointer';
       th.addEventListener('click', () => {
         const key = th.dataset.sort;
-        if (key === umSortKey) {
-          umSortAsc = !umSortAsc;
-        } else {
-          umSortKey = key;
-          umSortAsc = key === 'email' || key === 'role' ? true : false; // default asc for text cols
-        }
+        if (key === umSortKey) umSortAsc = !umSortAsc;
+        else { umSortKey = key; umSortAsc = (key === 'email' || key === 'role'); }
         umLoadUsers();
       });
     });

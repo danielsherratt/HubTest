@@ -6,51 +6,68 @@
   <title>CESW Hub – Sign in</title>
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
   <meta name="color-scheme" content="light only" />
+
+  <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-  <style>
-    :root { --brand:#00625f; --brand-700:#00514e; --bg:#f6f7f8; --text:#1f2d2e; --muted:#6b7c80; --border:#d0d6d9; --error:#b00020; --radius:10px; --shadow:0 10px 25px rgba(0,0,0,.08); }
-    *{ box-sizing:border-box; } html,body{ height:100%; }
-    body{ margin:0; font-family:"Noto Sans",system-ui; color:var(--text); background:var(--bg); display:flex; flex-direction:column; min-height:100vh; }
-    .banner{ width:100%; height:170px; background:url('assets/banner.jpg') center/cover no-repeat; }
-    .wrap{ flex:1; display:grid; place-items:start center; padding:2rem 1rem 3rem; }
-    .card{ width:100%; max-width:380px; background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); padding:1.25rem 1.25rem 1.5rem; animation:floatIn .25s ease-out; }
-    @keyframes floatIn{ from{ transform:translateY(8px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
-    h1{ font-size:1.25rem; margin:0 0 .25rem; color:var(--brand); text-align:center; font-weight:700; }
-    .sub{ text-align:center; color:var(--muted); font-size:.95rem; margin-bottom:1rem; }
-    form > * + *{ margin-top:.9rem; }
-    .field{ display:grid; grid-template-columns:1fr auto; align-items:center; gap:.5rem; border:1px solid var(--border); border-radius:8px; padding:.2rem .5rem .2rem .6rem; background:#fff; }
-    .field input{ border:0; outline:0; padding:.7rem .2rem; font-size:1rem; width:100%; background:transparent; }
-    .icon-btn{ border:0; background:transparent; cursor:pointer; padding:.4rem .5rem; border-radius:6px; }
-    .icon-btn:focus-visible{ outline:2px solid var(--brand); outline-offset:2px; }
-    .btn{ width:100%; border:0; border-radius:8px; padding:.8rem 1rem; font-size:1rem; font-weight:600; cursor:pointer; background:var(--brand); color:#fff; }
-    .btn:hover{ background:var(--brand-700); } .btn[disabled]{ opacity:.6; cursor:not-allowed; }
-    .error{ display:none; color:var(--error); font-size:.95rem; text-align:center; min-height:1.25rem; }
-    .muted{ color:var(--muted); font-size:.9rem; text-align:center; margin-top:.25rem; }
-    .forgot-wrap{ display:none; text-align:center; margin-top:.25rem; }
-    .forgot-wrap button{ background:none; border:0; color:var(--brand); font-weight:600; cursor:pointer; }
-    footer{ color:var(--muted); text-align:center; font-size:.85rem; padding:1rem 0 1.25rem; }
 
-    /* Modal */
-    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:1000; }
-    .modal{ width:100%; max-width:380px; background:#fff; border-radius:10px; box-shadow:var(--shadow); padding:1rem 1rem 1.25rem; }
-    .modal header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:.5rem; }
-    .modal h2{ font-size:1.05rem; margin:0; color:var(--brand); }
-    .close-btn{ background:none; border:0; font-size:1.1rem; cursor:pointer; color:#333; }
-    .modal .field{ margin-top:.75rem; }
-    .modal .actions{ display:flex; gap:.5rem; margin-top:1rem; }
-    .modal .actions .btn.secondary{ background:#eef1f2; color:#1f2d2e; }
-    .modal .hint{ font-size:.9rem; color:var(--muted); margin-top:.5rem; }
-    .modal .status{ font-size:.95rem; text-align:center; min-height:1.1rem; margin-top:.5rem; }
+  <style>
+    :root {
+      --brand: #00625f;
+      --brand-700: #00514e;
+      --bg: #f6f7f8;
+      --text: #1f2d2e;
+      --muted: #6b7c80;
+      --border: #d0d6d9;
+      --error: #b00020;
+      --radius: 10px;
+      --shadow: 0 10px 25px rgba(0,0,0,.08);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .banner { width: 100%; height: 170px; background: url('assets/banner.jpg') center/cover no-repeat; }
+    .wrap { flex: 1; display: grid; place-items: start center; padding: 2rem 1rem 3rem; }
+    .card {
+      width: 100%; max-width: 420px; background: #fff; border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 1.25rem 1.25rem 1.5rem; animation: floatIn .25s ease-out;
+    }
+    @keyframes floatIn { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    h1 { font-size: 1.25rem; margin: 0 0 .25rem; color: var(--brand); text-align: center; font-weight: 700; }
+    .sub { text-align: center; color: var(--muted); font-size: .95rem; margin-bottom: 1rem; }
+    form > * + * { margin-top: .9rem; }
+    .field {
+      display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .5rem;
+      border: 1px solid var(--border); border-radius: 8px; padding: .2rem .5rem .2rem .6rem; background: #fff;
+    }
+    .field input { border: 0; outline: 0; padding: .7rem .2rem; font-size: 1rem; width: 100%; background: transparent; }
+    .field .icon-btn { border: 0; background: transparent; cursor: pointer; padding: .4rem .5rem; border-radius: 6px; }
+    .field .icon-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    .btn { width: 100%; border: 0; border-radius: 8px; padding: .8rem 1rem; font-size: 1rem; font-weight: 600; cursor: pointer; background: var(--brand); color: #fff; }
+    .btn:hover { background: var(--brand-700); }
+    .btn[disabled] { opacity: .6; cursor: not-allowed; }
+    .error { display: none; color: var(--error); font-size: .95rem; text-align: center; min-height: 1.25rem; }
+    .muted { color: var(--muted); font-size: .9rem; text-align: center; margin-top: .25rem; }
+    .disclaimer { font-size:.9rem; color:#445; line-height:1.35; background:#f8fafb; border:1px solid #e3eaec; border-radius:8px; padding:.6rem .7rem; }
+    .disclaimer input { margin-right:.5rem; margin-top:.2rem; }
+    footer { color: var(--muted); text-align: center; font-size: .85rem; padding: 1rem 0 1.25rem; }
   </style>
 
+  <!-- If already signed in, go straight to Feed -->
   <script>
-    // If already signed in, go to the app
     (async () => {
       try {
         const r = await fetch('/api/auth/me', { credentials: 'include' });
         if (r.ok) window.location.href = '/feed.html';
-      } catch {}
+      } catch { /* ignore */ }
     })();
   </script>
 </head>
@@ -59,57 +76,58 @@
 
   <main class="wrap">
     <section class="card" role="region" aria-labelledby="signin-title">
-    <h1><i class="fa-solid fa-people-group"></i> CESW Hub - Login</h1>
+      <h1 id="signin-title">Sign in</h1>
+      <p class="sub">Staff access only</p>
 
       <form id="login-form" novalidate>
+        <!-- Email -->
         <div class="field">
-          <input type="email" name="email" placeholder="Email address" inputmode="email"
-                 autocomplete="username email" required aria-label="Email address"/>
+          <input
+            type="email"
+            name="email"
+            placeholder="Email address"
+            inputmode="email"
+            autocomplete="username email"
+            required
+            aria-label="Email address"
+          />
           <i class="fa-solid fa-envelope" aria-hidden="true" style="opacity:.6;margin-right:.3rem"></i>
         </div>
 
+        <!-- Password with show/hide -->
         <div class="field">
-          <input id="password" name="password" type="password" placeholder="Password"
-                 autocomplete="current-password" required aria-label="Password"/>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+            required
+            aria-label="Password"
+          />
           <button class="icon-btn" type="button" id="togglePwd" aria-label="Show password">
             <i id="pwdIcon" class="fa-regular fa-eye"></i>
           </button>
         </div>
 
+        <!-- Disclaimer + required ack -->
+        <label class="disclaimer">
+          <input type="checkbox" id="ack" required>
+          <span>
+            I understand and agree this system is for authorised staff only. Activity may be monitored and logged.
+            I will follow school ICT policies when accessing resources.
+          </span>
+        </label>
+
         <button class="btn" id="submitBtn" type="submit">Log In</button>
 
-        <div id="error-msg" class="error" role="alert" aria-live="polite"></div>
-
-        <!-- Hidden until a 401 occurs -->
-        <p id="forgotWrap" class="forgot-wrap">
-          <button type="button" id="forgotOpen">Forgot your password?</button>
-        </p>
-
-
+        <div id="error-msg" class="error" role="alert"></div>
+        <p class="muted">Having trouble signing in? Contact ICT.</p>
       </form>
     </section>
   </main>
 
   <footer>&copy; <span id="year"></span> CESW Hub</footer>
-
-  <!-- Forgot Password Modal -->
-  <div id="fpBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="fpTitle" aria-hidden="true">
-    <div class="modal">
-      <header>
-        <h2 id="fpTitle">Reset your password</h2>
-        <button class="close-btn" id="forgotClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-      </header>
-      <div class="field">
-        <input id="fpEmail" type="email" placeholder="Email address" inputmode="email" autocomplete="email" aria-label="Email address">
-      </div>
-      <div class="actions">
-        <button class="btn" id="forgotSend" type="button">Send reset link</button>
-        <button class="btn secondary" id="forgotCancel" type="button">Cancel</button>
-      </div>
-      <p class="hint">If an account exists for this email, you’ll receive a reset link. The link expires in 3 hours.</p>
-      <div id="fpStatus" class="status"></div>
-    </div>
-  </div>
 
   <script>
     (function () {
@@ -119,17 +137,13 @@
       const pwdInput = document.getElementById('password');
       const togglePwd = document.getElementById('togglePwd');
       const pwdIcon = document.getElementById('pwdIcon');
-      const forgotWrap = document.getElementById('forgotWrap');
-      const yearEl = document.getElementById('year'); yearEl.textContent = new Date().getFullYear();
+      const ack = document.getElementById('ack');
+      document.getElementById('year').textContent = new Date().getFullYear();
 
-      // Modal nodes
-      const fpBackdrop = document.getElementById('fpBackdrop');
-      const forgotOpen = document.getElementById('forgotOpen');
-      const forgotClose = document.getElementById('forgotClose');
-      const forgotCancel = document.getElementById('forgotCancel');
-      const forgotSend = document.getElementById('forgotSend');
-      const fpEmail = document.getElementById('fpEmail');
-      const fpStatus = document.getElementById('fpStatus');
+      // Pre-check if previously acknowledged
+      document.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('ack_ok') === '1') ack.checked = true;
+      });
 
       // Show/hide password
       togglePwd.addEventListener('click', () => {
@@ -139,56 +153,33 @@
         togglePwd.setAttribute('aria-label', isPwd ? 'Hide password' : 'Show password');
       });
 
-      function showError(msg) { errorEl.textContent = msg; errorEl.style.display = 'block'; }
-      function clearError() { errorEl.textContent = ''; errorEl.style.display = 'none'; }
-      function showForgotLink() { forgotWrap.style.display = 'block'; }
-
-      // --- Forgot password modal helpers ---
-      function openModal() {
-        fpBackdrop.style.display = 'flex';
-        fpBackdrop.setAttribute('aria-hidden', 'false');
-        fpStatus.textContent = '';
-        // Pre-fill with typed email if present
-        const typed = (form.email.value || '').trim();
-        if (typed) fpEmail.value = typed;
-        setTimeout(() => fpEmail.focus(), 0);
+      function showError(msg) {
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
       }
-      function closeModal() {
-        fpBackdrop.style.display = 'none';
-        fpBackdrop.setAttribute('aria-hidden', 'true');
+      function clearError() {
+        errorEl.textContent = '';
+        errorEl.style.display = 'none';
       }
-
-      forgotOpen.addEventListener('click', openModal);
-      forgotClose.addEventListener('click', closeModal);
-      forgotCancel.addEventListener('click', closeModal);
-      fpBackdrop.addEventListener('click', (e) => { if (e.target === fpBackdrop) closeModal(); });
-
-      async function sendReset() {
-        const email = (fpEmail.value || '').trim();
-        if (!email) { fpStatus.textContent = 'Please enter an email.'; return; }
-        fpStatus.textContent = 'Sending…';
-        try {
-          await fetch('/api/auth/request-reset', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-          });
-          fpStatus.textContent = 'If an account exists, a reset link has been sent.';
-        } catch {
-          fpStatus.textContent = 'Network error. Please try again.';
-        }
-      }
-      forgotSend.addEventListener('click', sendReset);
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         clearError();
+
         if (!form.reportValidity()) return;
+
+        if (!ack.checked) {
+          showError('Please confirm the disclaimer to continue.');
+          return;
+        }
 
         submitBtn.disabled = true;
         submitBtn.textContent = 'Signing in…';
 
-        const payload = { email: form.email.value.trim(), password: form.password.value };
+        const payload = {
+          email: form.email.value.trim(),
+          password: form.password.value
+        };
 
         try {
           const res = await fetch('/api/auth/login', {
@@ -198,20 +189,22 @@
             body: JSON.stringify(payload)
           });
 
-          if (res.ok) { window.location.href = '/feed.html'; return; }
+          if (res.ok) {
+            localStorage.setItem('ack_ok', '1'); // remember ack
+            window.location.href = '/feed.html';
+            return;
+          }
 
           let data = {};
           try { data = await res.json(); } catch {}
-          if (res.status === 401) {
-            showError('Invalid email or password.');
-            showForgotLink(); // reveal modal trigger only after an actual 401
-          } else if (res.status === 423) {
-            showError('Too many attempts. Please try again later.');
-          } else {
-            showError(data.error || 'Login failed.');
-          }
+          const message = data.error || (res.status === 401
+            ? 'Invalid email or password.'
+            : res.status === 423
+              ? 'Too many attempts. Please try again later.'
+              : 'Login failed.');
+          showError(message);
 
-        } catch {
+        } catch (err) {
           showError('Network error. Please try again.');
         } finally {
           submitBtn.disabled = false;
