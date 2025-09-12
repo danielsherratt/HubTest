@@ -1,6 +1,6 @@
 // GET ?post_id=123   → list comments (flat) for a post
 // POST { post_id, body, parent_id? } → create comment
-import { getMe } from '../../../lib/me.js';
+import { getMe } from '../../lib/me.js';
 
 export async function onRequest({ request, env }) {
   const db = env.POSTS_DB;

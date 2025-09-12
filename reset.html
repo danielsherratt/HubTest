@@ -3,212 +3,169 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>CESW Hub – Reset Password</title>
-  <link rel="icon" href="assets/favicon.ico" type="image/x-icon"/>
-  <meta name="color-scheme" content="light only" />
+  <title>CESW Hub – Password Reset</title>
+
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="assets/app.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-  <style>
-    :root { --brand:#00625f; --brand-700:#00514e; --bg:#f6f7f8; --text:#1f2d2e; --muted:#6b7c80; --border:#d0d6d9; --error:#b00020; --ok:#0a7a51; --radius:10px; --shadow:0 10px 25px rgba(0,0,0,.08); }
-    *{ box-sizing:border-box; } html,body{ height:100%; }
-    body{ margin:0; font-family:"Noto Sans",system-ui; color:var(--text); background:var(--bg); display:flex; flex-direction:column; min-height:100vh; }
-    .banner{ width:100%; height:170px; background:url('assets/banner.jpg') center/cover no-repeat; }
-    .wrap{ flex:1; display:grid; place-items:start center; padding:2rem 1rem 3rem; }
-    .card{ width:100%; max-width:380px; background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); padding:1.25rem 1.25rem 1.5rem; animation:floatIn .25s ease-out; }
-    @keyframes floatIn{ from{ transform:translateY(8px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
-    h1{ font-size:1.25rem; margin:0 0 .25rem; color:var(--brand); text-align:center; font-weight:700;}
-    .sub{ text-align:center; color:var(--muted); font-size:.95rem; margin-bottom:1rem; }
-    form > * + *{ margin-top:.9rem; }
-    .field{ display:grid; grid-template-columns:1fr auto; align-items:center; gap:.5rem; border:1px solid var(--border); border-radius:8px; padding:.2rem .5rem .2rem .6rem; background:#fff; }
-    .field input{ border:0; outline:0; padding:.7rem .2rem; font-size:1rem; width:100%; background:transparent; }
-    .icon-btn{ border:0; background:transparent; cursor:pointer; padding:.4rem .5rem; border-radius:6px; }
-    .icon-btn:focus-visible{ outline:2px solid var(--brand); outline-offset:2px; }
-    .btn{ width:100%; border:0; border-radius:8px; padding:.8rem 1rem; font-size:1rem; font-weight:600; cursor:pointer; background:var(--brand); color:#fff; }
-    .btn:hover{ background:var(--brand-700); } .btn[disabled]{ opacity:.6; cursor:not-allowed; }
-    .msg{ text-align:center; min-height:1.25rem; font-size:.95rem; }
-    .msg.error{ color:var(--error);} .msg.ok{ color:var(--ok);}
-    .muted{ color:var(--muted); font-size:.9rem; text-align:center; margin-top:.25rem;}
-    .links{ display:flex; justify-content:space-between; margin-top:.25rem; font-size:.9rem; }
-    .links a{ color:var(--brand); text-decoration:none; font-weight:600; } .links a:hover{ text-decoration:underline; }
-    .req{ font-size:.9rem; margin:.25rem 0 0; padding:0; list-style:none; }
-    .req li{ display:flex; align-items:center; gap:.45rem; color:#666; }
-    .req li.ok{ color:var(--ok); } .req li .icon{ width:1.1rem; text-align:center; }
-    .match{ font-size:.9rem; margin-top:.25rem; color:#666; } .match.ok{ color:var(--ok); } .match.err{ color:var(--error); }
-    footer{ color:var(--muted); text-align:center; font-size:.85rem; padding:1rem 0 1.25rem; }
-  </style>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <style>body{display:block}</style>
+  <script>
+    async function signOut(){
+      try { await fetch('/api/auth/logout',{method:'POST',credentials:'include'}); }
+      finally { location.href='/index.html'; }
+    }
+    (async () => {
+      try {
+        const r = await fetch('/api/auth/me',{credentials:'include'});
+        if (!r.ok) throw 0;
+        const me = await r.json();
+        const right = document.querySelector('.nav-right');
+        if (me.role === 'admin' && !right.querySelector('a[href="secure.html"]')) {
+          const a=document.createElement('a'); a.className='nav-item'; a.href='secure.html'; a.textContent='Admin'; right.appendChild(a);
+        }
+        if (!document.getElementById('signOutBtn')) {
+          const b=document.createElement('button'); b.id='signOutBtn'; b.className='nav-item'; b.textContent='Sign out'; b.onclick=signOut; right.appendChild(b);
+        }
+      } catch { /* not signed in; fine */ }
+    })();
+  </script>
 </head>
 <body>
-  <div class="banner" role="img" aria-label="CESW banner"></div>
+  <!-- NAV -->
+  <div class="navbar">
+    <div class="nav-left"><span class="menu-icon">&#9776;</span></div>
+    <div class="nav-center">
+      <div class="nav-links">
+        <a class="nav-item" href="feed.html">Feed</a>
+        <a class="nav-item" href="resources.html">Resources</a>
+        <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
+      </div>
+    </div>
+    <div class="nav-right"></div>
+  </div>
 
-  <main class="wrap">
-    <section class="card" role="region" aria-labelledby="reset-title">
-      <h1 id="reset-title">Reset your password</h1>
-      <p class="sub">At least 8 characters, including 1 uppercase and 1 number</p>
+  <div class="banner"></div>
+  <h2 class="title"><i class="fa-solid fa-key"></i> Password Reset</h2>
 
-      <form id="reset-form" novalidate>
-        <div class="field">
-          <input id="pwd1" type="password" placeholder="New password" required minlength="8"
-                 autocomplete="new-password" aria-label="New password"
-                 title="At least 8 characters, incl. one uppercase and one number" />
-          <button class="icon-btn" type="button" id="togglePwd1" aria-label="Show password">
-            <i id="pwdIcon1" class="fa-regular fa-eye"></i>
-          </button>
+  <main class="wrap" style="display:grid;place-items:start center;padding:1rem 1rem 2rem;">
+    <section class="login-card" style="max-width:480px;width:100%;">
+      <!-- Request reset (no token) -->
+      <div id="request-view" style="display:none">
+        <p class="muted">Enter your work email and we’ll send a password reset link.</p>
+        <form id="request-form" novalidate>
+          <div class="field">
+            <input type="email" id="req-email" placeholder="Email address" required autocomplete="email">
+            <i class="fa-solid fa-envelope" aria-hidden="true" style="opacity:.6;margin-right:.3rem"></i>
+          </div>
+          <button class="btn" id="req-btn" type="submit">Send reset link</button>
+          <div id="req-msg" class="muted" style="margin-top:.5rem;min-height:1.25rem"></div>
+        </form>
+        <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+          <a class="nav-item" href="/index.html"><i class="fa-solid fa-right-to-bracket"></i> Back to Sign in</a>
+          <a class="nav-item" href="/disclaimer.html" target="_blank" rel="noopener">Disclaimer</a>
         </div>
+      </div>
 
-        <!-- Requirements checklist -->
-        <ul class="req" id="reqList" aria-live="polite">
-          <li id="reqLen"><span class="icon">○</span> At least 8 characters</li>
-          <li id="reqUpper"><span class="icon">○</span> At least 1 uppercase letter</li>
-          <li id="reqNum"><span class="icon">○</span> At least 1 number</li>
-        </ul>
-
-        <div class="field">
-          <input id="pwd2" type="password" placeholder="Confirm new password" required minlength="8"
-                 autocomplete="new-password" aria-label="Confirm new password"
-                 title="At least 8 characters, incl. one uppercase and one number" />
-          <button class="icon-btn" type="button" id="togglePwd2" aria-label="Show password">
-            <i id="pwdIcon2" class="fa-regular fa-eye"></i>
-          </button>
+      <!-- Finalise reset (token) -->
+      <div id="reset-view" style="display:none">
+        <p class="muted">Set a new password for your account.</p>
+        <form id="reset-form" novalidate>
+          <div class="field">
+            <input type="password" id="new-pass" placeholder="New password" required autocomplete="new-password" minlength="8">
+            <button class="icon-btn" type="button" id="toggleNew"><i id="iconNew" class="fa-regular fa-eye"></i></button>
+          </div>
+          <div class="field">
+            <input type="password" id="new-pass2" placeholder="Confirm new password" required autocomplete="new-password" minlength="8">
+            <button class="icon-btn" type="button" id="toggleNew2"><i id="iconNew2" class="fa-regular fa-eye"></i></button>
+          </div>
+          <button class="btn" id="set-btn" type="submit">Set password</button>
+          <div id="set-msg" class="muted" style="margin-top:.5rem;min-height:1.25rem"></div>
+        </form>
+        <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+          <a class="nav-item" href="/index.html"><i class="fa-solid fa-right-to-bracket"></i> Back to Sign in</a>
+          <a class="nav-item" href="/disclaimer.html" target="_blank" rel="noopener">Disclaimer</a>
         </div>
-        <div id="matchMsg" class="match" aria-live="polite"></div>
-
-        <button class="btn" id="submitBtn" type="submit" disabled>Set Password</button>
-        <div id="msg" class="msg" role="status" aria-live="polite"></div>
-
-        <div class="links">
-          <a href="index.html"><i class="fa-solid fa-arrow-left-long"></i> Back to sign in</a>
-          <span id="tokenStatus" class="muted"></span>
-        </div>
-      </form>
+      </div>
     </section>
   </main>
 
-  <footer>&copy; <span id="year"></span> CESW Hub</footer>
-
   <script>
-    // Run after DOM is ready to avoid "null textContent" errors
-    document.addEventListener('DOMContentLoaded', () => {
-      const $ = (id) => document.getElementById(id) || null;
-      const safeText = (id, text) => { const el = $(id); if (el) el.textContent = text; };
-      const setClass = (el, cls, on) => { if (el) el.classList.toggle(cls, !!on); };
+    const qs = new URLSearchParams(location.search);
+    const token = qs.get('token');
 
-      const params = new URLSearchParams(location.search);
-      const token = params.get('token') || '';
+    const reqView  = document.getElementById('request-view');
+    const resetView= document.getElementById('reset-view');
 
-      const form = $('reset-form');
-      const msg = $('msg');
-      const btn = $('submitBtn');
-      const tokenStatus = $('tokenStatus');
-      const pwd1 = $('pwd1'), pwd2 = $('pwd2');
-      const togglePwd1 = $('togglePwd1'), togglePwd2 = $('togglePwd2');
-      const pwdIcon1 = $('pwdIcon1'), pwdIcon2 = $('pwdIcon2');
-      const reqLen = $('reqLen'), reqUpper = $('reqUpper'), reqNum = $('reqNum'), matchMsg = $('matchMsg');
+    // Toggle views
+    if (token) resetView.style.display='block';
+    else reqView.style.display='block';
 
-      // footer year (guarded)
-      safeText('year', new Date().getFullYear());
+    // Menu
+    $('.menu-icon').on('click',()=>$('.nav-links').toggleClass('active'));
 
-      // token hint (server still validates)
-      if (tokenStatus) {
-        if (!token) { tokenStatus.textContent = 'Missing or invalid link.'; tokenStatus.style.color = '#b00020'; }
-        else tokenStatus.textContent = 'Link present (expires after 3 hours).';
-      }
-      if (btn && !token) btn.disabled = true;
-
-      function setMsg(text, ok=false){
-        if (!msg) return;
-        msg.textContent = text || '';
-        msg.className = 'msg ' + (ok ? 'ok' : (text ? 'error' : ''));
-      }
-      function toggleField(field, icon, btnEl){
-        if (!field || !icon || !btnEl) return;
-        const isPwd = field.type === 'password';
-        field.type = isPwd ? 'text' : 'password';
-        icon.className = isPwd ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
-        btnEl.setAttribute('aria-label', isPwd ? 'Hide password' : 'Show password');
-      }
-      function policy(p){
-        return { len: !!p && p.length >= 8, upper: /[A-Z]/.test(p), num: /\d/.test(p) };
-      }
-      function renderPolicy(p){
-        const st = policy(p);
-        if (reqLen) { setClass(reqLen, 'ok', st.len); const ic = reqLen.querySelector?.('.icon'); if (ic) ic.textContent = st.len ? '✓' : '○'; }
-        if (reqUpper){ setClass(reqUpper, 'ok', st.upper); const ic = reqUpper.querySelector?.('.icon'); if (ic) ic.textContent = st.upper ? '✓' : '○'; }
-        if (reqNum){ setClass(reqNum, 'ok', st.num); const ic = reqNum.querySelector?.('.icon'); if (ic) ic.textContent = st.num ? '✓' : '○'; }
-        return st.len && st.upper && st.num;
-      }
-      function renderMatch(p1, p2){
-        if (!matchMsg) return p1 === p2 && !!p2;
-        if (!p2) { matchMsg.textContent = ''; matchMsg.className = 'match'; return false; }
-        const same = p1 === p2;
-        matchMsg.textContent = same ? 'Passwords match.' : 'Passwords do not match.';
-        matchMsg.className = 'match ' + (same ? 'ok' : 'err');
-        return same;
-      }
-      function evaluate(){
-        const okPolicy = renderPolicy(pwd1?.value || '');
-        const okMatch  = renderMatch(pwd1?.value || '', pwd2?.value || '');
-        if (btn) btn.disabled = !(okPolicy && okMatch && !!token);
-      }
-
-      // Hook up listeners if nodes exist
-      if (togglePwd1 && pwd1 && pwdIcon1) togglePwd1.addEventListener('click', () => toggleField(pwd1, pwdIcon1, togglePwd1));
-      if (togglePwd2 && pwd2 && pwdIcon2) togglePwd2.addEventListener('click', () => toggleField(pwd2, pwdIcon2, togglePwd2));
-      if (pwd1) pwd1.addEventListener('input', evaluate);
-      if (pwd2) pwd2.addEventListener('input', evaluate);
-
-      // Initial evaluation
-      evaluate();
-
-      // Submit handler
-      if (form) form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        setMsg('');
-        evaluate();
-        if (btn && btn.disabled) return;
-
-        const newPass = pwd1?.value || '';
-        if (!token) { setMsg('Invalid or missing link.'); return; }
-
-        if (btn) { btn.disabled = true; btn.textContent = 'Setting…'; }
-        try {
-          const r = await fetch('/api/auth/reset', {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ token, password: newPass })
-          });
-
-          // Try to parse JSON safely
-          let data = null;
-          try { data = await r.json(); } catch { data = null; }
-
-          if (!r.ok) {
-            setMsg((data && data.error) || 'Reset failed.');
-          } else {
-            // Auto-login using returned email, if provided by the API
-            const email = data && data.email;
-            if (email) {
-              const login = await fetch('/api/auth/login', {
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                credentials:'include',
-                body: JSON.stringify({ email, password: newPass })
-              });
-              if (login.ok) {
-                setMsg('Password updated! Logging you in…', true);
-                location.href = '/feed.html';
-                return;
-              }
-            }
-            // Fallback if auto-login not available
-            setMsg('Password updated! Please sign in.', true);
-            setTimeout(() => location.href = '/index.html', 1100);
-          }
-        } catch {
-          setMsg('Network error. Please try again.');
-        } finally {
-          if (btn) { btn.disabled = false; btn.textContent = 'Set Password'; }
+    // Request reset
+    document.getElementById('request-form')?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const email = document.getElementById('req-email').value.trim();
+      const btn = document.getElementById('req-btn');
+      const msg = document.getElementById('req-msg');
+      if (!email) { msg.textContent='Please enter your email.'; return; }
+      btn.disabled = true; btn.textContent='Sending…'; msg.textContent='';
+      try{
+        const r = await fetch('/api/auth/request_reset', {
+          method:'POST', credentials:'include',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ email })
+        });
+        if (!r.ok) {
+          let d={}; try{ d=await r.json(); }catch{}
+          throw new Error(d.error || 'Could not send reset link.');
         }
-      });
+        msg.textContent='If that email is registered, a reset link has been sent.';
+      }catch(err){ msg.textContent = err.message || 'Something went wrong.'; }
+      finally{ btn.disabled=false; btn.textContent='Send reset link'; }
+    });
+
+    // Show/hide toggles
+    function toggleVisibility(inputId, iconId){
+      const inp = document.getElementById(inputId);
+      const icn = document.getElementById(iconId);
+      const isPwd = inp.type === 'password';
+      inp.type = isPwd ? 'text' : 'password';
+      icn.className = isPwd ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+    }
+    document.getElementById('toggleNew')?.addEventListener('click',()=>toggleVisibility('new-pass','iconNew'));
+    document.getElementById('toggleNew2')?.addEventListener('click',()=>toggleVisibility('new-pass2','iconNew2'));
+
+    // Finalise reset
+    document.getElementById('reset-form')?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const pass1 = document.getElementById('new-pass').value;
+      const pass2 = document.getElementById('new-pass2').value;
+      const btn = document.getElementById('set-btn');
+      const msg = document.getElementById('set-msg');
+
+      if (pass1.length < 8) { msg.textContent='Password must be at least 8 characters.'; return; }
+      if (pass1 !== pass2)  { msg.textContent='Passwords do not match.'; return; }
+
+      btn.disabled=true; btn.textContent='Updating…'; msg.textContent='';
+      try{
+        const r = await fetch('/api/auth/reset', {
+          method:'POST', credentials:'include',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ token, password: pass1 })
+        });
+        if (!r.ok) {
+          let d={}; try{ d=await r.json(); }catch{}
+          throw new Error(d.error || 'Reset failed.');
+        }
+        msg.textContent='Password updated. Redirecting to sign in…';
+        setTimeout(()=>location.href='/index.html', 1200);
+      }catch(err){ msg.textContent = err.message || 'Something went wrong.'; }
+      finally{ btn.disabled=false; btn.textContent='Set password'; }
     });
   </script>
 </body>

@@ -4,73 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CESW Hub – Sign in</title>
-  <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
   <meta name="color-scheme" content="light only" />
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
 
   <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
 
-  <style>
-    :root {
-      --brand: #00625f;
-      --brand-700: #00514e;
-      --bg: #f6f7f8;
-      --text: #1f2d2e;
-      --muted: #6b7c80;
-      --border: #d0d6d9;
-      --error: #b00020;
-      --radius: 10px;
-      --shadow: 0 10px 25px rgba(0,0,0,.08);
-    }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      font-family: "Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
-      color: var(--text);
-      background: var(--bg);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    .banner { width: 100%; height: 170px; background: url('assets/banner.jpg') center/cover no-repeat; }
-    .wrap { flex: 1; display: grid; place-items: start center; padding: 2rem 1rem 3rem; }
-    .card {
-      width: 100%; max-width: 420px; background: #fff; border-radius: var(--radius);
-      box-shadow: var(--shadow); padding: 1.25rem 1.25rem 1.5rem; animation: floatIn .25s ease-out;
-    }
-    @keyframes floatIn { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    h1 { font-size: 1.25rem; margin: 0 0 .25rem; color: var(--brand); text-align: center; font-weight: 700; }
-    .sub { text-align: center; color: var(--muted); font-size: .95rem; margin-bottom: 1rem; }
-    form > * + * { margin-top: .9rem; }
-    .field {
-      display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .5rem;
-      border: 1px solid var(--border); border-radius: 8px; padding: .2rem .5rem .2rem .6rem; background: #fff;
-    }
-    .field input { border: 0; outline: 0; padding: .7rem .2rem; font-size: 1rem; width: 100%; background: transparent; }
-    .field .icon-btn { border: 0; background: transparent; cursor: pointer; padding: .4rem .5rem; border-radius: 6px; }
-    .field .icon-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-    .btn { width: 100%; border: 0; border-radius: 8px; padding: .8rem 1rem; font-size: 1rem; font-weight: 600; cursor: pointer; background: var(--brand); color: #fff; }
-    .btn:hover { background: var(--brand-700); }
-    .btn[disabled] { opacity: .6; cursor: not-allowed; }
-    .error { display: none; color: var(--error); font-size: .95rem; text-align: center; min-height: 1.25rem; }
-    .muted { color: var(--muted); font-size: .9rem; text-align: center; margin-top: .25rem; }
-    
-    footer { color: var(--muted); text-align: center; font-size: .85rem; padding: 1rem 0 1.25rem; }
-  .disclaimer {
-    display:flex; align-items:flex-start; gap:.6rem;
-    font-size:.9rem; color:#445; line-height:1.35;
-    background:#f8fafb; border:1px solid #e3eaec; border-radius:8px;
-    padding:.6rem .7rem;
-  }
-  .disclaimer input[type="checkbox"] { margin-top:.2rem; flex: none; }
-  .disclaimer .text { flex:1; }
+  <!-- Unified styles -->
+  <link rel="stylesheet" href="assets/app.css">
 
-  </style>
-
-  <!-- If already signed in, go straight to Feed -->
   <script>
+    // If already signed in, go straight to Feed
     (async () => {
       try {
         const r = await fetch('/api/auth/me', { credentials: 'include' });
@@ -78,14 +23,15 @@
       } catch { /* ignore */ }
     })();
   </script>
+  <style>body{display:block}</style>
 </head>
 <body>
   <div class="banner" role="img" aria-label="CESW banner"></div>
 
-  <main class="wrap">
-    <section class="card" role="region" aria-labelledby="signin-title">
-      <h1 id="signin-title">Sign in</h1>
-      <p class="sub">Staff access only</p>
+  <main class="wrap" style="display:grid;place-items:start center;padding:2rem 1rem 3rem;">
+    <section class="login-card" role="region" aria-labelledby="signin-title">
+      <h1 id="signin-title" style="text-align:center;color:var(--brand);margin:.25rem 0 .35rem;">Sign in</h1>
+      <p class="sub" style="text-align:center;color:var(--muted);margin:.2rem 0 1rem;">Staff access only</p>
 
       <form id="login-form" novalidate>
         <!-- Email -->
@@ -118,24 +64,26 @@
           </button>
         </div>
 
-        <!-- Disclaimer + required ack -->
-<label class="disclaimer">
-  <input type="checkbox" id="ack" required>
-  <span class="text">
-    I understand and agree this system is for authorised staff only.
-    Activity may be monitored and logged. I will follow school ICT policies when accessing resources.
-  </span>
-</label>
+        <!-- Disclaimer + required agreement (unchecked by default) -->
+        <div class="disclaimer">
+          Please read our <a href="/disclaimer.html" target="_blank" rel="noopener">CESW Staff Hub Disclaimer</a>.
+        </div>
+        <label class="agree">
+          <input type="checkbox" id="agree" required />
+          <span>I have read and agree to the CESW Staff Hub Disclaimer.</span>
+        </label>
 
-        <button class="btn" id="submitBtn" type="submit">Log In</button>
+        <button class="btn" id="submitBtn" type="submit" disabled>Log In</button>
 
-        <div id="error-msg" class="error" role="alert"></div>
-        <p class="muted">Having trouble signing in? Contact ICT.</p>
+        <div id="error-msg" class="error" role="alert" style="margin-top:.5rem;min-height:1.25rem;"></div>
+        <p class="muted" style="text-align:center;margin-top:.25rem;">Having trouble signing in? Contact ICT.</p>
       </form>
     </section>
   </main>
 
-  <footer>&copy; <span id="year"></span> CESW Hub</footer>
+  <footer style="color:var(--muted);text-align:center;font-size:.85rem;padding:1rem 0 1.25rem;">
+    &copy; <span id="year"></span> CESW Hub
+  </footer>
 
   <script>
     (function () {
@@ -145,13 +93,9 @@
       const pwdInput = document.getElementById('password');
       const togglePwd = document.getElementById('togglePwd');
       const pwdIcon = document.getElementById('pwdIcon');
-      const ack = document.getElementById('ack');
-      document.getElementById('year').textContent = new Date().getFullYear();
+      const agree = document.getElementById('agree');
 
-      // Pre-check if previously acknowledged
-      document.addEventListener('DOMContentLoaded', () => {
-        if (localStorage.getItem('ack_ok') === '1') ack.checked = true;
-      });
+      document.getElementById('year').textContent = new Date().getFullYear();
 
       // Show/hide password
       togglePwd.addEventListener('click', () => {
@@ -161,25 +105,26 @@
         togglePwd.setAttribute('aria-label', isPwd ? 'Hide password' : 'Show password');
       });
 
+      // Require disclaimer agreement (disabled by default; enable when checked)
+      agree.checked = false; // ensure not pre-checked
+      submitBtn.disabled = !agree.checked;
+      agree.addEventListener('change', () => {
+        submitBtn.disabled = !agree.checked;
+      });
+
       function showError(msg) {
         errorEl.textContent = msg;
-        errorEl.style.display = 'block';
       }
       function clearError() {
         errorEl.textContent = '';
-        errorEl.style.display = 'none';
       }
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         clearError();
 
+        // Basic HTML5 validation gate (also enforces required checkbox)
         if (!form.reportValidity()) return;
-
-        if (!ack.checked) {
-          showError('Please confirm the disclaimer to continue.');
-          return;
-        }
 
         submitBtn.disabled = true;
         submitBtn.textContent = 'Signing in…';
@@ -198,7 +143,6 @@
           });
 
           if (res.ok) {
-            localStorage.setItem('ack_ok', '1'); // remember ack
             window.location.href = '/feed.html';
             return;
           }
@@ -215,8 +159,9 @@
         } catch (err) {
           showError('Network error. Please try again.');
         } finally {
-          submitBtn.disabled = false;
+          submitBtn.disabled = !agree.checked;
           submitBtn.textContent = 'Log In';
+          // Clear password for safety
           form.password.value = '';
         }
       });

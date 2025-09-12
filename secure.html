@@ -5,269 +5,273 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CESW Hub - Admin</title>
 
-  <link rel="stylesheet" href="assets/admin.css">
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="assets/app.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-  <style>
-    body { display: none; }
+  <!-- Quill for feed editor -->
+  <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css">
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
-    /* Navbar with center links & right actions */
-    .navbar {
-      display:grid; grid-template-columns: 1fr auto 1fr; align-items:center;
-      padding:.5rem 1rem; background:#fff; border-bottom:1px solid #e6ecee;
-    }
-    .nav-left  { justify-self:start;  display:flex; align-items:center; gap:.5rem; }
-    .nav-center{ justify-self:center; }
-    .nav-right { justify-self:end;    display:flex; align-items:center; gap:.5rem; }
+  <!-- PDF.js for resource thumbnails -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';</script>
 
-    .menu-icon { cursor:pointer; font-size:1.25rem; }
-    .nav-links, .nav-right { display:flex; gap:1rem; align-items:center; }
-    .nav-item {
-      background:none; border:0; padding:.35rem .6rem; cursor:pointer; border-radius:6px;
-      text-decoration:none; color:#0f1f20; font-weight:600;
-    }
-    .nav-item:hover { background:#f2f5f6; }
-    #signOutBtn { color:#b00020; }
-
-    .chip { display:inline-block; padding:.15rem .5rem; border-radius:999px; background:#eef3f4; font-size:.85rem; }
-    table#um-table th { user-select:none; cursor:pointer; }
-    table#um-table th i { margin-left:.25rem; }
-    .upload-section label { display:inline-flex; align-items:center; gap:.4rem; }
-  </style>
-
-  <!-- Gate: admin-only via /api/auth/me + build right-side nav -->
+  <style>body{display:none}</style>
   <script>
     async function signOut(){
-      try { await fetch('/api/auth/logout',{method:'POST',credentials:'include'}); }
+      try { await fetch('/api/auth/logout', { method:'POST', credentials:'include' }); }
       finally { location.href='/index.html'; }
     }
 
+    let ME=null;
+
     (async () => {
       try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        if (!res.ok) throw new Error('Not authorized');
-        const me = await res.json();
-        if (!me || me.role !== 'admin') { window.location.href = '/index.html'; return; }
-        document.body.style.display = 'block';
+        const r = await fetch('/api/auth/me', { credentials:'include' });
+        if (!r.ok) throw 0;
+        ME = await r.json();
+        if (ME.role !== 'admin') throw 0;
 
-        // Right-side actions
+        document.body.style.display='block';
+
+        // Right-side nav buttons (Admin + Sign out)
         const right = document.querySelector('.nav-right');
         if (!right.querySelector('a[href="secure.html"]')) {
-          const a = document.createElement('a'); a.className='nav-item'; a.href='secure.html'; a.textContent='Admin'; right.appendChild(a);
+          const a=document.createElement('a'); a.className='nav-item'; a.href='secure.html'; a.textContent='Admin';
+          right.appendChild(a);
         }
         if (!document.getElementById('signOutBtn')) {
-          const b = document.createElement('button'); b.id='signOutBtn'; b.className='nav-item'; b.textContent='Sign out'; b.onclick=signOut; right.appendChild(b);
+          const b=document.createElement('button'); b.id='signOutBtn'; b.className='nav-item'; b.textContent='Sign out'; b.onclick=signOut;
+          right.appendChild(b);
         }
       } catch {
-        window.location.href = '/index.html';
+        location.href='/index.html';
       }
     })();
   </script>
 </head>
 <body>
-  <!-- Navbar -->
+  <!-- NAV -->
   <div class="navbar">
-    <div class="nav-left">
-      <span class="menu-icon">&#9776;</span>
-    </div>
+    <div class="nav-left"><span class="menu-icon">&#9776;</span></div>
     <div class="nav-center">
       <div class="nav-links">
         <a class="nav-item" href="feed.html">Feed</a>
         <a class="nav-item" href="resources.html">Resources</a>
-        <a class="nav-item" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">Calendar</a>
+        <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
       </div>
     </div>
-    <div class="nav-right"><!-- Admin + Sign out injected --></div>
+    <div class="nav-right"></div>
   </div>
 
   <div class="banner"></div>
-
   <main style="max-width: 1000px; margin: auto;">
-    <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub - Admin</h1>
+    <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub – Admin</h1>
 
-    <a class="calendarbutton" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">
+    <!-- ---------------------- USERS ---------------------- -->
+    <section>
+      <h2 class="title"><i class="fa-solid fa-users"></i> Users</h2>
+
+      <!-- Create User -->
+      <form id="create-user-form" class="card" style="display:grid;gap:.6rem;margin-bottom:1rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
+          <input type="text" id="cu-first" placeholder="First name" required>
+          <input type="text" id="cu-last"  placeholder="Last name" required>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:.6rem;">
+          <input type="email" id="cu-email" placeholder="Email" required autocomplete="email">
+          <select id="cu-role" required>
+            <option value="" disabled selected>Role</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
+          <input type="password" id="cu-pass" placeholder="Temporary password (leave blank to auto-generate)" autocomplete="new-password">
+          <label class="agree" style="align-items:center">
+            <input type="checkbox" id="cu-send-welcome" checked>
+            <span>Send welcome email</span>
+          </label>
+        </div>
+        <button type="submit" class="btn" id="cu-btn">Create user</button>
+        <div id="cu-msg" class="muted"></div>
+      </form>
+
+      <!-- Search + table -->
+      <div class="card">
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.6rem">
+          <input id="user-search" class="search-bar" placeholder="Search users by name or email…">
+          <span class="muted">Showing latest 10 by last sign-in</span>
+        </div>
+
+        <table id="users-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-key="name">Name</th>
+              <th class="sortable" data-key="email">Email</th>
+              <th class="sortable" data-key="role">Role</th>
+              <th class="sortable" data-key="last_sign_in">Last sign-in (NZ)</th>
+              <th>IP</th>
+              <th>Alerts</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p id="users-empty" class="muted" style="display:none;margin:.6rem 0 0;">No users match your search.</p>
+      </div>
+    </section>
+
+    <div style="height:1.25rem"></div>
+
+    <!-- ---------------------- RESOURCES ---------------------- -->
+    <section>
+      <h2 class="title"><i class="fa-solid fa-folder-plus"></i> Add Resource</h2>
+      <form id="upload-form" class="card" enctype="multipart/form-data" style="display:grid;gap:.6rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
+          <input type="file" id="resource-file" />
+          <input type="url" id="resource-url" placeholder="Or paste a link instead">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;">
+          <select id="resource-type" required>
+            <option value="" disabled selected>Select resource type</option>
+            <option value="file">File</option>
+            <option value="website">Website</option>
+            <option value="video">Video</option>
+          </select>
+          <select id="resource-category" required>
+            <option value="" disabled selected>Select category</option>
+            <option value="general">General</option>
+            <option value="resources">Resources</option>
+            <option value="onlineresources">Online Resources</option>
+            <option value="faq">FAQ</option>
+          </select>
+          <label class="agree" style="align-items:center">
+            <input type="checkbox" id="resource-pinned">
+            <span>Pin</span>
+          </label>
+        </div>
+
+        <input type="text" id="resource-title" placeholder="Resource title" required />
+        <button type="submit" class="btn" id="new-upload-button">Add Resource</button>
+      </form>
+
+      <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Resources</h2>
+      <div class="card">
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.6rem">
+          <input type="text" id="search-resources" class="search-bar" placeholder="Search resources...">
+          <a href="resources.html" target="_blank" class="nav-item"><i class="fa-solid fa-eye"></i> View</a>
+        </div>
+
+        <table id="resources-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-key="title">Title</th>
+              <th class="sortable" data-key="created_date">Date</th>
+              <th class="sortable" data-key="category">Category</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p id="resources-empty" class="muted" style="display:none;margin:.6rem 0 0;">No resources found. Try a different search.</p>
+        <div class="muted">Latest 10 are shown, search for the exact one you want.</div>
+      </div>
+    </section>
+
+    <div style="height:1.25rem"></div>
+
+    <!-- ---------------------- FEED ---------------------- -->
+    <section>
+      <h2 class="title"><i class="fa-solid fa-plus"></i> Add to Feed</h2>
+      <form id="new-post" class="card" style="display:grid;gap:.6rem;">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:.6rem;">
+          <input name="title" id="new-post-input" placeholder="Title" required />
+          <select name="category" id="new-post-select" required>
+            <option value="" disabled selected>Select category</option>
+            <option value="general">General</option>
+            <option value="resources">Resources</option>
+            <option value="onlineresources">Online Resources</option>
+            <option value="faq">FAQ</option>
+          </select>
+          <label class="agree" style="align-items:center">
+            <input type="checkbox" name="pinned" />
+            <span>Pin</span>
+          </label>
+        </div>
+        <div id="editor"></div>
+        <button type="submit" class="btn" id="new-post-button">Create Post</button>
+      </form>
+
+      <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Feed</h2>
+      <div class="card">
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.6rem">
+          <input type="text" id="search-posts" class="search-bar" placeholder="Search posts...">
+          <a href="feed.html" target="_blank" class="nav-item"><i class="fa-solid fa-eye"></i> View</a>
+        </div>
+
+        <table id="posts-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-key="title">Title</th>
+              <th class="sortable" data-key="created_at">Date</th>
+              <th class="sortable" data-key="category">Category</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p id="posts-empty" class="muted" style="display:none;margin:.6rem 0 0;">No posts found. Try a different search.</p>
+        <div class="muted">Latest 10 are shown, search for the exact one you want.</div>
+      </div>
+    </section>
+
+    <div style="height:1.25rem"></div>
+
+    <a class="nav-item" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">
       <i class="fa fa-calendar"></i> Calendar
     </a>
 
-    <!-- Add Resource -->
-    <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
-    <form id="upload-form" class="upload-section" enctype="multipart/form-data">
-      <input type="file" id="resource-file" />
-      <input type="url" id="resource-url" placeholder="Or paste a link instead"><br>
-
-      <select id="resource-type" required>
-        <option value="">Select resource type</option>
-        <option value="file">File</option>
-        <option value="website">Website</option>
-        <option value="video">Video</option>
-      </select><br>
-
-      <select id="resource-category" required>
-        <option value="" disabled selected>Select category</option>
-        <option value="general">General</option>
-        <option value="resources">Resources</option>
-        <option value="onlineresources">Online Resources</option>
-        <option value="faq">FAQ</option>
-      </select><br>
-
-      <input type="text" id="resource-title" placeholder="Resource title" required /><br>
-
-      <label class="star-checkbox">
-        <input type="checkbox" id="resource-pinned" />
-        <i class="fa-regular fa-star unchecked"></i>
-        <i class="fa-solid fa-star checked"></i>
-        Pin this resource
-      </label><br>
-
-      <button type="submit" id="new-upload-button">Add Resource</button>
-    </form>
-
-    <!-- Manage Resources -->
-    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Resources</h2>
-    <a href="resources.html" target="_blank" rel="noopener" alt="View Resources"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
-    <input type="text" id="search-resources" class="search-bar" placeholder="Search resources...">
-    <table id="resources-table">
-      <thead>
-        <tr>
-          <th class="sortable" data-key="title">Title</th>
-          <th class="sortable" data-key="created_date">Date</th>
-          <th class="sortable" data-key="resource-category">Category</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <p id="resources-empty" style="display:none;">Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</p>
-    <i>Latest 10 are shown, search for the exact one you want</i>
-    <div style="margin-bottom:1em;"></div>
-
-    <!-- Add Post -->
-    <h2 class="title"><i class="fa-solid fa-plus"></i> Add to Feed</h2>
-    <form id="new-post">
-      <input name="title" id="new-post-input" placeholder="Title" required />
-      <select name="category" id="new-post-select" required>
-        <option value="" disabled selected>Select category</option>
-        <option value="general">General</option>
-        <option value="resources">Resources</option>
-        <option value="onlineresources">Online Resources</option>
-        <option value="faq">FAQ</option>
-      </select>
-      <label class="star-checkbox">
-        <input type="checkbox" name="pinned" />
-        <i class="fa-regular fa-star unchecked"></i>
-        <i class="fa-solid fa-star checked"></i>
-        Pin this post
-      </label>
-      <div id="editor"></div>
-      <button type="submit" id="new-post-button">Create Post</button>
-    </form>
-
-    <!-- Manage Posts -->
-    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Feed</h2>
-    <a href="feed.html" target="_blank" rel="noopener" alt="View Feed"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
-    <input type="text" id="search-posts" class="search-bar" placeholder="Search posts...">
-    <table id="posts-table">
-      <thead>
-        <tr>
-          <th class="sortable" data-key="title">Title</th>
-          <th class="sortable" data-key="created_at">Date</th>
-          <th class="sortable" data-key="category">Category</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <p id="posts-empty" style="display:none;">Mmm, no post found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</p>
-
-    <i>Latest 10 are shown, search for the exact one you want</i>
-    <a href="mailto:ITSupport@kotakureo.school.nz" id="one" class="link-nochange">
+    <a href="mailto:ITSupport@kotakureo.school.nz" class="nav-item">
       <i class="fa-solid fa-life-ring"></i> Help
     </a>
-
-    <!-- User Management -->
-    <h2 class="title" style="margin-top:2rem;"><i class="fa-solid fa-users-gear"></i> User Management</h2>
-
-    <input id="um-search" type="search" placeholder="Search users by email…" class="search-bar" style="margin:.25rem 0 1rem 0; width:100%;">
-
-    <section class="upload-section" style="padding:1rem;border:1px solid #e8ecee;border-radius:10px;margin-bottom:1rem;">
-      <form id="um-create-form" autocomplete="off">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.5rem;align-items:end;">
-          <div>
-            <label for="um-email">Email</label>
-            <input id="um-email" type="email" placeholder="user@example.com" required />
-          </div>
-          <div>
-            <label for="um-password">Password</label>
-            <input id="um-password" type="password" placeholder="Set a password" required />
-          </div>
-          <div>
-            <label for="um-role">Role</label>
-            <select id="um-role">
-              <option value="user">user</option>
-              <option value="admin">admin</option>
-            </select>
-          </div>
-          <div>
-            <button type="submit" class="pinresource-btn"><i class="fa-solid fa-user-plus"></i> Create</button>
-          </div>
-        </div>
-        <div id="um-create-msg" style="margin-top:.5rem;"></div>
-      </form>
-    </section>
-
-    <table id="um-table">
-      <thead>
-        <tr>
-          <th class="um-sort" data-sort="email">Email <i class="fa-solid fa-sort"></i></th>
-          <th class="um-sort" data-sort="role">Role <i class="fa-solid fa-sort"></i></th>
-          <th class="um-sort" data-sort="last_sign_in">Last sign in <i class="fa-solid fa-sort"></i></th>
-          <th class="um-sort" data-sort="created_at">Created <i class="fa-solid fa-sort"></i></th>
-          <th>IP / Alerts</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="um-rows">
-        <tr><td colspan="6">Loading…</td></tr>
-      </tbody>
-    </table>
   </main>
 
-  <!-- Avoid noisy DOM mutation listeners -->
   <script>
-    (function() {
-      const originalAddEventListener = EventTarget.prototype.addEventListener;
-      EventTarget.prototype.addEventListener = function(type, listener, options) {
+    /* ---------- Utils ---------- */
+    function nzDateTime(value){
+      const d = new Date(value);
+      if (isNaN(d)) return '';
+      return d.toLocaleString('en-NZ', {
+        timeZone:'Pacific/Auckland',
+        year:'numeric', month:'short', day:'2-digit',
+        hour:'2-digit', minute:'2-digit'
+      }).replace(',', '');
+    }
+
+    function sortBy(key, asc){
+      return (a,b)=>{
+        const A = (a[key] ?? '').toString().toLowerCase();
+        const B = (b[key] ?? '').toString().toLowerCase();
+        if (A < B) return asc ? -1:1;
+        if (A > B) return asc ? 1:-1;
+        return 0;
+      };
+    }
+
+    (function blockMutationEvents(){
+      const orig = EventTarget.prototype.addEventListener;
+      EventTarget.prototype.addEventListener = function(type, listener, options){
         if (type === 'DOMNodeInserted' || type === 'DOMNodeRemoved') return;
-        return originalAddEventListener.call(this, type, listener, options);
+        return orig.call(this, type, listener, options);
       };
     })();
-  </script>
 
-  <!-- PDF.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';</script>
-
-  <!-- Quill -->
-  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-
-  <script>
-    /* ========== Utils ========== */
-    function nzDateTime(value, { withTime = true } = {}) {
-      if (!value) return '';
-      const d = new Date(value);
-      if (Number.isNaN(d.getTime())) return String(value);
-      const opts = withTime
-        ? { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }
-        : { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit' };
-      return d.toLocaleString('en-NZ', opts).replace(',', '');
-    }
-    function esc(s){
-      return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
-    }
-
-    /* ========== Quill ========== */
+    /* ---------- Quill ---------- */
     const quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
@@ -280,400 +284,459 @@
       }
     });
 
-    // Set resource type automatically when file chosen
-    document.getElementById('resource-file').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) document.getElementById('resource-type').value = 'file';
+    /* =======================================================
+       USERS
+    ======================================================= */
+    let users = [];
+    let userSort = { key: 'last_sign_in', asc: false };
+
+    async function fetchUsers(){
+      const res = await fetch('/api/users?with_signin_stats=1', { credentials:'include' });
+      if (res.status === 401) return location.href = '/index.html';
+      users = await res.json();
+
+      // Default sort by last_sign_in desc (most recent first)
+      users.sort((a,b)=>{
+        const A = a.last_sign_in ? new Date(a.last_sign_in).getTime() : 0;
+        const B = b.last_sign_in ? new Date(b.last_sign_in).getTime() : 0;
+        return B - A;
+      });
+
+      renderUsers();
+    }
+
+    function renderUsers(){
+      const tbody = document.querySelector('#users-table tbody');
+      const emptyMsg = document.getElementById('users-empty');
+      const q = (document.getElementById('user-search').value || '').toLowerCase();
+
+      const filtered = users.filter(u => {
+        const name = `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim().toLowerCase();
+        const email = (u.email || '').toLowerCase();
+        return name.includes(q) || email.includes(q);
+      });
+
+      // Sort
+      const key = userSort.key;
+      const asc = userSort.asc;
+      if (key === 'name') {
+        filtered.sort((a,b)=>{
+          const A = (`${a.first_name ?? ''} ${a.last_name ?? ''}`).trim().toLowerCase();
+          const B = (`${b.first_name ?? ''} ${b.last_name ?? ''}`).trim().toLowerCase();
+          if (A < B) return asc ? -1 : 1;
+          if (A > B) return asc ? 1 : -1;
+          return 0;
+        });
+      } else if (key === 'last_sign_in') {
+        filtered.sort((a,b)=>{
+          const A = a.last_sign_in ? new Date(a.last_sign_in).getTime() : 0;
+          const B = b.last_sign_in ? new Date(b.last_sign_in).getTime() : 0;
+          return asc ? (A - B) : (B - A);
+        });
+      } else {
+        filtered.sort(sortBy(key, asc));
+      }
+
+      // Only show top 10
+      const limited = filtered.slice(0, 10);
+
+      tbody.innerHTML = '';
+
+      if (limited.length === 0) {
+        emptyMsg.style.display = 'block';
+        return;
+      } else emptyMsg.style.display = 'none';
+
+      for (const u of limited) {
+        const name = (`${u.first_name ?? ''} ${u.last_name ?? ''}`).trim() || '—';
+        const alertChip = (u.distinct_ips_24h >= 3)
+          ? `<span class="chip" title="3+ distinct IPs in 24h" style="background:#ffe8e8;color:#a00;border:1px solid #f6caca">Multi-IP</span>`
+          : '';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${name}</td>
+          <td>${u.email}</td>
+          <td>${u.role}</td>
+          <td>${u.last_sign_in ? nzDateTime(u.last_sign_in) : ''}</td>
+          <td>${u.last_sign_ip ?? ''}</td>
+          <td>${alertChip}</td>
+          <td>
+            <button class="btn" style="padding:.3rem .5rem" data-act="logout" data-id="${u.id}"><i class="fa-solid fa-right-from-bracket"></i></button>
+            <button class="btn" style="padding:.3rem .5rem" data-act="reset" data-id="${u.id}"><i class="fa-solid fa-key"></i></button>
+            <button class="btn" style="padding:.3rem .5rem;background:#b00020" data-act="delete" data-id="${u.id}"><i class="fa-solid fa-trash"></i></button>
+          </td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // Table sorting
+    document.querySelectorAll('#users-table th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        userSort.asc = key === userSort.key ? !userSort.asc : true;
+        userSort.key = key;
+        renderUsers();
+      });
     });
 
-    /* ========== Posts & Resources Management ========== */
-    let posts = [];
+    // Create user
+    document.getElementById('create-user-form').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const btn = document.getElementById('cu-btn');
+      const msg = document.getElementById('cu-msg');
+      const first = document.getElementById('cu-first').value.trim();
+      const last  = document.getElementById('cu-last').value.trim();
+      const email = document.getElementById('cu-email').value.trim();
+      const role  = document.getElementById('cu-role').value;
+      let pass    = document.getElementById('cu-pass').value;
+      const sendWelcome = document.getElementById('cu-send-welcome').checked;
+
+      if (!first || !last || !email || !role) {
+        msg.textContent = 'All fields except password are required.'; return;
+      }
+      if (!pass) {
+        // simple generator
+        pass = Math.random().toString(36).slice(-8) + '!' + Math.floor(100+Math.random()*900);
+      }
+
+      btn.disabled = true; msg.textContent = 'Creating…';
+
+      try{
+        const res = await fetch('/api/users', {
+          method:'POST', credentials:'include',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            first_name:first, last_name:last, email, role, password:pass,
+            send_welcome: sendWelcome,
+            welcome_name: first  // <-- so your email template can say "Hello {first}"
+          })
+        });
+        if (!res.ok) {
+          let data = {}; try{ data=await res.json(); }catch{}
+          throw new Error(data.error || 'Failed to create user');
+        }
+        msg.textContent = 'User created.';
+        e.target.reset();
+        fetchUsers();
+      } catch(err){
+        msg.textContent = err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // Row actions: force logout / reset password / delete
+    document.getElementById('users-table').addEventListener('click', async (e)=>{
+      const b = e.target.closest('button[data-act]');
+      if (!b) return;
+      const id = b.dataset.id;
+      const act = b.dataset.act;
+
+      try {
+        if (act === 'logout') {
+          if (!confirm('Force sign out this user?')) return;
+          const r = await fetch(`/api/users/${id}/logout`, { method:'POST', credentials:'include' });
+          if (!r.ok) throw new Error('Failed to force sign out.');
+          fetchUsers();
+        }
+
+        if (act === 'reset') {
+          if (!confirm('Reset password and send email?')) return;
+          // Preferred endpoint:
+          let r = await fetch(`/api/users/${id}/reset_password`, {
+            method:'POST', credentials:'include',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ send_email:true })
+          });
+          // Fallback to PUT if reset route not present
+          if (r.status === 404) {
+            const newPass = Math.random().toString(36).slice(-8) + '!' + Math.floor(100+Math.random()*900);
+            r = await fetch(`/api/users/${id}`, {
+              method:'PUT', credentials:'include',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ password:newPass, send_email:true })
+            });
+          }
+          if (!r.ok) throw new Error('Password reset failed.');
+          alert('Password reset initiated.');
+        }
+
+        if (act === 'delete') {
+          if (!confirm('Delete this user? This cannot be undone.')) return;
+          const r = await fetch(`/api/users/${id}`, { method:'DELETE', credentials:'include' });
+          if (r.status === 204) {
+            fetchUsers();
+          } else {
+            let data={}; try{ data=await r.json(); }catch{}
+            throw new Error(data.error || 'Failed to delete user.');
+          }
+        }
+      } catch (err) {
+        alert(err.message || 'Action failed.');
+      }
+    });
+
+    document.getElementById('user-search').addEventListener('input', renderUsers);
+
+    /* =======================================================
+       RESOURCES
+    ======================================================= */
     let resources = [];
-    let postSort = { key: 'created_at', asc: false };
     let resourceSort = { key: 'created_date', asc: false };
 
-    async function fetchPosts() {
-      const res = await fetch('/api/posts?admin=true', { credentials: 'include' });
-      if (res.status === 401) return location.href = '/index.html';
-      posts = await res.json();
-      renderPosts();
-    }
-    async function fetchResources() {
-      const res = await fetch('/api/resourcespull', { credentials: 'include' });
+    async function fetchResources(){
+      const res = await fetch('/api/resourcespull', { credentials:'include' });
       if (res.status === 401) return location.href = '/index.html';
       resources = await res.json();
       renderResources();
     }
 
-    function sortBy(key, asc) {
-      return (a, b) => {
-        const valA = a[key]?.toLowerCase?.() || a[key];
-        const valB = b[key]?.toLowerCase?.() || b[key];
-        if (valA < valB) return asc ? -1 : 1;
-        if (valA > valB) return asc ? 1 : -1;
-        return 0;
-      };
-    }
-
-    function renderPosts() {
-      const tbody = document.querySelector('#posts-table tbody');
-      const emptyMsg = document.getElementById('posts-empty');
-      const search = document.getElementById('search-posts').value.toLowerCase();
-
-      const filtered = posts
-        .filter(p => (p.title || '').toLowerCase().includes(search))
-        .sort(sortBy(postSort.key, postSort.asc))
-        .slice(0, 10);
-
-      tbody.innerHTML = '';
-
-      if (!filtered.length) { emptyMsg.style.display = 'block'; return; }
-      emptyMsg.style.display = 'none';
-
-      for (const p of filtered) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${esc(p.title)}</td>
-          <td>${esc(nzDateTime(p.created_at))}</td>
-          <td>${esc(p.category)}</td>
-          <td>
-            <button class="pin-btn" onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
-              <i class="${p.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${p.pinned ? 'Unpin' : 'Pin'}
-            </button>
-            <button class="delete-btn" onclick="deletePost(${p.id})"><i class="fa fa-trash"></i> Delete</button>
-          </td>`;
-        tbody.appendChild(row);
-      }
-    }
-
-    function renderResources() {
+    function renderResources(){
       const tbody = document.querySelector('#resources-table tbody');
-      const emptyMsg = document.getElementById('resources-empty');
-      const search = document.getElementById('search-resources').value.toLowerCase();
+      const empty = document.getElementById('resources-empty');
+      const q = (document.getElementById('search-resources').value || '').toLowerCase();
 
       const filtered = resources
-        .filter(r => (r.title || '').toLowerCase().includes(search))
+        .filter(r => (r.title || '').toLowerCase().includes(q))
         .sort(sortBy(resourceSort.key, resourceSort.asc))
         .slice(0, 10);
 
       tbody.innerHTML = '';
-
-      if (!filtered.length) { emptyMsg.style.display = 'block'; return; }
-      emptyMsg.style.display = 'none';
+      if (!filtered.length) { empty.style.display='block'; return; }
+      empty.style.display='none';
 
       for (const r of filtered) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td><a href="${r.url}" class="link-nochange" target="_blank" rel="noopener">${esc(r.title)}</a></td>
-          <td>${esc(nzDateTime(r.created_date, { withTime:false }))}</td>
-          <td>${esc(r.category)}</td>
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><a href="${r.url}" class="link-nochange" target="_blank" rel="noopener">${r.title}</a></td>
+          <td>${r.created_date ? new Date(r.created_date).toLocaleDateString('en-NZ',{timeZone:'Pacific/Auckland'}) : ''}</td>
+          <td>${r.category}</td>
           <td>
-            <button class="pinresource-btn" onclick="togglePinResource(${r.id}, ${r.pinned})">
-              <i class="${r.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${r.pinned ? 'Unpin' : 'Pin'}
+            <button class="btn" style="padding:.3rem .5rem" data-act="pin-resource" data-id="${r.id}" data-pinned="${r.pinned ? '1':'0'}">
+              <i class="${r.pinned ? 'fa-solid':'fa-regular'} fa-star"></i>
             </button>
-            <button class="deleteresource-btn" onclick="deleteResource(${r.id})"><i class="fa fa-trash"></i> Delete</button>
+            <button class="btn" style="padding:.3rem .5rem;background:#b00020" data-act="del-resource" data-id="${r.id}">
+              <i class="fa fa-trash"></i>
+            </button>
           </td>`;
-        tbody.appendChild(row);
+        tbody.appendChild(tr);
       }
     }
 
-    // Post actions
-    window.togglePinPost = async (id, category, pinned) => {
-      const newCat = pinned ? category.replace(/^pinned\s*/i, '') : `pinned ${category}`;
-      await fetch(`/api/posts/${id}`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: newCat, pinned: !pinned })
-      });
-      fetchPosts();
-    };
-    window.deletePost = async (id) => {
-      if (confirm('Delete this post?')) {
-        await fetch(`/api/posts/${id}`, { method: 'DELETE', credentials: 'include' });
-        fetchPosts();
-      }
-    };
-
-    // Resource actions
-    window.togglePinResource = async (id, pinned) => {
-      await fetch(`/api/resources/${id}`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pinned: !pinned })
-      });
-      fetchResources();
-    };
-    window.deleteResource = async (id) => {
-      if (confirm('Delete this resource?')) {
-        await fetch(`/api/resources/${id}`, { method: 'DELETE', credentials: 'include' });
-        fetchResources();
-      }
-    };
-
-    // New post
-    document.getElementById('new-post').addEventListener('submit', async e => {
-      e.preventDefault();
-      const form = e.target;
-      const title = form.title.value;
-      const category = form.category.value;
-      const pinned = form.pinned.checked;
-      await fetch('/api/posts', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, category: pinned ? `pinned ${category}` : category, body: quill.root.innerHTML, pinned })
-      });
-      form.reset();
-      quill.setContents([]);
-      fetchPosts();
-    });
-
-    // Upload resource
-    document.getElementById('upload-form').addEventListener('submit', async e => {
-      e.preventDefault();
-
-      const file = document.getElementById('resource-file').files[0];
-      const urlInput = document.getElementById('resource-url').value.trim();
-      const title = document.getElementById('resource-title').value.trim();
-      const pinned = document.getElementById('resource-pinned').checked;
-      const type = document.getElementById('resource-type').value;
-      const category = document.getElementById('resource-category').value.trim();
-
-      if (!file && !urlInput) return alert("Please provide a file or a URL.");
-      if (!title || !type) return alert("Title and type are required.");
-
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('pinned', pinned);
-      formData.append('type', type);
-      formData.append('category', category);
-
-      if (file) {
-        formData.append('file', file);
-        if (file.type === "application/pdf") {
-          const pdfThumb = await generatePdfThumbnail(file);
-          if (pdfThumb) formData.append('thumbnail', pdfThumb);
-        }
-      } else {
-        formData.append('url', urlInput);
-        // Attempt a Microlink screenshot thumbnail
-        const thumbnailUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
-        try {
-          const response = await fetch(thumbnailUrl);
-          const data = await response.json();
-          const imgUrl = data?.data?.screenshot?.url;
-          if (imgUrl) {
-            const imageBlob = await fetch(imgUrl).then(r => r.blob());
-            const base64 = await blobToBase64(imageBlob);
-            formData.append('thumbnail', base64);
-          }
-        } catch (err) { console.warn("Microlink thumbnail failed:", err); }
-      }
-
-      await fetch('/api/resources/upload', { method: 'POST', body: formData });
-      location.reload();
-    });
-
-    async function generatePdfThumbnail(file) {
-      try {
-        const pdfData = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 1 });
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
-        canvas.width = viewport.width; canvas.height = viewport.height;
-        await page.render({ canvasContext: context, viewport }).promise;
-        return canvas.toDataURL("image/png");
-      } catch (err) { console.error("PDF thumbnail generation failed:", err); return null; }
-    }
-    function blobToBase64(blob) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
-
-    document.getElementById('search-posts').addEventListener('input', renderPosts);
-    document.getElementById('search-resources').addEventListener('input', renderResources);
-    document.querySelectorAll('#posts-table th.sortable').forEach(th =>
-      th.addEventListener('click', () => {
-        const key = th.dataset.key;
-        postSort.asc = key === postSort.key ? !postSort.asc : true;
-        postSort.key = key;
-        renderPosts();
-      })
-    );
     document.querySelectorAll('#resources-table th.sortable').forEach(th =>
-      th.addEventListener('click', () => {
+      th.addEventListener('click', ()=>{
         const key = th.dataset.key;
         resourceSort.asc = key === resourceSort.key ? !resourceSort.asc : true;
         resourceSort.key = key;
         renderResources();
       })
     );
+    document.getElementById('search-resources').addEventListener('input', renderResources);
 
-    /* ========== User Management ========== */
-    const umRows = document.getElementById('um-rows');
-    const umForm = document.getElementById('um-create-form');
-    const umMsg  = document.getElementById('um-create-msg');
-    const umSearch = document.getElementById('um-search');
-    const umSortHeaders = document.querySelectorAll('.um-sort');
+    // Toggle pin / delete resource
+    document.getElementById('resources-table').addEventListener('click', async (e)=>{
+      const b = e.target.closest('button[data-act]');
+      if (!b) return;
+      const id = b.dataset.id;
+      const act = b.dataset.act;
 
-    let umSortKey = 'created_at';
-    let umSortAsc = false;
-
-    function umSortIcon(th, active, asc) {
-      const i = th.querySelector('i');
-      if (!i) return;
-      if (!active) { i.className = 'fa-solid fa-sort'; return; }
-      i.className = asc ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
-    }
-
-    async function umLoadUsers(){
-      const q = umSearch.value.trim();
-      const params = new URLSearchParams({ q, sort: umSortKey, dir: umSortAsc ? 'asc' : 'desc' });
-      try{
-        const r = await fetch('/api/users?' + params.toString(), { credentials:'include' });
-        if(!r.ok){ umRows.innerHTML = '<tr><td colspan="6">Failed to load users.</td></tr>'; return; }
-        let data = await r.json();
-        if (!Array.isArray(data)) data = [];
-        // Only show the 10 most recent (expect backend sort to match; otherwise this slice still caps list)
-        data = data.slice(0, 10);
-
-        if(!data.length){ umRows.innerHTML = '<tr><td colspan="6">No users.</td></tr>'; return; }
-
-        umRows.innerHTML = data.map(u => {
-          const multiIp = Number(u.distinct_ips_24h || 0);
-          const alert = (multiIp >= 3)
-            ? `<span class="chip" title="Signed in from ${multiIp} IPs in last 24h" style="background:#fff3cd;color:#8a6d3b"><i class="fa-solid fa-triangle-exclamation"></i> multi-IP</span>`
-            : '';
-          return `
-            <tr data-id="${u.id}">
-              <td>${esc(u.email)}</td>
-              <td><span class="chip">${esc(u.role)}</span></td>
-              <td>${esc(nzDateTime(u.last_sign_in))}</td>
-              <td>${esc(nzDateTime(u.created_at))}</td>
-              <td>
-                <div>${esc(u.last_sign_ip || '')}</div>
-                ${alert}
-              </td>
-              <td style="display:flex; gap:.35rem; flex-wrap:wrap;">
-                <button class="pinresource-btn" data-reset="${u.id}">
-                  <i class="fa-solid fa-key"></i> Reset Password
-                </button>
-                <button class="deleteresource-btn" data-logout="${u.id}">
-                  <i class="fa-solid fa-right-from-bracket"></i> Force sign-out
-                </button>
-                <button class="deleteresource-btn" data-del="${u.id}">
-                  <i class="fa-solid fa-user-xmark"></i> Delete
-                </button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      } catch (e) {
-        umRows.innerHTML = '<tr><td colspan="6">Error loading users.</td></tr>';
-      }
-      umSortHeaders.forEach(th => { umSortIcon(th, th.dataset.sort === umSortKey, umSortAsc); });
-    }
-
-    // Create user
-    umForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      umMsg.textContent = '';
-      const email = (document.getElementById('um-email').value || '').trim();
-      const password = document.getElementById('um-password').value;
-      const role = document.getElementById('um-role').value || 'user';
-      if (!email || !password) { umMsg.textContent = 'Email and password required.'; return; }
-      try {
-        const r = await fetch('/api/users', {
-          method: 'POST', credentials:'include',
+      if (act === 'pin-resource') {
+        const pinned = b.dataset.pinned === '1';
+        await fetch(`/api/resources/${id}`, {
+          method:'PUT', credentials:'include',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ email, password, role })
+          body: JSON.stringify({ pinned: !pinned })
         });
-        if (r.ok) {
-          umMsg.textContent = 'User created.';
-          e.target.reset();
-          umLoadUsers();
-        } else {
-          const data = await r.json().catch(()=>({}));
-          umMsg.textContent = 'Create failed: ' + (data?.error || r.status);
+        fetchResources();
+      }
+      if (act === 'del-resource') {
+        if (!confirm('Delete this resource?')) return;
+        await fetch(`/api/resources/${id}`, { method:'DELETE', credentials:'include' });
+        fetchResources();
+      }
+    });
+
+    // Upload resource
+    document.getElementById('upload-form').addEventListener('submit', async e=>{
+      e.preventDefault();
+      const file = document.getElementById('resource-file').files[0];
+      const url  = document.getElementById('resource-url').value.trim();
+      const title= document.getElementById('resource-title').value.trim();
+      const pinned = document.getElementById('resource-pinned').checked;
+      const type = document.getElementById('resource-type').value;
+      const category = document.getElementById('resource-category').value.trim();
+
+      if (!file && !url) return alert('Provide a file or a URL.');
+      if (!title || !type) return alert('Title and type are required.');
+
+      const form = new FormData();
+      form.append('title', title);
+      form.append('pinned', pinned);
+      form.append('type', type);
+      form.append('category', category);
+
+      if (file) {
+        form.append('file', file);
+        if (file.type === 'application/pdf') {
+          const pdfThumb = await generatePdfThumbnail(file);
+          if (pdfThumb) form.append('thumbnail', pdfThumb);
         }
-      } catch {
-        umMsg.textContent = 'Network error creating user.';
-      }
-    });
-
-    // Table interactions: reset password / force logout / delete
-    umRows.addEventListener('click', async (e)=>{
-      const logoutBtn = e.target.closest('button[data-logout]');
-      const delBtn    = e.target.closest('button[data-del]');
-      const resetBtn  = e.target.closest('button[data-reset]');
-
-      if (logoutBtn) {
-        const id = logoutBtn.dataset.logout;
-        if (!confirm('Force sign-out this user from all devices?')) return;
+      } else {
+        form.append('url', url);
         try {
-          const r = await fetch('/api/users/' + id + '/logout', { method:'POST', credentials:'include' });
-          if (r.ok) alert('User sessions revoked. They will be signed out on next request.');
-          else alert('Failed to revoke sessions.');
-        } catch { alert('Network error.'); }
-        return;
+          const resp = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false`);
+          const data = await resp.json();
+          const imgUrl = data?.data?.screenshot?.url;
+          if (imgUrl) {
+            const blob = await fetch(imgUrl).then(r=>r.blob());
+            const base64 = await blobToBase64(blob);
+            form.append('thumbnail', base64);
+          }
+        } catch {}
       }
 
-      if (resetBtn) {
-        const id = resetBtn.dataset.reset;
-        const row = resetBtn.closest('tr');
-        const email = row?.children?.[0]?.textContent?.trim() || '';
-        const p1 = prompt(`Set new password for ${email}:`);
-        if (!p1) return;
-        const p2 = prompt('Confirm new password:');
-        if (p1 !== p2) { alert('Passwords do not match.'); return; }
-        if (p1.length < 6) { alert('Password must be at least 6 characters.'); return; }
-        try{
-          const r = await fetch('/api/users/' + id, {
-            method:'PUT',
-            headers: { 'Content-Type':'application/json' },
-            credentials:'include',
-            body: JSON.stringify({ password: p1 })
-          });
-          if (r.ok) alert('Password updated.');
-          else { const data = await r.json().catch(()=>({})); alert('Reset failed: ' + (data?.error || r.status)); }
-        }catch{ alert('Network error while resetting password.'); }
-        return;
-      }
+      await fetch('/api/resources/upload', { method:'POST', body:form, credentials:'include' });
+      document.getElementById('upload-form').reset();
+      fetchResources();
+    });
 
-      if (delBtn) {
-        const id = delBtn.dataset.del;
-        if(!confirm('Delete this user? This cannot be undone.')) return;
-        try{
-          const r = await fetch('/api/users/'+id, { method:'DELETE', credentials:'include' });
-          if(r.status === 204){ umLoadUsers(); return; }
-          const t = await r.text();
-          alert('Delete failed: ' + t);
-        }catch{ alert('Delete error'); }
-        return;
+    async function generatePdfThumbnail(file){
+      try{
+        const buf = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1 });
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = viewport.width; canvas.height = viewport.height;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        return canvas.toDataURL('image/png');
+      }catch{ return null; }
+    }
+    function blobToBase64(blob){
+      return new Promise((resolve,reject)=>{
+        const r=new FileReader();
+        r.onloadend=()=>resolve(r.result);
+        r.onerror=reject;
+        r.readAsDataURL(blob);
+      });
+    }
+
+    /* =======================================================
+       FEED
+    ======================================================= */
+    let posts = [];
+    let postSort = { key: 'created_at', asc: false };
+
+    async function fetchPosts(){
+      const res = await fetch('/api/posts?admin=true', { credentials:'include' });
+      if (res.status === 401) return location.href = '/index.html';
+      posts = await res.json();
+      renderPosts();
+    }
+
+    function renderPosts(){
+      const tbody = document.querySelector('#posts-table tbody');
+      const empty = document.getElementById('posts-empty');
+      const q = (document.getElementById('search-posts').value || '').toLowerCase();
+
+      const filtered = posts
+        .filter(p => (p.title || '').toLowerCase().includes(q))
+        .sort(sortBy(postSort.key, postSort.asc))
+        .slice(0, 10);
+
+      tbody.innerHTML = '';
+      if (!filtered.length) { empty.style.display='block'; return; }
+      empty.style.display='none';
+
+      for (const p of filtered) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${p.title}</td>
+          <td>${p.created_at ? new Date(p.created_at).toLocaleDateString('en-NZ',{timeZone:'Pacific/Auckland'}) : ''}</td>
+          <td>${p.category}</td>
+          <td>
+            <button class="btn" style="padding:.3rem .5rem" data-act="pin-post" data-id="${p.id}" data-cat="${p.category}" data-pinned="${p.pinned ? '1':'0'}">
+              <i class="${p.pinned ? 'fa-solid':'fa-regular'} fa-star"></i>
+            </button>
+            <button class="btn" style="padding:.3rem .5rem;background:#b00020" data-act="del-post" data-id="${p.id}">
+              <i class="fa fa-trash"></i>
+            </button>
+          </td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    document.querySelectorAll('#posts-table th.sortable').forEach(th =>
+      th.addEventListener('click', ()=>{
+        const key = th.dataset.key;
+        postSort.asc = key === postSort.key ? !postSort.asc : true;
+        postSort.key = key;
+        renderPosts();
+      })
+    );
+    document.getElementById('search-posts').addEventListener('input', renderPosts);
+
+    // Toggle pin / delete post
+    document.getElementById('posts-table').addEventListener('click', async (e)=>{
+      const b = e.target.closest('button[data-act]');
+      if (!b) return;
+      const id = b.dataset.id;
+      const act = b.dataset.act;
+
+      if (act === 'pin-post') {
+        const pinned = b.dataset.pinned === '1';
+        const category = b.dataset.cat || '';
+        const newCat = pinned ? category.replace(/^pinned\s*/i, '') : `pinned ${category}`;
+        await fetch(`/api/posts/${id}`, {
+          method:'PUT', credentials:'include',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ category: newCat, pinned: !pinned })
+        });
+        fetchPosts();
+      }
+      if (act === 'del-post') {
+        if (!confirm('Delete this post?')) return;
+        await fetch(`/api/posts/${id}`, { method:'DELETE', credentials:'include' });
+        fetchPosts();
       }
     });
 
-    // Sorting, searching
-    document.getElementById('um-search').addEventListener('input', () => umLoadUsers());
-    document.querySelectorAll('.um-sort').forEach(th => th.addEventListener('click', () => {
-      const key = th.dataset.sort;
-      if (key === umSortKey) umSortAsc = !umSortAsc; else { umSortKey = key; umSortAsc = true; }
-      umLoadUsers();
-    }));
+    // Create post
+    document.getElementById('new-post').addEventListener('submit', async e=>{
+      e.preventDefault();
+      const form = e.target;
+      const title = form.title.value.trim();
+      const category = form.category.value;
+      const pinned = form.pinned.checked;
+      const body = quill.root.innerHTML;
 
-    /* ========== Init loads ========== */
-    document.addEventListener('DOMContentLoaded', () => {
+      if (!title || !category) return;
+
+      await fetch('/api/posts', {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ title, category: pinned ? `pinned ${category}` : category, body, pinned })
+      });
+      form.reset(); quill.setContents([]);
       fetchPosts();
+    });
+
+    /* =======================================================
+       BOOT
+    ======================================================= */
+    $('.menu-icon').on('click', () => $('.nav-links').toggleClass('active'));
+    $(document).ready(function(){
+      fetchUsers();
       fetchResources();
-      umLoadUsers();
+      fetchPosts();
+
+      // File-type auto-set
+      document.getElementById('resource-file').addEventListener('change', (e)=>{
+        const file = e.target.files[0];
+        if (file) document.getElementById('resource-type').value='file';
+      });
     });
   </script>
 </body>
