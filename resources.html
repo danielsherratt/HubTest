@@ -8,20 +8,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/cesw.css">
   <style>body{display:none}</style>
   <script>
-    async function signOut(){ try{ await fetch('/api/auth/logout',{method:'POST',credentials:'include'});}finally{location.href='/index.html';}}
-    (async ()=>{
+    async function signOut(){ try{await fetch('/api/auth/logout',{method:'POST',credentials:'include'})}finally{location.href='/index.html'} }
+    (async()=>{
       try{
-        const r = await fetch('/api/auth/me', { credentials:'include' });
-        if (!r.ok) throw 0;
-        const me = await r.json();
-        if (!['user','admin'].includes(me.role)) throw 0;
+        const r=await fetch('/api/auth/me',{credentials:'include'}); if(!r.ok) throw 0;
+        const me=await r.json(); if(!['user','admin'].includes(me.role)) throw 0;
         document.body.style.display='block';
         const right=document.querySelector('.nav-right');
-        if (me.role==='admin'){ const a=document.createElement('a'); a.className='nav-item'; a.href='secure.html'; a.innerHTML='<i class="fa-solid fa-gear"></i> Admin'; right.appendChild(a); }
-        const b=document.createElement('a'); b.className='nav-item'; b.href='#'; b.innerHTML='<i class="fa-solid fa-right-from-bracket"></i> Sign out'; b.onclick=(e)=>{e.preventDefault();signOut()}; right.appendChild(b);
+        if(me.role==='admin'){ const a=document.createElement('a'); a.className='nav-item'; a.href='secure.html'; a.innerHTML='<i class="fa-solid fa-gear"></i> Admin'; right.appendChild(a); }
+        const b=document.createElement('a'); b.className='nav-item'; b.href='#'; b.innerHTML='<i class="fa-solid fa-right-from-bracket"></i> Sign out'; b.onclick=e=>{e.preventDefault();signOut()}; right.appendChild(b);
       }catch{ location.href='/index.html'; }
     })();
   </script>
@@ -60,7 +58,7 @@
     </div>
 
     <div id="category-container"></div>
-    <button id="backToCategories" class="btn" style="display:none; margin: 1em 0;">
+    <button id="backToCategories" class="btn" style="display:none; margin:1em 0;">
       <i class="fa-solid fa-arrow-left"></i> Categories
     </button>
 
@@ -76,23 +74,22 @@
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    let allPosts = [];
-    const RES_FAV_KEY = 'resources_favourites';
-    let favourites = JSON.parse(localStorage.getItem(RES_FAV_KEY)) || [];
+    let allPosts=[];
+    const RES_FAV_KEY='resources_favourites';
+    let favourites=JSON.parse(localStorage.getItem(RES_FAV_KEY))||[];
 
     async function loadPosts(){
-      const res = await fetch('/api/resourcespull', { credentials:'include' });
-      allPosts = await res.json();
+      const res=await fetch('/api/resourcespull',{credentials:'include'});
+      allPosts=await res.json();
 
       // categories
-      const categories = [...new Set(allPosts.map(p => p.category).filter(Boolean))];
-      const catContainer = document.getElementById('category-container');
-      catContainer.innerHTML = '';
+      const categories=[...new Set(allPosts.map(p=>p.category).filter(Boolean))];
+      const catContainer=document.getElementById('category-container');
+      catContainer.innerHTML='';
       categories.forEach(cat=>{
         const card=document.createElement('div');
-        card.className='category-card';
-        card.dataset.cat=(cat||'').toLowerCase();
-        const imageUrl = `https://files.danieltesting.space/uploads/${encodeURIComponent((cat||'').toLowerCase())}.png`;
+        card.className='category-card'; card.dataset.cat=(cat||'').toLowerCase();
+        const imageUrl=`https://files.danieltesting.space/uploads/${encodeURIComponent((cat||'').toLowerCase())}.png`;
         card.innerHTML=`<img src="${imageUrl}" alt="">`;
         card.addEventListener('click',()=>showCategory(cat));
         catContainer.appendChild(card);
@@ -103,11 +100,10 @@
     }
 
     function showCategory(cat){
-      $('#searchBar').val('');
-      $('#noFavourites').hide();
+      $('#searchBar').val(''); $('#noFavourites').hide();
       document.getElementById('category-container').style.display='none';
       document.getElementById('backToCategories').style.display='inline-block';
-      const filtered = allPosts.filter(p => (p.category||'').toLowerCase()===(cat||'').toLowerCase());
+      const filtered=allPosts.filter(p=>(p.category||'').toLowerCase()===(cat||'').toLowerCase());
       renderCards(filtered);
     }
 
@@ -119,24 +115,23 @@
     });
 
     function filterCards(){
-      const val = ($('#searchBar').val()||'').toLowerCase().trim();
-      const container = document.querySelector('.card-container');
-      const catCards = document.getElementById('category-container');
+      const val=($('#searchBar').val()||'').toLowerCase().trim();
+      const container=document.querySelector('.card-container');
+      const catCards=document.getElementById('category-container');
 
-      if (!val){
+      if(!val){
         container.innerHTML=''; catCards.style.display='flex';
         $('#noFavourites').hide(); $('#noResults').hide(); return;
       }
       catCards.style.display='none';
-      const matched = allPosts.filter(p => (p.title||'').toLowerCase().includes(val));
+      const matched=allPosts.filter(p=>(p.title||'').toLowerCase().includes(val));
       renderCards(matched);
     }
 
     function renderCards(posts){
-      const container = document.querySelector('.card-container');
+      const container=document.querySelector('.card-container');
       container.innerHTML='';
-
-      if (!posts.length){ $('#noResults').show(); return; }
+      if(!posts.length){ $('#noResults').show(); return; }
       $('#noResults').hide();
 
       posts.forEach(p=>{
@@ -154,8 +149,8 @@
 
       // init favs
       $('.card').each(function(){
-        const title = $(this).data('name')||'';
-        if (favourites.includes(title)){
+        const title=$(this).data('name')||'';
+        if(favourites.includes(title)){
           $(this).find('.fav-btn').addClass('active').find('i').removeClass('fa-regular').addClass('fa-solid');
         }
       });
@@ -164,13 +159,8 @@
       $('.fav-btn').off('click').on('click', function(e){
         e.preventDefault(); e.stopPropagation();
         const card=$(this).closest('.card'); const title=card.data('name')||'';
-        if (favourites.includes(title)){
-          favourites=favourites.filter(f=>f!==title);
-          $(this).removeClass('active').find('i').removeClass('fa-solid').addClass('fa-regular');
-        } else {
-          favourites.push(title);
-          $(this).addClass('active').find('i').removeClass('fa-regular').addClass('fa-solid');
-        }
+        if(favourites.includes(title)){ favourites=favourites.filter(f=>f!==title); $(this).removeClass('active').find('i').removeClass('fa-solid').addClass('fa-regular'); }
+        else { favourites.push(title); $(this).addClass('active').find('i').removeClass('fa-regular').addClass('fa-solid'); }
         localStorage.setItem(RES_FAV_KEY, JSON.stringify(favourites));
       });
     }
@@ -179,10 +169,8 @@
       loadPosts();
 
       $('#searchBar').focus().on('keyup input', filterCards)
-        .on('input', function(){
-          clearTimeout($.data(this,'timer'));
-          const self=this; $.data(this,'timer', setTimeout(()=>$(self).blur(), 10000));
-        }).on('keydown', function(){ clearTimeout($.data(this,'timer')); });
+        .on('input', function(){ clearTimeout($.data(this,'timer')); const self=this; $.data(this,'timer', setTimeout(()=>$(self).blur(),10000)); })
+        .on('keydown', function(){ clearTimeout($.data(this,'timer')); });
 
       $('#clearSearch').click(function(){
         $('#searchBar').val('').trigger('keyup');
@@ -194,9 +182,8 @@
       });
 
       $('#ShowFavs').click(function(){
-        const any = favourites.length>0;
-        const container = document.querySelector('.card-container');
-        if (!any){
+        const any=favourites.length>0; const container=document.querySelector('.card-container');
+        if(!any){
           container.innerHTML=''; $('#noFavourites').show();
           document.getElementById('category-container').style.display='none';
           document.getElementById('backToCategories').style.display='none';
@@ -205,7 +192,7 @@
         $('#noFavourites').hide();
         document.getElementById('category-container').style.display='none';
         document.getElementById('backToCategories').style.display='inline-block';
-        const subset = allPosts.filter(p => favourites.includes((p.title||'').toLowerCase()));
+        const subset=allPosts.filter(p=>favourites.includes((p.title||'').toLowerCase()));
         renderCards(subset);
       });
 
@@ -218,7 +205,7 @@
         renderCards(allPosts);
       });
 
-      $(window).on('scroll', ()=>{ const sc=$(window).scrollTop()>100; $('#backToTop, #contact').toggle(sc); });
+      $(window).on('scroll',()=>{ const sc=$(window).scrollTop()>100; $('#backToTop,#contact').toggle(sc); });
       $('#backToTop').click(()=> $('html, body').animate({scrollTop:0}, 'fast'));
     });
   </script>

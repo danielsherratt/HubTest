@@ -8,28 +8,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/cesw.css">
   <style>body{display:none}</style>
   <script>
-    let CURRENT_USER = null;
-    async function signOut(){ try{ await fetch('/api/auth/logout',{method:'POST',credentials:'include'});}finally{location.href='/index.html';}}
-    (async () => {
-      try {
-        const r = await fetch('/api/auth/me', { credentials:'include' });
-        if (!r.ok) throw 0;
-        const me = await r.json();
-        if (!['user','admin'].includes(me.role)) throw 0;
-        CURRENT_USER = me; document.body.style.display = 'block';
-        // build right-side controls
-        const right = document.querySelector('.nav-right');
-        if (me.role === 'admin') {
-          const admin = document.createElement('a'); admin.className='nav-item'; admin.href='secure.html';
-          admin.innerHTML = '<i class="fa-solid fa-gear"></i> Admin'; right.appendChild(admin);
-        }
-        const out = document.createElement('a'); out.href='#'; out.className='nav-item';
-        out.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Sign out';
-        out.onclick=(e)=>{e.preventDefault();signOut()}; right.appendChild(out);
-      } catch { location.href='/index.html'; }
+    let CURRENT_USER=null;
+    async function signOut(){ try{await fetch('/api/auth/logout',{method:'POST',credentials:'include'})}finally{location.href='/index.html'} }
+    (async()=>{
+      try{
+        const r=await fetch('/api/auth/me',{credentials:'include'}); if(!r.ok) throw 0;
+        const me=await r.json(); if(!['user','admin'].includes(me.role)) throw 0;
+        CURRENT_USER=me; document.body.style.display='block';
+        const right=document.querySelector('.nav-right');
+        if(me.role==='admin'){const a=document.createElement('a');a.className='nav-item';a.href='secure.html';a.innerHTML='<i class="fa-solid fa-gear"></i> Admin'; right.appendChild(a);}
+        const b=document.createElement('a'); b.className='nav-item'; b.href='#'; b.innerHTML='<i class="fa-solid fa-right-from-bracket"></i> Sign out'; b.onclick=e=>{e.preventDefault();signOut()}; right.appendChild(b);
+      }catch{location.href='/index.html'}
     })();
   </script>
 </head>
@@ -75,45 +67,34 @@
     <a href="mailto:ITSupport@kotakureo.school.nz" id="contact" class="link-nochange">
       <i class="fa fa-envelope"></i> Contact
     </a>
-    <button id="backToTop"><i class="fa-solid fa-angle-up"></i> Back to Top</button>
+    <button id="backToTop" class="btn"><i class="fa-solid fa-angle-up"></i> Back to Top</button>
   </main>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    const FEED_FAV_KEY = 'feed_favourites';
-    let feedFavs = JSON.parse(localStorage.getItem(FEED_FAV_KEY) || '[]'); // post IDs
-    let posts = [];
+    const FEED_FAV_KEY='feed_favourites';
+    let feedFavs=JSON.parse(localStorage.getItem(FEED_FAV_KEY)||'[]'); // post IDs
+    let posts=[];
 
     async function loadPosts(){
-      const res = await fetch('/api/posts', { credentials:'include' });
-      posts = await res.json();
-      renderCards(posts);
-      filterCards();
+      const res=await fetch('/api/posts',{credentials:'include'});
+      posts=await res.json();
+      renderCards(posts); filterCards();
     }
 
     function renderCards(list){
-      const container = document.querySelector('.card-container');
-      container.innerHTML = '';
-
+      const container=document.querySelector('.card-container');
+      container.innerHTML='';
       list.forEach(p=>{
-        const id = Number(p.id);
-        const favActive = feedFavs.includes(id);
-        const cat = (p.category||'').toLowerCase();
-
-        const div = document.createElement('div');
-        div.className = 'card feed-card';
-        div.dataset.name = (p.title||'').toLowerCase();
-        div.dataset.category = cat;
-        div.dataset.id = id;
-
-        const createdNZ = p.created_at ? new Date(p.created_at).toLocaleDateString('en-NZ') : '';
-
-        div.innerHTML = `
-          <button class="fav-btn" title="Favourite"><i class="${favActive?'fa-solid':'fa-regular'} fa-star"></i></button>
+        const id=Number(p.id), fav=feedFavs.includes(id), cat=(p.category||'').toLowerCase();
+        const createdNZ=p.created_at?new Date(p.created_at).toLocaleDateString('en-NZ'):'';
+        const div=document.createElement('div');
+        div.className='card feed-card'; div.dataset.name=(p.title||'').toLowerCase(); div.dataset.category=cat; div.dataset.id=id;
+        div.innerHTML=`
+          <button class="fav-btn" title="Favourite"><i class="${fav?'fa-solid':'fa-regular'} fa-star"></i></button>
           <h1>${p.title||''}</h1>
           <div>${p.body||''}</div>
           <br><i>${createdNZ} ${p.category||''}</i>
-
           <div class="comments" data-post-id="${id}">
             <div class="c-header">
               <span class="c-count" data-count>Comments</span>
@@ -122,179 +103,102 @@
             <div class="c-list hidden" data-list></div>
             <div class="c-editor">
               <textarea placeholder="Write a comment…"></textarea>
-              <button class="c-send" type="button"><i class="fa-solid fa-paper-plane"></i> Post</button>
+              <button class="c-send btn" type="button"><i class="fa-solid fa-paper-plane"></i> Post</button>
             </div>
           </div>
         `;
         container.appendChild(div);
-
-        // lazy count
         updateCommentCountLazy(id, div.querySelector('[data-count]'), div.querySelector('[data-toggle]'));
       });
 
       // fav toggle
       $('.fav-btn').off('click').on('click', function(e){
         e.preventDefault(); e.stopPropagation();
-        const id = Number($(this).closest('.card').data('id'));
-        const on = feedFavs.includes(id);
-        if (on) { feedFavs = feedFavs.filter(x=>x!==id); $(this).find('i').removeClass('fa-solid').addClass('fa-regular'); }
-        else    { feedFavs.push(id); $(this).find('i').removeClass('fa-regular').addClass('fa-solid'); }
+        const id=Number($(this).closest('.card').data('id'));
+        const on=feedFavs.includes(id);
+        if(on){ feedFavs=feedFavs.filter(x=>x!==id); $(this).find('i').removeClass('fa-solid').addClass('fa-regular'); }
+        else{ feedFavs.push(id); $(this).find('i').removeClass('fa-regular').addClass('fa-solid'); }
         localStorage.setItem(FEED_FAV_KEY, JSON.stringify(feedFavs));
-      });
-
-      // init stars
-      $('.card').each(function(){
-        const id = Number($(this).data('id'));
-        if (feedFavs.includes(id)) $(this).find('.fav-btn i').removeClass('fa-regular').addClass('fa-solid');
       });
 
       // comments
       $('.c-toggle').off('click').on('click', async function(){
-        const root = $(this).closest('.comments');
-        const list = root.find('[data-list]');
-        const pid = Number(root.data('post-id'));
-        if (list.hasClass('hidden')) {
-          await loadComments(pid, list[0], root[0]);
-          list.removeClass('hidden');
-          this.textContent = 'Hide comments';
-        } else {
-          list.addClass('hidden');
-          this.textContent = 'Show comments';
-        }
+        const root=$(this).closest('.comments'); const list=root.find('[data-list]'); const pid=Number(root.data('post-id'));
+        if(list.hasClass('hidden')){ await loadComments(pid, list[0], root[0]); list.removeClass('hidden'); this.textContent='Hide comments'; }
+        else { list.addClass('hidden'); this.textContent='Show comments'; }
       });
       $('.c-send').off('click').on('click', async function(){
-        const root = $(this).closest('.comments');
-        const pid = Number(root.data('post-id'));
-        const textarea = root.find('textarea');
-        const body = (textarea.val()||'').trim();
-        if (!body) return;
-        const ok = await apiCreateComment(pid, body);
-        if (ok) {
-          textarea.val('');
-          const list = root.find('[data-list]')[0];
-          await loadComments(pid, list, root[0]);
-          root.find('[data-list]').removeClass('hidden');
-          root.find('[data-toggle]')[0].textContent='Hide comments';
-        } else {
-          alert('Failed to post comment.');
-        }
+        const root=$(this).closest('.comments'); const pid=Number(root.data('post-id'));
+        const textarea=root.find('textarea'); const body=(textarea.val()||'').trim(); if(!body) return;
+        const ok=await apiCreateComment(pid, body);
+        if(ok){ textarea.val(''); const list=root.find('[data-list]')[0]; await loadComments(pid, list, root[0]); root.find('[data-list]').removeClass('hidden'); root.find('[data-toggle]')[0].textContent='Hide comments'; }
+        else alert('Failed to post comment.');
       });
     }
 
-    // Comment APIs (with fallbacks)
+    // Comment APIs & count
     async function apiGetComments(postId){
-      let r = await fetch(`/api/comments?post_id=${postId}`, { credentials:'include' });
-      if (r.ok) return await r.json();
-      r = await fetch(`/api/posts/${postId}/comments`, { credentials:'include' });
-      if (r.ok) return await r.json();
+      let r=await fetch(`/api/comments?post_id=${postId}`,{credentials:'include'}); if(r.ok) return r.json();
+      r=await fetch(`/api/posts/${postId}/comments`,{credentials:'include'}); if(r.ok) return r.json();
       return null;
     }
     async function apiCreateComment(postId, body){
-      let r = await fetch('/api/comments', {
-        method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ post_id:postId, body })
-      });
-      if (r.ok) return true;
-      r = await fetch(`/api/posts/${postId}/comments`, {
-        method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ body })
-      });
-      return r.ok;
+      let r=await fetch('/api/comments',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:postId, body})}); if(r.ok) return true;
+      r=await fetch(`/api/posts/${postId}/comments`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})}); return r.ok;
     }
     async function apiUpdateComment(id, body){
-      const r = await fetch(`/api/comments/${id}`, {
-        method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ body })
-      });
-      return r.ok;
+      const r=await fetch(`/api/comments/${id}`,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})}); return r.ok;
     }
     async function apiDeleteComment(id){
-      const r = await fetch(`/api/comments/${id}`, { method:'DELETE', credentials:'include' });
-      return r.ok;
+      const r=await fetch(`/api/comments/${id}`,{method:'DELETE',credentials:'include'}); return r.ok;
     }
     async function apiCountComments(postId){
-      let r = await fetch(`/api/comments/count?post_id=${postId}`, { credentials:'include' });
-      if (r.ok) { const j = await r.json().catch(()=>null); if (j && typeof j.count==='number') return j.count; }
-      r = await fetch(`/api/posts/${postId}/comments/count`, { credentials:'include' });
-      if (r.ok) { const j = await r.json().catch(()=>null); if (j && typeof j.count==='number') return j.count; }
+      let r=await fetch(`/api/comments/count?post_id=${postId}`,{credentials:'include'}); if(r.ok){ const j=await r.json().catch(()=>null); if(j&&typeof j.count==='number') return j.count; }
+      r=await fetch(`/api/posts/${postId}/comments/count`,{credentials:'include'}); if(r.ok){ const j=await r.json().catch(()=>null); if(j&&typeof j.count==='number') return j.count; }
       return null;
     }
-    function setCommentsUI(rootEl, count){
-      const n = (typeof count==='number') ? count : null;
-      const countEl = rootEl.querySelector('[data-count]');
-      const toggleEl = rootEl.querySelector('[data-toggle]');
-      if (countEl) countEl.textContent = n===null ? 'Comments' : `Comments (${n})`;
-      if (toggleEl) {
-        const showing = !rootEl.querySelector('[data-list]').classList.contains('hidden');
-        toggleEl.textContent = (showing ? 'Hide comments' : 'Show comments') + (n===null ? '' : ` (${n})`);
-      }
+    function setCommentsUI(rootEl,count){
+      const n=(typeof count==='number')?count:null; const countEl=rootEl.querySelector('[data-count]'); const toggleEl=rootEl.querySelector('[data-toggle]');
+      if(countEl) countEl.textContent=n===null?'Comments':`Comments (${n})`;
+      if(toggleEl){ const showing=!rootEl.querySelector('[data-list]').classList.contains('hidden'); toggleEl.textContent=(showing?'Hide comments':'Show comments')+(n===null?'':` (${n})`); }
     }
-    async function updateCommentCountLazy(postId, countEl, toggleEl){
-      const count = await apiCountComments(postId);
-      if (countEl) countEl.textContent = (count===null)?'Comments':`Comments (${count})`;
-      if (toggleEl) toggleEl.textContent = (count===null)?'Show comments':`Show comments (${count})`;
+    async function updateCommentCountLazy(postId,countEl,toggleEl){
+      const c=await apiCountComments(postId);
+      if(countEl) countEl.textContent = (c===null)?'Comments':`Comments (${c})`;
+      if(toggleEl) toggleEl.textContent = (c===null)?'Show comments':`Show comments (${c})`;
     }
-    async function loadComments(postId, listEl, rootEl){
-      const data = await apiGetComments(postId);
-      if (data === null) {
-        listEl.innerHTML = '<div class="comment"><em>Comments unavailable.</em></div>';
-        setCommentsUI(rootEl, null); return;
-      }
-      listEl.innerHTML = '';
-      if (!Array.isArray(data) || !data.length) {
-        listEl.innerHTML = '<div class="comment"><em>No comments yet.</em></div>';
-        setCommentsUI(rootEl, 0); return;
-      }
+    async function loadComments(postId,listEl,rootEl){
+      const data=await apiGetComments(postId);
+      if(data===null){ listEl.innerHTML='<div class="comment"><em>Comments unavailable.</em></div>'; setCommentsUI(rootEl,null); return; }
+      listEl.innerHTML='';
+      if(!Array.isArray(data)||!data.length){ listEl.innerHTML='<div class="comment"><em>No comments yet.</em></div>'; setCommentsUI(rootEl,0); return; }
       data.forEach(c=>{
-        const name = (c.author && (c.author.first_name || c.author.last_name))
-          ? `${c.author.first_name||''} ${c.author.last_name||''}`.trim()
-          : 'User';
-        const when = c.created_at ? new Date(c.created_at).toLocaleString('en-NZ',{ timeZone:'Pacific/Auckland' }) : '';
-        const canEdit = CURRENT_USER && (CURRENT_USER.role==='admin' || CURRENT_USER.id === c.user_id);
-        const row = document.createElement('div');
+        const name=(c.author&&(c.author.first_name||c.author.last_name))?`${c.author.first_name||''} ${c.author.last_name||''}`.trim():'User';
+        const when=c.created_at?new Date(c.created_at).toLocaleString('en-NZ',{timeZone:'Pacific/Auckland'}):'';
+        const canEdit=CURRENT_USER&&(CURRENT_USER.role==='admin'||CURRENT_USER.id===c.user_id);
+        const row=document.createElement('div');
         row.className='comment';
-        row.innerHTML = `
+        row.innerHTML=`
           <div class="meta"><strong>${name}</strong> • <span>${when}</span></div>
           <div class="c-body">${c.body||''}</div>
           <div class="c-actions">
-            ${canEdit?`<button class="c-edit" data-id="${c.id}">Edit</button>
-                       <button class="c-del" data-id="${c.id}">Delete</button>`:''}
+            ${canEdit?`<button class="c-edit" data-id="${c.id}">Edit</button><button class="c-del" data-id="${c.id}">Delete</button>`:''}
           </div>`;
         listEl.appendChild(row);
       });
-      // actions
-      listEl.querySelectorAll('.c-del').forEach(btn=>{
-        btn.onclick = async ()=>{
-          if (!confirm('Delete this comment?')) return;
-          const ok = await apiDeleteComment(btn.dataset.id);
-          if (ok) btn.closest('.comment').remove(); else alert('Delete failed.');
-        };
-      });
-      listEl.querySelectorAll('.c-edit').forEach(btn=>{
-        btn.onclick = async ()=>{
-          const bodyEl = btn.closest('.comment').querySelector('.c-body');
-          const curr = bodyEl.textContent;
-          const next = prompt('Edit comment:', curr);
-          if (next==null || !next.trim()) return;
-          const ok = await apiUpdateComment(btn.dataset.id, next.trim());
-          if (ok) bodyEl.textContent = next.trim(); else alert('Update failed.');
-        };
-      });
+      listEl.querySelectorAll('.c-del').forEach(btn=>{ btn.onclick=async()=>{ if(!confirm('Delete this comment?')) return; const ok=await apiDeleteComment(btn.dataset.id); if(ok) btn.closest('.comment').remove(); else alert('Delete failed.'); };});
+      listEl.querySelectorAll('.c-edit').forEach(btn=>{ btn.onclick=async()=>{ const bodyEl=btn.closest('.comment').querySelector('.c-body'); const cur=bodyEl.textContent; const next=prompt('Edit comment:',cur); if(next==null||!next.trim())return; const ok=await apiUpdateComment(btn.dataset.id,next.trim()); if(ok) bodyEl.textContent=next.trim(); else alert('Update failed.'); };});
       setCommentsUI(rootEl, data.length);
     }
 
     function filterCards(){
-      const val = ($('#searchBar').val()||'').toLowerCase();
-      const cat = ($('#category-select').val()||'').toLowerCase();
-      let shown = 0;
+      const val=($('#searchBar').val()||'').toLowerCase();
+      const cat=($('#category-select').val()||'').toLowerCase();
+      let shown=0;
       $('.card').each(function(){
-        const name = ($(this).data('name')||'');
-        const c = ($(this).data('category')||'');
-        const id = Number($(this).data('id'));
-        let ok = name.includes(val);
-        if (ok && cat) ok = (cat==='favourites') ? feedFavs.includes(id) : c.includes(cat);
-        $(this).toggle(ok);
-        if (ok) shown++;
+        const name=($(this).data('name')||''); const c=($(this).data('category')||''); const id=Number($(this).data('id'));
+        let ok=name.includes(val); if(ok&&cat) ok=(cat==='favourites')?feedFavs.includes(id):c.includes(cat);
+        $(this).toggle(ok); if(ok) shown++;
       });
       $('#noResults').toggle(shown===0);
     }
@@ -302,14 +206,12 @@
     $(document).ready(function(){
       loadPosts();
       $('#searchBar').focus().on('keyup input', filterCards)
-        .on('input', function(){
-          clearTimeout($.data(this,'timer'));
-          const self=this; $.data(this,'timer', setTimeout(()=>$(self).blur(), 10000));
-        }).on('keydown', function(){ clearTimeout($.data(this,'timer'));});
+        .on('input',function(){ clearTimeout($.data(this,'timer')); const self=this; $.data(this,'timer', setTimeout(()=>$(self).blur(), 10000)); })
+        .on('keydown',()=> clearTimeout($.data(this,'timer')));
       $('#category-select').on('change', filterCards);
 
-      $(window).on('scroll', ()=>{ const sc = $(window).scrollTop()>100; $('#backToTop, #contact').toggle(sc);});
-      $('#backToTop').on('click', ()=> $('html, body').animate({scrollTop:0}, 'fast'));
+      $(window).on('scroll',()=>{ const sc=$(window).scrollTop()>100; $('#backToTop,#contact').toggle(sc);});
+      $('#backToTop').on('click',()=> $('html, body').animate({scrollTop:0}, 'fast'));
     });
   </script>
 </body>
