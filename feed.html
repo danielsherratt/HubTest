@@ -54,7 +54,9 @@
     <div class="nav-right"></div>
   </div>
 
-  <div class="banner"></div>
+  <!-- Banner (absolute path so it always resolves) -->
+  <div class="banner" role="img" aria-label="CESW banner" style="background-image:url('/assets/banner.jpg')"></div>
+
   <h2 class="title"><i class="fa-solid fa-list-ul"></i> Feed</h2>
 
   <main>
@@ -107,8 +109,7 @@
         const favActive = feedFavs.includes(id);
         const cat = (p.category || '').toLowerCase();
 
-        // IMPORTANT: use data-title and data-cat (NOT data-name+data-category)
-        // to avoid the resources tile CSS override.
+        // feed-card avoids resource tile overrides
         const div = document.createElement('div');
         div.className = 'card feed-card';
         div.dataset.title = (p.title || '').toLowerCase();
@@ -168,9 +169,9 @@
 
       // Comments toggling + load
       $('.c-toggle').off('click').on('click', async function(){
-        const card = $(this).closest('.comments');
-        const list = card.find('.c-list');
-        const postId = Number(card.data('post-id'));
+        const commentsRoot = $(this).closest('.comments');
+        const list = commentsRoot.find('.c-list');
+        const postId = Number(commentsRoot.data('post-id'));
         if (list.hasClass('hidden')) {
           await loadComments(postId, list[0]);
           list.removeClass('hidden');
@@ -183,44 +184,71 @@
 
       // Post comment
       $('.c-send').off('click').on('click', async function(){
-        const comments = $(this).closest('.comments');
-        const postId = Number(comments.data('post-id'));
-        const textarea = comments.find('textarea');
+        const root = $(this).closest('.comments');
+        const postId = Number(root.data('post-id'));
+        const textarea = root.find('textarea');
         const body = textarea.val().trim();
         if (!body) return;
-        try {
-          const r = await fetch(`/api/posts/${postId}/comments`, {
-            method:'POST',
-            credentials:'include',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ body })
-          });
-          if (r.ok) {
-            textarea.val('');
-            const list = comments.find('.c-list')[0];
-            await loadComments(postId, list);
-            $(comments).find('.c-list').removeClass('hidden');
-            $(comments).find('.c-toggle')[0].textContent = 'Hide comments';
-          } else {
-            alert('Failed to post comment.');
-          }
-        } catch { alert('Network error.'); }
+        const ok = await apiCreateComment(postId, body);
+        if (ok) {
+          textarea.val('');
+          const list = root.find('.c-list')[0];
+          await loadComments(postId, list);
+          root.find('.c-list').removeClass('hidden');
+          root.find('.c-toggle')[0].textContent = 'Hide comments';
+        } else {
+          alert('Failed to post comment (API not available).');
+        }
       });
     }
 
+    // ---- Comments API with fallbacks ----
+    async function apiGetComments(postId){
+      // try /api/comments?post_id=
+      let r = await fetch(`/api/comments?post_id=${postId}`, { credentials:'include' });
+      if (r.ok) return await r.json();
+      // fallback /api/posts/:id/comments
+      r = await fetch(`/api/posts/${postId}/comments`, { credentials:'include' });
+      if (r.ok) return await r.json();
+      return null;
+    }
+    async function apiCreateComment(postId, body){
+      let r = await fetch('/api/comments', {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ post_id: postId, body })
+      });
+      if (r.ok) return true;
+      r = await fetch(`/api/posts/${postId}/comments`, {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ body })
+      });
+      return r.ok;
+    }
+    async function apiUpdateComment(id, body){
+      let r = await fetch(`/api/comments/${id}`, {
+        method:'PUT', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ body })
+      });
+      return r.ok;
+    }
+    async function apiDeleteComment(id){
+      let r = await fetch(`/api/comments/${id}`, { method:'DELETE', credentials:'include' });
+      return r.ok;
+    }
+
     async function loadComments(postId, listEl){
-      try{
-        const r = await fetch(`/api/posts/${postId}/comments`, { credentials:'include' });
-        const data = r.ok ? await r.json() : [];
-        renderComments(listEl, data);
-      }catch{
-        listEl.innerHTML = '<div class="comment">Failed to load comments.</div>';
+      const data = await apiGetComments(postId);
+      if (data === null) {
+        listEl.innerHTML = '<div class="comment"><em>Comments unavailable.</em></div>';
+        return;
       }
+      renderComments(listEl, data);
     }
 
     function renderComments(listEl, comments){
-      // Expecting array of {id, body, created_at, user_id, author:{first_name,last_name}, parent_id}
-      // Flat render (top-level only) for now
       listEl.innerHTML = '';
       if (!Array.isArray(comments) || comments.length === 0) {
         listEl.innerHTML = '<div class="comment"><em>No comments yet.</em></div>';
@@ -251,12 +279,9 @@
         btn.onclick = async () => {
           const id = btn.getAttribute('data-id');
           if (!confirm('Delete this comment?')) return;
-          try{
-            const r = await fetch(`/api/comments/${id}`, { method:'DELETE', credentials:'include' });
-            if (r.ok) {
-              btn.closest('.comment').remove();
-            } else alert('Delete failed.');
-          }catch{ alert('Network error.'); }
+          const ok = await apiDeleteComment(id);
+          if (ok) btn.closest('.comment').remove();
+          else alert('Delete failed (API not available).');
         };
       });
       listEl.querySelectorAll('.c-edit').forEach(btn => {
@@ -267,16 +292,9 @@
           const current = bodyEl.textContent;
           const next = prompt('Edit comment:', current);
           if (next == null || !next.trim()) return;
-          try{
-            const r = await fetch(`/api/comments/${id}`, {
-              method:'PUT', credentials:'include',
-              headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ body: next.trim() })
-            });
-            if (r.ok) {
-              bodyEl.textContent = next.trim();
-            } else alert('Update failed.');
-          }catch{ alert('Network error.'); }
+          const ok = await apiUpdateComment(id, next.trim());
+          if (ok) bodyEl.textContent = next.trim();
+          else alert('Update failed (API not available).');
         };
       });
     }
