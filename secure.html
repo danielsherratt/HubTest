@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="assets/cesw.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
 
+  <!-- Admin page: h2 centered, content left aligned; extra spacing between sections -->
   <style>
     body{display:none}
     main.admin { max-width: 1000px; margin: auto; text-align: left; }
@@ -21,6 +22,7 @@
       try { await fetch('/api/auth/logout',{ method:'POST', credentials:'include' }); }
       finally { location.href='/index.html'; }
     }
+    // Gate: admin only; build right-side nav actions
     (async () => {
       try {
         const res = await fetch('/api/auth/me', { credentials: 'include' });
@@ -68,8 +70,7 @@
 
   <main class="admin">
     <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub - Admin</h1>
-
-    <!-- Distinct calendar button under heading (brand green / white text) -->
+    <!-- Distinct calendar button under heading -->
     <a class="calendarbutton" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">
       <i class="fa fa-calendar"></i> Calendar
     </a>
@@ -232,6 +233,16 @@
     </section>
   </main>
 
+  <script>
+    (function() {
+      const originalAddEventListener = EventTarget.prototype.addEventListener;
+      EventTarget.prototype.addEventListener = function(type, listener, options) {
+        if (type === 'DOMNodeInserted' || type === 'DOMNodeRemoved') return;
+        return originalAddEventListener.call(this, type, listener, options);
+      };
+    })();
+  </script>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';</script>
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
@@ -276,7 +287,7 @@
     function renderPosts() {
       const tbody = document.querySelector('#posts-table tbody');
       const emptyMsg = document.getElementById('posts-empty');
-      const search = document.getElementById('search-posts')?.value?.toLowerCase?.() || '';
+      const search = document.getElementById('search-posts').value.toLowerCase();
 
       const filtered = posts
         .filter(p => (p.title || '').toLowerCase().includes(search))
@@ -349,7 +360,7 @@
     function renderResources() {
       const tbody = document.querySelector('#resources-table tbody');
       const emptyMsg = document.getElementById('resources-empty');
-      const search = document.getElementById('search-resources')?.value?.toLowerCase?.() || '';
+      const search = document.getElementById('search-resources').value.toLowerCase();
 
       const filtered = resources
         .filter(r => (r.title || '').toLowerCase().includes(search))
@@ -392,9 +403,8 @@
       }
     };
 
-    // Inputs for search / sorting on posts/resources
-    document.getElementById('search-posts')?.addEventListener('input', renderPosts);
-    document.getElementById('search-resources')?.addEventListener('input', renderResources);
+    document.getElementById('search-posts').addEventListener('input', renderPosts);
+    document.getElementById('search-resources').addEventListener('input', renderResources);
 
     document.querySelectorAll('#posts-table th.sortable').forEach(th =>
       th.addEventListener('click', () => {
@@ -429,7 +439,7 @@
     const umMsg  = document.getElementById('um-create-msg');
     const umSearch = document.getElementById('um-search');
 
-    // Declare ONCE
+    // Declare ONCE (fixes your error)
     let umSortKey = 'last_sign_in';
     let umSortAsc = false;
 
@@ -448,6 +458,7 @@
           });
         }
 
+        // Sort then limit 10
         data.sort((a,b) => {
           const getName = (u) => ((u.first_name||'') + ' ' + (u.last_name||'')).trim().toLowerCase();
           let va, vb;
@@ -581,7 +592,7 @@
       }
     });
 
-    // Sorting / search (no re-declare of umSortKey/umSortAsc)
+    // Sorting / search
     document.getElementById('um-search').addEventListener('input', umLoadUsers);
     document.querySelectorAll('.um-sort').forEach(th => th.addEventListener('click', () => {
       const key = th.dataset.sort;

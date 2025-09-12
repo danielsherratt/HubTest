@@ -15,6 +15,7 @@
       try { await fetch('/api/auth/logout', { method:'POST', credentials:'include' }); }
       finally { location.href='/index.html'; }
     }
+    // Gate: user or admin; build right-side nav actions
     (async () => {
       try {
         const r = await fetch('/api/auth/me', { credentials:'include' });
@@ -50,9 +51,7 @@
     <div class="nav-right"></div>
   </div>
 
-  <!-- Banner -->
-  <div class="banner" role="img" aria-label="CESW banner" style="background-image:url('/assets/banner.jpg')"></div>
-
+  <div class="banner"></div>
   <h2 class="title"><i class="fa-solid fa-file"></i> Resources</h2>
 
   <main>
@@ -60,7 +59,6 @@
       <input type="text" id="searchBar" placeholder="Find a resource">
       <button id="clearSearch" title="Clear"><i class="fa-solid fa-xmark"></i></button>
       <button id="ShowFavs" title="Favourites"><i class="fa-solid fa-star"></i></button>
-      <button id="ShowAll" title="Show all">Show All</button>
     </div>
 
     <div id="noFavourites" style="display:none; text-align:center; margin:20px;">
@@ -114,12 +112,10 @@
       // Default: categories visible; cards empty
       document.querySelector('.card-container').innerHTML = '';
       $('#noResults').hide();
-      $('#noFavourites').hide();
     }
 
     function showCategory(cat) {
       $('#searchBar').val('');
-      $('#noFavourites').hide();
       document.getElementById('category-container').style.display = 'none';
       document.getElementById('backToCategories').style.display = 'inline-block';
 
@@ -132,7 +128,6 @@
       document.getElementById('backToCategories').style.display = 'none';
       document.querySelector('.card-container').innerHTML = '';
       $('#noResults').hide();
-      $('#noFavourites').hide();
     });
 
     function filterCards() {
@@ -143,7 +138,6 @@
       if (!val) {
         container.innerHTML = '';
         catCards.style.display = 'flex';
-        $('#noFavourites').hide();
         $('#noResults').hide();
         return;
       }
@@ -223,37 +217,20 @@
         $('#noFavourites').hide();
         $('#searchBar').focus();
         document.getElementById('backToCategories').style.display = 'none';
-        document.getElementById('category-container').style.display = 'flex';
-        document.querySelector('.card-container').innerHTML = '';
-        $('#noResults').hide();
       });
 
       // Show Favourites only
       $('#ShowFavs').click(function () {
-        const container = document.querySelector('.card-container');
-        const any = favourites.length > 0;
-        if (!any) {
-          container.innerHTML = ''; // hide cards
+        if (!favourites.length) {
+          $('.card').hide();
           $('#noFavourites').show();
-          document.getElementById('category-container').style.display = 'none';
-          document.getElementById('backToCategories').style.display = 'none';
-          $('#noResults').hide();
-          return;
+        } else {
+          $('#noFavourites').hide();
+          $('.card').each(function () {
+            const title = $(this).data('name') || '';
+            $(this).toggle(favourites.includes(title));
+          });
         }
-        $('#noFavourites').hide();
-        document.getElementById('category-container').style.display = 'none';
-        document.getElementById('backToCategories').style.display = 'inline-block';
-        const subset = allPosts.filter(p => favourites.includes((p.title||'').toLowerCase()));
-        renderCards(subset);
-      });
-
-      // Show All -> show all cards (not categories)
-      $('#ShowAll').click(function () {
-        $('#searchBar').val('');
-        $('#noFavourites').hide();
-        document.getElementById('backToCategories').style.display = 'inline-block';
-        document.getElementById('category-container').style.display = 'none';
-        renderCards(allPosts);
       });
 
       // Scroll helpers
