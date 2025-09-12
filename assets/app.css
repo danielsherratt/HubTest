@@ -67,7 +67,11 @@ table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(
 thead th{background:#f5f8f8;padding:.6rem .75rem;text-align:left;color:#375;user-select:none}
 tbody td{padding:.55rem .75rem;border-top:1px solid #eef3f4}
 th.sortable{cursor:pointer}
+<<<<<<< HEAD
 th.sortable:hover{background:#eef5f5} 
+=======
+th.sortable:hover{background:#eef5f5}
+>>>>>>> 8abdeee9a20c53d12c9132eada69cd35b6425220
 
 /* Chips */
 .chip{display:inline-block;padding:.15rem .5rem;border-radius:999px;background:#eef3f4;font-size:.85rem}
