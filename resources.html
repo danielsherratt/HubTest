@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<<<<<<< HEAD
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CESW Hub - Resources</title>
@@ -44,38 +43,13 @@
         }
       } catch {
         location.href = '/index.html';
-=======
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
-  <title>CESW Hub - Resources</title>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <style>
-    body { display: none; }
-    #category-container { display: flex; flex-wrap: wrap; gap: 1em; margin: 1em 0; }
-  </style>
-  <script>
-    (async () => {
-      try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        if (!res.ok) throw new Error('Not authorized');
-        const data = await res.json();
-        if (!['user', 'admin'].includes(data.role)) {
-          window.location.href = '/index.html';
-        }
-        document.body.style.display = 'block';
-      } catch (err) {
-        window.location.href = '/index.html';
->>>>>>> 632d8a4809b1944d8bd55f5c2b2b53d77d37c2d4
       }
     })();
   </script>
-  <link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
   <!-- NAV -->
   <div class="navbar">
-<<<<<<< HEAD
     <div class="nav-left"><span class="menu-icon">&#9776;</span></div>
     <div class="nav-center">
       <div class="nav-links">
@@ -85,21 +59,12 @@
       </div>
     </div>
     <div class="nav-right"></div>
-=======
-    <span class="menu-icon">&#9776;</span>
-    <div class="nav-links">
-      <a class="nav-item" href="resources.html">Resources</a>
-      <a class="nav-item" href="feed.html">Feed</a>
-      <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e">Calendar</a>
-    </div>
->>>>>>> 632d8a4809b1944d8bd55f5c2b2b53d77d37c2d4
   </div>
 
   <div class="banner"></div>
   <h2 class="title"><i class="fa-solid fa-file"></i> Resources</h2>
 
   <main>
-<<<<<<< HEAD
     <div id="search-container" class="search-bar-wrap">
       <input type="text" id="searchBar" placeholder="Find a resource" class="search-bar">
       <button id="clearSearch" title="Clear search"><i class="fa-solid fa-xmark"></i></button>
@@ -119,18 +84,6 @@
 
     <div id="noResults" class="muted" style="display:none;">
       Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>. Please change your search.
-=======
-    <div id="search-container">
-      <input type="text" id="searchBar" placeholder="Find a resource">
-    </div>
-
-    <div id="category-container"></div>
-<button id="backToCategories" style="display:none; margin: 1em 0;">
-  <i class="fa-solid fa-arrow-left"></i> Categories
-</button>
-    <div id="noResults">
-      Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search
->>>>>>> 632d8a4809b1944d8bd55f5c2b2b53d77d37c2d4
     </div>
 
     <div class="card-container"></div>
@@ -142,7 +95,6 @@
   </main>
 
   <script>
-<<<<<<< HEAD
     /* -------- Account-based favourites (resources) -------- */
     let resFavIds = new Set();
 
@@ -279,69 +231,18 @@
 
     function filterCards(){
       const val = ($('#searchBar').val() || '').toLowerCase().trim();
-=======
-    let allPosts = [];
-
-    async function loadPosts() {
-      const res = await fetch('/api/resourcespull');
-      allPosts = await res.json();
-
-      const categories = [...new Set(allPosts.map(p => p.category).filter(Boolean))];
-      const catContainer = document.getElementById('category-container');
-      catContainer.innerHTML = '';
-   categories.forEach(cat => {
-  const card = document.createElement('div');
-  card.className = 'category-card';
-  card.dataset.cat = cat.toLowerCase();
-
-  const imageUrl = `https://files.danieltesting.space/uploads/${encodeURIComponent(cat.toLowerCase())}.png`;
-
-  card.innerHTML = `
-  
-    <img src="${imageUrl}">
-  `;
-
-  card.addEventListener('click', () => showCategory(cat));
-  catContainer.appendChild(card);
-});
-
-      renderCards(allPosts); // default to show nothing
-      document.querySelector('.card-container').innerHTML = '';
-    }
-
-function showCategory(cat) {
-  document.getElementById('searchBar').value = '';
-  document.getElementById('category-container').style.display = 'none';
-  document.getElementById('backToCategories').style.display = 'inline-block';
-
-  const filtered = allPosts.filter(p => (p.category || '').toLowerCase() === cat.toLowerCase());
-  renderCards(filtered);
-}
-document.getElementById('backToCategories').addEventListener('click', () => {
-  document.getElementById('category-container').style.display = 'flex';
-  document.getElementById('backToCategories').style.display = 'none';
-  document.querySelector('.card-container').innerHTML = '';
-  $('#noResults').hide();
-});
-    function filterCards() {
-      const val = $('#searchBar').val().toLowerCase().trim();
-      const container = document.querySelector('.card-container');
-      const catCards = document.getElementById('category-container');
-
->>>>>>> 632d8a4809b1944d8bd55f5c2b2b53d77d37c2d4
       if (!val) {
-        container.innerHTML = '';
-        catCards.style.display = 'flex';
-        $('#noResults').hide();
+        if (viewMode === 'favs') showFavourites();
+        else showCategories();
         return;
       }
-
-      catCards.style.display = 'none';
-      const matched = allPosts.filter(p => p.title.toLowerCase().includes(val));
+      viewMode = 'search';
+      $catContainer.hide();
+      $backToCategories.show();
+      const matched = allResources.filter(p => (p.title || '').toLowerCase().includes(val));
       renderCards(matched);
     }
 
-<<<<<<< HEAD
     /* -------------------- Events -------------------- */
     $(document).ready(function(){
       loadResources();
@@ -361,49 +262,10 @@ document.getElementById('backToCategories').addEventListener('click', () => {
       $('.menu-icon').on('click', () => $('.nav-links').toggleClass('active'));
 
       // scroll helpers
-=======
-    function renderCards(posts) {
-      const container = document.querySelector('.card-container');
-      container.innerHTML = '';
-      if (posts.length === 0) {
-        $('#noResults').show();
-        return;
-      }
-      $('#noResults').hide();
-      posts.forEach(p => {
-        const div = document.createElement('div');
-        div.innerHTML = `
-<a class="link-nochange" href="${p.url}">
-  <div class="card" data-name="${p.title.toLowerCase()}" data-category="${(p.category || '').toLowerCase()}">
-    <p>${p.title}</p> 
-    <img src="${p.thumbnail}">
-  </div>
-</a>`;
-        container.appendChild(div);
-      });
-    }
-
-    $(document).ready(function () {
-      loadPosts();
-      $('#searchBar')
-        .focus()
-        .on('keyup input', filterCards)
-        .on('input', function () {
-          clearTimeout($.data(this, 'timer'));
-          const self = this;
-          $.data(this, 'timer', setTimeout(() => $(self).blur(), 10000));
-        })
-        .on('keydown', function () {
-          clearTimeout($.data(this, 'timer'));
-        });
-
-      $('.menu-icon').click(() => $('.nav-links').toggleClass('active'));
->>>>>>> 632d8a4809b1944d8bd55f5c2b2b53d77d37c2d4
       $(window).on('scroll', () => {
         const s = $(window).scrollTop() > 100;
         $('#backToTop,#contact').toggle(s);
       });
-<<<<<<< HEAD
       $('#backToTop').on('click', () => $('html, body').animate({ scrollTop: 0 }, 'fast'));
     });
 
@@ -427,11 +289,6 @@ document.getElementById('backToCategories').addEventListener('click', () => {
         $card.remove();
         if ($('.res-card').length === 0) { $noFavourites.show(); $noResults.hide(); }
       }
-=======
-      $('#backToTop').click(() =>
-        $('html, body').animate({ scrollTop: 0 }, 'fast')
-      );
->>>>>>> 632d8a4809b1944d8bd55f5c2b2b53d77d37c2d4
     });
   </script>
 </body>

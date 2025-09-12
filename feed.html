@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<<<<<<< HEAD
   <title>CESW Hub - Feed</title>
 
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
@@ -68,53 +67,9 @@
   <main>
     <div id="search-container" class="search-bar-wrap">
       <input type="text" id="searchBar" placeholder="Find a post" class="search-bar">
-=======
-   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <title>CESW Hub - Feed</title>
-  <style>
-  body { display: none; }
-</style>
-<script>
-(async () => {
-  try {
-    const res = await fetch('/api/auth/me', {
-      credentials: 'include'
-    });
-    if (!res.ok) throw new Error('Not authorized');
-    const data = await res.json();
-    if (!['user', 'admin'].includes(data.role)) {
-      window.location.href = '/index.html';
-    }
-document.body.style.display = 'block';
-  } catch (err) {
-    window.location.href = '/index.html';
-  }
-})();
-</script>
-
-
-  <link rel="stylesheet" href="assets/app.css">
-</head>
-<body>
-<div class="navbar">
-	<span class="menu-icon">&#9776;</span>
-<div class="nav-links">
-		<div class="nav-links">
-      <a class="nav-item" href="resources.html">Resources</a>
-      <a class="nav-item" href="feed.html">Feed</a>
-      <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e">Calendar</a>
-		</div>
-		</div>
-    </div>
-    <div class="banner"></div>
-    <h2 class="title"><i class="fa-solid fa-list-ul"></i> Feed</h2>  
-    
-<main>	
-    <div id="search-container">
-      <input type="text" id="searchBar" placeholder="Find a post">
->>>>>>> 632d8a4809b1944d8bd55f5c2b2b53d77d37c2d4
       <select id="category-select">
         <option value="">All</option>
+        <option value="favourites">My Favourites</option>
         <option value="pinned">Pinned</option>
         <option value="general">General</option>
         <option value="faq">FAQ</option>
@@ -126,24 +81,16 @@ document.body.style.display = 'block';
     <div id="noResults" class="muted" style="display:none">
       Mmm no post found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category
     </div>
-<<<<<<< HEAD
 
     <div class="card-container" id="cards"></div>
-=======
-    <div class="card-container"></div>
->>>>>>> 632d8a4809b1944d8bd55f5c2b2b53d77d37c2d4
 
     <a href="mailto:ITSupport@kotakureo.school.nz" id="contact" class="link-nochange">
       <i class="fa fa-envelope"></i> Contact
     </a>
-    <button id="backToTop">
-      <i class="fa-solid fa-angle-up"></i> Back to Top
-    </button>
+    <button id="backToTop"><i class="fa-solid fa-angle-up"></i> Back to Top</button>
   </main>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-<<<<<<< HEAD
     /* ---------- Helpers ---------- */
     function nzDateTime(value){
       const d = new Date(value);
@@ -239,34 +186,9 @@ document.body.style.display = 'block';
 
         // update comment count initially
         loadComments(p.id, { countOnly:true });
-=======
-    async function loadPosts() {
-      const res = await fetch('/api/posts');
-      const posts = await res.json();
-
-      // Server already ordered by pinned & date
-      const container = document.querySelector('.card-container');
-      container.innerHTML = '';
-
-      posts.forEach(p => {
-        const displayCat = p.category.toLowerCase();
-        const div = document.createElement('div');
-        div.className         = 'card';
-        div.dataset.name      = p.title.toLowerCase();
-        div.dataset.category  = displayCat;
-        div.innerHTML = `
-          <h1>${p.title}</h1>
-          <div>${p.body}</div>
-          <br><i>${new Date(p.created_at).toLocaleDateString()} ${p.category}</i>
-        `;
-        container.append(div);
->>>>>>> 632d8a4809b1944d8bd55f5c2b2b53d77d37c2d4
       });
-
-      filterCards();
     }
 
-<<<<<<< HEAD
     /* ---------- Comments ---------- */
     const commentCache = new Map(); // postId -> array
     function buildCommentsBlock(postId){
@@ -500,60 +422,13 @@ document.body.style.display = 'block';
     $(window).on('scroll', () => {
       const scrolled = $(window).scrollTop() > 100;
       $('#backToTop, #contact').toggle(scrolled);
-=======
-    function filterCards() {
-      let val = $('#searchBar').val().toLowerCase();
-      const cat = $('#category-select').val().toLowerCase();
-      let shown = 0;
-
-
-
-      $('.card').each(function() {
-        const name = $(this).data('name');
-        const c    = $(this).data('category');
-        const ok   = name.includes(val) && (!cat || c.includes(cat));
-        $(this).toggle(ok);
-        if (ok) shown++;
-      });
-
-      $('#noResults').toggle(shown === 0);
-    }
-        // Toggle menu
-    $('.menu-icon').click(function () {
-        $('.nav-links').toggleClass('active');
->>>>>>> 632d8a4809b1944d8bd55f5c2b2b53d77d37c2d4
     });
     $('#backToTop').on('click', () => $('html, body').animate({ scrollTop: 0 }, 'fast'));
 
-<<<<<<< HEAD
     $(document).ready(function(){
-=======
-    $(document).ready(function() {
->>>>>>> 632d8a4809b1944d8bd55f5c2b2b53d77d37c2d4
       loadPosts();
-      $('#searchBar')
-        .focus()
-        .on('keyup input', filterCards)
-        .on('input', function() {
-          clearTimeout($.data(this,'timer'));
-          const self = this;
-          $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
-        })
-        .on('keydown', function() {
-          clearTimeout($.data(this,'timer'));
-        });
+      $('#searchBar').on('keyup input', filterCards);
       $('#category-select').on('change', filterCards);
-<<<<<<< HEAD
-=======
-
-      $(window).on('scroll', () => {
-        const scrolled = $(window).scrollTop() > 100;
-        $('#backToTop, #contact').toggle(scrolled);
-      });
-      $('#backToTop').on('click', () =>
-        $('html, body').animate({ scrollTop: 0 }, 'fast')
-      );
->>>>>>> 632d8a4809b1944d8bd55f5c2b2b53d77d37c2d4
     });
   </script>
 </body>
