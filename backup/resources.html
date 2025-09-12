@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <title>CESW Hub - Resources</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<link rel="stylesheet" href="assets/resources.css">
+<style>
+  body { display: none; }
+</style>
+<script>
+(async () => {
+  try {
+    const res = await fetch('/api/verify', {
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('Not authorized');
+    const data = await res.json();
+    if (!['user', 'admin'].includes(data.role)) {
+      window.location.href = '/index.html';
+    }
+    document.body.style.display = 'block';
+  } catch (err) {
+    window.location.href = '/index.html';
+  }
+})();
+</script>
+
+
+
+</head>
+<body>
+<div class="navbar">
+	<span class="menu-icon">&#9776;</span>
+<div class="nav-links">
+		<div class="nav-links">
+        <a class="nav-item" href="resources.html">Resources</a>
+        <a class="nav-item" href="feed.html">Feed</a>
+
+		</div>
+		</div>
+    </div>
+    <div class="banner"></div>
+      
+    <h1 class="title"><i class="fa-solid fa-people-group"></i> CESW Hub</h1>
+	
+    <h2 class="title"><i class="fa-solid fa-file"></i> Resources</h2>  
+    
+<main>		
+<div id="search-container">
+      <input type="text" id="searchBar" placeholder="Find a resource">
+ 
+    </div>
+
+    <div id="noResults">
+      Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search
+    </div>
+    <div class="card-container"></div>
+
+    <a href="mailto:ITSupport@kotakureo.school.nz" id="contact" class="link-nochange">
+      <i class="fa fa-envelope"></i> Contact
+    </a>
+    <button id="backToTop">
+      <i class="fa-solid fa-angle-up"></i> Back to Top
+    </button>
+
+</main>
+
+   <script>
+    async function loadPosts() {
+      const res = await fetch('/api/resourcespull');
+      const posts = await res.json();
+
+      // Server already ordered by pinned & date
+      const container = document.querySelector('.card-container');
+      container.innerHTML = '';
+
+      posts.forEach(p => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          
+<a class="link-nochange" href="${p.url}">
+ <div class="card" data-name="${p.title.toLowerCase()}">
+ <p>${p.title}</p> 
+ <img src="${p.thumbnail}">
+ </div>
+</a>
+        `;
+        container.append(div);
+      });
+
+      filterCards();
+    }
+
+    function filterCards() {
+      let val = $('#searchBar').val().toLowerCase();
+      let shown = 0;
+
+
+
+      $('.card').each(function() {
+        const name = $(this).data('name');
+
+        const ok   = name.includes(val);
+        $(this).toggle(ok);
+        if (ok) shown++;
+      });
+
+      $('#noResults').toggle(shown === 0);
+    }
+        // Toggle menu
+    $('.menu-icon').click(function () {
+        $('.nav-links').toggleClass('active');
+    });
+
+    $(document).ready(function() {
+      loadPosts();
+      $('#searchBar')
+        .focus()
+        .on('keyup input', filterCards)
+        .on('input', function() {
+          clearTimeout($.data(this,'timer'));
+          const self = this;
+          $.data(this,'timer', setTimeout(() => $(self).blur(), 10000));
+        })
+        .on('keydown', function() {
+          clearTimeout($.data(this,'timer'));
+        });
+
+      $(window).on('scroll', () => {
+        const scrolled = $(window).scrollTop() > 100;
+        $('#backToTop, #contact').toggle(scrolled);
+      });
+      $('#backToTop').on('click', () =>
+        $('html, body').animate({ scrollTop: 0 }, 'fast')
+      );
+       // Clear search bar when clicking clear button
+    $('#clearSearch').click(function () {
+        location.reload();
+    });
+    });
+  </script>
+	
+</body>
+</html>
+   

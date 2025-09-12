@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Disclaimer & Copyright Notice — CESW Hub</title>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
+  <meta name="color-scheme" content="light only" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --brand:#00625f; --bg:#f6f7f8; --text:#1f2d2e; --muted:#6b7c80; --border:#d0d6d9;
+      --radius:12px; --shadow:0 10px 25px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif}
+    .banner{width:100%;height:160px;background:url('assets/banner.jpg') center/cover no-repeat}
+    main{max-width:840px;margin:-60px auto 32px;padding:0 16px}
+    .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px}
+    h1{margin:0 0 .25rem;color:var(--brand);font-size:1.5rem}
+    .sub{color:var(--muted);margin:0 0 1rem}
+    p{line-height:1.6;margin:.75rem 0}
+    .muted{color:var(--muted)}
+    .btn-row{display:flex;gap:.5rem;margin-top:1rem}
+    .btn{display:inline-block;padding:.7rem 1rem;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);text-decoration:none}
+    .btn.primary{background:var(--brand);color:#fff;border-color:transparent}
+    .btn:hover{filter:brightness(.98)}
+    footer{color:var(--muted);text-align:center;font-size:.9rem;margin:24px 0}
+  </style>
+</head>
+<body>
+  <div class="banner" role="img" aria-label="CESW banner"></div>
+
+  <main>
+    <article class="card" role="region" aria-labelledby="title">
+      <h1 id="title">Disclaimer &amp; Copyright Notice</h1>
+      <p class="sub">Ko Taku Reo Deaf Education New Zealand</p>
+
+      <p><strong>All content, resources, and materials</strong> available on this website are the property of Ko Taku Reo Deaf Education New Zealand. These materials are provided exclusively for the use of currently employed Community Education Support Workers (CESW).</p>
+
+      <p>Any copying, sharing, or distribution outside of this group is <strong>strictly prohibited</strong> without prior written consent from Ko Taku Reo.</p>
+
+      <p>By accessing this site, you agree to use the materials only for their intended purpose in supporting your role as a CESW.</p>
+
+      <p><strong>&copy; Ko Taku Reo Deaf Education New Zealand. All rights reserved.</strong></p>
+
+      <div class="btn-row">
+        <a class="btn" href="index.html">Back to sign in</a>
+        <a class="btn primary" href="mailto:itsupport@kotakureo.school.nz">Contact IT Support</a>
+      </div>
+    </article>
+  </main>
+
+  <footer>&copy; <span id="year"></span> CESW Hub</footer>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
