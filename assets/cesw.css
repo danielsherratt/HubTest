@@ -1,4 +1,4 @@
-/* === CESW Shared Styles (Feed, Resources, Admin) === */
+/* === CESW Shared Styles === */
 :root{
   --brand:#00625f;
   --brand-700:#00514e;
@@ -12,8 +12,8 @@
   --shadow:0 10px 25px rgba(0,0,0,.08);
 }
 
-*{box-sizing:border-box}
-html,body{height:100%}
+*{ box-sizing:border-box }
+html,body{ height:100% }
 body{
   margin:0;
   font-family:"Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
@@ -21,15 +21,15 @@ body{
   background:var(--bg);
 }
 
-/* ---------- Navbar ---------- */
+/* ---------- Navbar (grid so center stays centered) ---------- */
 .navbar{ background:var(--brand); color:#fff; }
 .nav-inner{
   max-width:1100px; margin:0 auto; padding:.5rem 1rem;
-  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:1rem;
 }
-.nav-center{ flex:1; display:flex; justify-content:center; }
+.nav-center{ justify-self:center; }
+.nav-right{ justify-self:end; display:flex; align-items:center; gap:.5rem; }
 .nav-links{ display:flex; align-items:center; gap:.5rem; }
-.nav-right{ display:flex; align-items:center; gap:.5rem; }
 .nav-item{
   display:inline-flex; align-items:center; gap:.45rem;
   text-decoration:none; color:#fff;
@@ -42,7 +42,7 @@ body{
 .banner{
   height:180px;
   background:url('assets/banner.jpg') center/cover no-repeat;
-  margin:0; /* ensures no gap after nav */
+  margin:0; /* remove any gap below nav */
 }
 
 /* ---------- Headings & Layout ---------- */
@@ -52,6 +52,7 @@ main{ max-width:1000px; margin:0 auto; padding:1rem; }
   text-align:center;
   margin:1rem 0 .25rem;
 }
+.title i{ color:var(--brand); }
 
 /* ---------- Search & Controls ---------- */
 #search-container{
@@ -95,47 +96,36 @@ button:hover,.btn:hover{ background:var(--brand-700); }
 }
 .card img{ max-width:100%; max-height:120px; object-fit:cover; border-radius:6px; }
 
-/* Feed card (long) */
-.feed-card{ width:100%; max-width:800px; text-align:left; height:auto; padding:16px 18px 12px; }
-
-/* Favourites star */
-.fav-btn{
-  position:absolute; background:transparent; border:0; cursor:pointer; font-size:1.1rem;
-  color:#dbdbdb;
+/* Feed card (long/original style) */
+.feed-card{
+  width:100%; max-width:900px; text-align:left; height:auto;
+  padding:16px 18px 12px; border:1px solid #e5e9ec; border-radius:10px; background:#fff; box-shadow:var(--shadow);
 }
-.card .fav-btn{ bottom:8px; right:8px; }
-.feed-card .fav-btn{ top:10px; right:10px; bottom:auto; }
-.fav-btn.active i{ color:gold !important; }
-.fa-solid,.fa-regular{ color:#eafefd; } /* icons in nav use light teal */
+
+/* Favourites star (icon, not button) */
+.fav-star{
+  position:absolute; top:10px; right:10px; font-size:1.1rem;
+  cursor:pointer; color:#dbdbdb;
+}
+.fav-star.active i{ color:gold !important; }
 .card .fa-solid, .card .fa-regular,
-.feed-card .fa-solid, .feed-card .fa-regular,
-.comments .fa-solid { color:#0d6f6c; } /* content icons brandy */
+.feed-card .fa-solid, .feed-card .fa-regular { color:#0d6f6c; }
 
 /* ---------- Comments ---------- */
-.comments{
-  border:1px solid #e2e6e9; border-radius:8px; margin-top:12px; background:#fff;
-}
-.c-header{
-  display:flex; justify-content:space-between; align-items:center;
-  padding:.5rem .65rem; border-bottom:1px solid #eef2f4;
-}
+.comments{ border:1px solid #e2e6e9; border-radius:8px; margin-top:12px; background:#fff; }
+.c-header{ display:flex; justify-content:space-between; align-items:center; padding:.5rem .65rem; border-bottom:1px solid #eef2f4; }
 .c-list{ padding:.5rem .65rem; max-height:420px; overflow:auto; }
 .c-list.hidden{ display:none; }
-.c-editor{
-  border-top:1px solid #eef2f4; padding:.6rem .65rem;
-  display:grid; grid-template-columns:1fr auto; gap:.5rem;
-}
+.c-editor{ border-top:1px solid #eef2f4; padding:.6rem .65rem; display:grid; grid-template-columns:1fr auto; gap:.5rem; }
 .c-editor textarea{
   width:100%; min-height:60px; resize:vertical;
   border:1px solid var(--border); border-radius:8px; padding:.5rem .6rem;
-  font: inherit; font-size:.95rem;
+  font:inherit; font-size:.95rem;
 }
 .c-send i{ margin-right:.35rem; }
 .comment{ padding:.45rem 0; border-bottom:1px dashed #e5ecee; }
 .comment .meta{ color:var(--muted); font-size:.9rem; margin-bottom:.25rem; }
-.comment .c-actions button{
-  background:transparent; border:0; cursor:pointer; color:var(--brand); padding:0 .35rem 0 0;
-}
+.comment .c-actions button{ background:transparent; border:0; cursor:pointer; color:var(--brand); padding:0 .35rem 0 0; }
 
 /* ---------- Tables (Admin) ---------- */
 table{
@@ -150,18 +140,14 @@ tbody td{ padding:.6rem .7rem; border-top:1px solid #edf1f3; }
 th.sortable,.um-sort{ cursor:pointer; }
 th.sortable i,.um-sort i{ margin-left:.35rem; color:#6a7; }
 
-/* Admin forms/blocks */
-.upload-section{
-  background:#fff; border:1px solid #e8ecee; border-radius:10px; padding:1rem;
-}
+/* Admin blocks */
+.upload-section{ background:#fff; border:1px solid #e8ecee; border-radius:10px; padding:1rem; }
 .star-checkbox{ display:inline-flex; align-items:center; gap:.4rem; }
-
-/* Specific admin action styles */
 .pin-btn,.pinresource-btn{ background:var(--brand); color:#fff; }
 .delete-btn,.deleteresource-btn{ background:#fff; color:var(--brand); border:1px solid var(--border); }
 .delete-btn:hover,.deleteresource-btn:hover{ background:#f1f5f6; }
 
-/* Calendar button under admin title */
+/* Calendar under admin title */
 .calendarbutton{
   display:inline-flex; align-items:center; gap:.5rem;
   background:var(--brand); color:#fff; text-decoration:none;
@@ -169,16 +155,15 @@ th.sortable i,.um-sort i{ margin-left:.35rem; color:#6a7; }
 }
 .calendarbutton:hover{ background:var(--brand-700); }
 
-/* Categories (Resources) */
-#category-container{
-  display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin:1em 0;
-}
+/* Resources: category tiles & centered Back button */
+#category-container{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin:1em 0; }
 .category-card{
   width:200px; height:120px; border-radius:10px; overflow:hidden;
   box-shadow:var(--shadow); background:#fff; border:1px solid #e5e9ec; cursor:pointer;
   display:flex; align-items:center; justify-content:center;
 }
 .category-card img{ width:100%; height:100%; object-fit:cover; }
+.center-row{ display:flex; justify-content:center; }
 
 /* Utilities */
 .link-nochange{ color:inherit; text-decoration:none; }
@@ -189,8 +174,9 @@ th.sortable i,.um-sort i{ margin-left:.35rem; color:#6a7; }
 
 /* Mobile */
 @media (max-width: 700px){
-  .nav-inner{ flex-wrap:wrap; }
-  .nav-center{ order:2; width:100%; margin:.25rem 0; }
-  .nav-right{ order:3; width:100%; justify-content:flex-end; }
+  .nav-inner{ grid-template-columns: 1fr; }
+  .nav-center{ justify-self:center; }
+  .nav-right{ justify-self:center; }
   .feed-card{ max-width:100%; }
 }
+    

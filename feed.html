@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CESW Hub - Feed</title>
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="assets/cesw.css">
@@ -19,9 +18,9 @@
         const me=await r.json(); if(!['user','admin'].includes(me.role)) throw 0;
         CURRENT_USER=me; document.body.style.display='block';
         const right=document.querySelector('.nav-right');
-        if(me.role==='admin'){const a=document.createElement('a');a.className='nav-item';a.href='secure.html';a.innerHTML='<i class="fa-solid fa-gear"></i> Admin'; right.appendChild(a);}
+        if(me.role==='admin'){ const a=document.createElement('a'); a.className='nav-item'; a.href='secure.html'; a.innerHTML='<i class="fa-solid fa-gear"></i> Admin'; right.appendChild(a); }
         const b=document.createElement('a'); b.className='nav-item'; b.href='#'; b.innerHTML='<i class="fa-solid fa-right-from-bracket"></i> Sign out'; b.onclick=e=>{e.preventDefault();signOut()}; right.appendChild(b);
-      }catch{location.href='/index.html'}
+      }catch{ location.href='/index.html'; }
     })();
   </script>
 </head>
@@ -61,7 +60,6 @@
     </div>
 
     <div id="noResults">Mmm no post found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category</div>
-
     <div class="card-container"></div>
 
     <a href="mailto:ITSupport@kotakureo.school.nz" id="contact" class="link-nochange">
@@ -89,16 +87,21 @@
         const id=Number(p.id), fav=feedFavs.includes(id), cat=(p.category||'').toLowerCase();
         const createdNZ=p.created_at?new Date(p.created_at).toLocaleDateString('en-NZ'):'';
         const div=document.createElement('div');
-        div.className='card feed-card'; div.dataset.name=(p.title||'').toLowerCase(); div.dataset.category=cat; div.dataset.id=id;
+        div.className='card feed-card';
+        div.dataset.name=(p.title||'').toLowerCase();
+        div.dataset.category=cat;
+        div.dataset.id=id;
+
         div.innerHTML=`
-          <button class="fav-btn" title="Favourite"><i class="${fav?'fa-solid':'fa-regular'} fa-star"></i></button>
+          <span class="fav-star ${fav?'active':''}" title="Favourite"><i class="${fav?'fa-solid':'fa-regular'} fa-star"></i></span>
           <h1>${p.title||''}</h1>
           <div>${p.body||''}</div>
           <br><i>${createdNZ} ${p.category||''}</i>
+
           <div class="comments" data-post-id="${id}">
             <div class="c-header">
               <span class="c-count" data-count>Comments</span>
-              <button class="c-toggle" type="button" data-toggle>Show comments</button>
+              <button class="c-toggle btn-ghost" type="button" data-toggle>Show comments</button>
             </div>
             <div class="c-list hidden" data-list></div>
             <div class="c-editor">
@@ -108,16 +111,18 @@
           </div>
         `;
         container.appendChild(div);
+
+        // lazy count
         updateCommentCountLazy(id, div.querySelector('[data-count]'), div.querySelector('[data-toggle]'));
       });
 
-      // fav toggle
-      $('.fav-btn').off('click').on('click', function(e){
+      // fav star toggle
+      $('.fav-star').off('click').on('click', function(e){
         e.preventDefault(); e.stopPropagation();
         const id=Number($(this).closest('.card').data('id'));
         const on=feedFavs.includes(id);
-        if(on){ feedFavs=feedFavs.filter(x=>x!==id); $(this).find('i').removeClass('fa-solid').addClass('fa-regular'); }
-        else{ feedFavs.push(id); $(this).find('i').removeClass('fa-regular').addClass('fa-solid'); }
+        if(on){ feedFavs=feedFavs.filter(x=>x!==id); $(this).removeClass('active').find('i').removeClass('fa-solid').addClass('fa-regular'); }
+        else{ feedFavs.push(id); $(this).addClass('active').find('i').removeClass('fa-regular').addClass('fa-solid'); }
         localStorage.setItem(FEED_FAV_KEY, JSON.stringify(feedFavs));
       });
 
@@ -153,19 +158,24 @@
       const r=await fetch(`/api/comments/${id}`,{method:'DELETE',credentials:'include'}); return r.ok;
     }
     async function apiCountComments(postId){
-      let r=await fetch(`/api/comments/count?post_id=${postId}`,{credentials:'include'}); if(r.ok){ const j=await r.json().catch(()=>null); if(j&&typeof j.count==='number') return j.count; }
-      r=await fetch(`/api/posts/${postId}/comments/count`,{credentials:'include'}); if(r.ok){ const j=await r.json().catch(()=>null); if(j&&typeof j.count==='number') return j.count; }
+      let r=await fetch(`/api/comments/count?post_id=${postId}`,{credentials:'include'}); if(r.ok){ const j=await r.json().catch(()=>null); if(j && typeof j.count==='number') return j.count; }
+      r=await fetch(`/api/posts/${postId}/comments/count`,{credentials:'include'}); if(r.ok){ const j=await r.json().catch(()=>null); if(j && typeof j.count==='number') return j.count; }
       return null;
     }
     function setCommentsUI(rootEl,count){
-      const n=(typeof count==='number')?count:null; const countEl=rootEl.querySelector('[data-count]'); const toggleEl=rootEl.querySelector('[data-toggle]');
+      const n=(typeof count==='number')?count:null;
+      const countEl=rootEl.querySelector('[data-count]');
+      const toggleEl=rootEl.querySelector('[data-toggle]');
       if(countEl) countEl.textContent=n===null?'Comments':`Comments (${n})`;
-      if(toggleEl){ const showing=!rootEl.querySelector('[data-list]').classList.contains('hidden'); toggleEl.textContent=(showing?'Hide comments':'Show comments')+(n===null?'':` (${n})`); }
+      if(toggleEl){
+        const showing=!rootEl.querySelector('[data-list]').classList.contains('hidden');
+        toggleEl.textContent=(showing?'Hide comments':'Show comments')+(n===null?'':` (${n})`);
+      }
     }
     async function updateCommentCountLazy(postId,countEl,toggleEl){
       const c=await apiCountComments(postId);
-      if(countEl) countEl.textContent = (c===null)?'Comments':`Comments (${c})`;
-      if(toggleEl) toggleEl.textContent = (c===null)?'Show comments':`Show comments (${c})`;
+      if(countEl) countEl.textContent=(c===null)?'Comments':`Comments (${c})`;
+      if(toggleEl) toggleEl.textContent=(c===null)?'Show comments':`Show comments (${c})`;
     }
     async function loadComments(postId,listEl,rootEl){
       const data=await apiGetComments(postId);
@@ -207,10 +217,10 @@
       loadPosts();
       $('#searchBar').focus().on('keyup input', filterCards)
         .on('input',function(){ clearTimeout($.data(this,'timer')); const self=this; $.data(this,'timer', setTimeout(()=>$(self).blur(), 10000)); })
-        .on('keydown',()=> clearTimeout($.data(this,'timer')));
+        .on('keydown',function(){ clearTimeout($.data(this,'timer')); });
       $('#category-select').on('change', filterCards);
 
-      $(window).on('scroll',()=>{ const sc=$(window).scrollTop()>100; $('#backToTop,#contact').toggle(sc);});
+      $(window).on('scroll',()=>{ const sc=$(window).scrollTop()>100; $('#backToTop,#contact').toggle(sc); });
       $('#backToTop').on('click',()=> $('html, body').animate({scrollTop:0}, 'fast'));
     });
   </script>

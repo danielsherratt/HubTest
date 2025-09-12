@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CESW Hub - Admin</title>
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="assets/cesw.css">
@@ -15,8 +14,8 @@
     async function signOut(){ try{await fetch('/api/auth/logout',{method:'POST',credentials:'include'})}finally{location.href='/index.html'} }
     (async()=>{
       try{
-        const res=await fetch('/api/auth/me',{credentials:'include'}); if(!res.ok) throw new Error('Not authorized');
-        const me=await res.json(); if(me.role!=='admin') throw new Error('Not admin');
+        const r=await fetch('/api/auth/me',{credentials:'include'}); if(!r.ok) throw new Error('Not authorized');
+        const me=await r.json(); if(me.role!=='admin') throw new Error('Not admin');
         document.body.style.display='block';
         const right=document.querySelector('.nav-right');
         const admin=document.createElement('a'); admin.href='/secure.html'; admin.className='nav-item'; admin.innerHTML='<i class="fa-solid fa-gear"></i> Admin'; right.appendChild(admin);
@@ -384,7 +383,7 @@
       const key=th.dataset.sort;
       if(key===umSortKey) umSortAsc=!umSortAsc; else { umSortKey=key; umSortAsc=true; }
       document.querySelectorAll('.um-sort i').forEach(i=> i.className='fa-solid fa-sort');
-      const icon=th.querySelector('i'); if(icon) icon.className = umSortAsc ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+      const icon=th.querySelector('i'); if(icon) icon.className=umSortAsc?'fa-solid fa-sort-up':'fa-solid fa-sort-down';
       umLoadUsers();
     }));
 
