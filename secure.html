@@ -48,6 +48,7 @@
 <body>
   <!-- NAV -->
   <div class="navbar">
+    <div class="nav-left"></div>
     <div class="nav-center">
       <div class="nav-links">
         <a class="nav-item" href="feed.html">Feed</a>
@@ -151,7 +152,7 @@
       </thead>
       <tbody></tbody>
     </table>
-    <p id="posts-empty" style="display:none;">Mmm, no post found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</p>
+    <p id="posts-empty" style="display:none;">Mmm, no post found <i class="fa-solid fa-face-sad-tear"></i></p>
     <i>Latest 10 are shown, search for the exact one you want</i>
     <a href="mailto:ITSupport@kotakureo.school.nz" id="one" class="link-nochange">
       <i class="fa-solid fa-life-ring"></i> Help
@@ -232,15 +233,6 @@
 
   <script>
     /* ===== Utils ===== */
-    function nzDateTime(value, { withTime = true } = {}) {
-      if (!value) return '';
-      const d = new Date(value);
-      if (Number.isNaN(d.getTime())) return String(value);
-      const opts = withTime
-        ? { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }
-        : { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit' };
-      return d.toLocaleString('en-NZ', opts).replace(',', '');
-    }
     function esc(s){ return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m])); }
     function sortBy(key, asc) {
       return (a, b) => {
@@ -416,21 +408,23 @@
     );
 
     /* ===== User Management ===== */
+    function nzDateTime(value, { withTime = true } = {}) {
+      if (!value) return '';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      const opts = withTime
+        ? { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }
+        : { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit' };
+      return d.toLocaleString('en-NZ', opts).replace(',', '');
+    }
+
     const umRows = document.getElementById('um-rows');
     const umForm = document.getElementById('um-create-form');
     const umMsg  = document.getElementById('um-create-msg');
     const umSearch = document.getElementById('um-search');
-    const umSortHeaders = document.querySelectorAll('.um-sort');
 
     let umSortKey = 'last_sign_in';
     let umSortAsc = false;
-
-    function umSortIcon(th, active, asc) {
-      const i = th.querySelector('i');
-      if (!i) return;
-      if (!active) { i.className = 'fa-solid fa-sort'; return; }
-      i.className = asc ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
-    }
 
     async function umLoadUsers(){
       const q = umSearch.value.trim().toLowerCase();
@@ -440,7 +434,6 @@
         let data = await r.json();
         if (!Array.isArray(data)) data = [];
 
-        // Filter (name/email)
         if (q) {
           data = data.filter(u => {
             const hay = [u.email||'', u.first_name||'', u.last_name||''].join(' ').toLowerCase();
@@ -448,23 +441,18 @@
           });
         }
 
-        // Sort
-        const key = umSortKey;
-        const asc = umSortAsc;
+        // Sort then limit 10
         data.sort((a,b) => {
           const getName = (u) => ((u.first_name||'') + ' ' + (u.last_name||'')).trim().toLowerCase();
           let va, vb;
-          if (key==='name') { va=getName(a); vb=getName(b); }
-          else if (key==='email') { va=(a.email||'').toLowerCase(); vb=(b.email||'').toLowerCase(); }
-          else if (key==='role') { va=(a.role||'').toLowerCase(); vb=(b.role||'').toLowerCase(); }
-          else if (key==='last_sign_in') { va=new Date(a.last_sign_in||0).getTime(); vb=new Date(b.last_sign_in||0).getTime(); }
+          if (umSortKey==='name') { va=getName(a); vb=getName(b); }
+          else if (umSortKey==='email') { va=(a.email||'').toLowerCase(); vb=(b.email||'').toLowerCase(); }
+          else if (umSortKey==='role') { va=(a.role||'').toLowerCase(); vb=(b.role||'').toLowerCase(); }
           else { va=new Date(a.last_sign_in||0).getTime(); vb=new Date(b.last_sign_in||0).getTime(); }
-          if (va<vb) return asc? -1: 1;
-          if (va>vb) return asc? 1: -1;
+          if (va<vb) return umSortAsc? -1: 1;
+          if (va>vb) return umSortAsc? 1: -1;
           return 0;
         });
-
-        // Limit to 10
         data = data.slice(0, 10);
 
         if(!data.length){ umRows.innerHTML = '<tr><td colspan="6">No users.</td></tr>'; return; }
@@ -504,6 +492,7 @@
       }
     }
 
+    // Create user
     umForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       umMsg.textContent = '';
@@ -535,8 +524,7 @@
     });
 
     // Table button handlers
-    const umRowsEl = document.getElementById('um-rows');
-    umRowsEl.addEventListener('click', async (e)=>{
+    document.getElementById('um-rows').addEventListener('click', async (e)=>{
       const logoutBtn = e.target.closest('button[data-logout]');
       const delBtn    = e.target.closest('button[data-del]');
       const resetBtn  = e.target.closest('button[data-reset]');

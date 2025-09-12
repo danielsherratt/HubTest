@@ -7,6 +7,7 @@
 
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="assets/cesw.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
 
   <style>body{display:none}</style>
   <script>
@@ -39,6 +40,7 @@
 <body>
   <!-- NAV -->
   <div class="navbar">
+    <div class="nav-left"></div>
     <div class="nav-center">
       <div class="nav-links">
         <a class="nav-item" href="feed.html">Feed</a>
@@ -83,13 +85,14 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
     let allPosts = [];
-    let favourites = JSON.parse(localStorage.getItem('favourites')) || [];
+    const RES_FAV_KEY = 'resources_favourites';
+    let favourites = JSON.parse(localStorage.getItem(RES_FAV_KEY)) || [];
 
     async function loadPosts() {
       const res = await fetch('/api/resourcespull', { credentials:'include' });
       allPosts = await res.json();
 
-      // Build categories (unique)
+      // Build categories
       const categories = [...new Set(allPosts.map(p => p.category).filter(Boolean))];
       const catContainer = document.getElementById('category-container');
       catContainer.innerHTML = '';
@@ -106,7 +109,7 @@
         catContainer.appendChild(card);
       });
 
-      // Default: show categories; cards area empty
+      // Default: categories visible; cards empty
       document.querySelector('.card-container').innerHTML = '';
       $('#noResults').hide();
     }
@@ -167,7 +170,7 @@
         container.appendChild(div);
       });
 
-      // Initialize favourites UI for newly rendered cards
+      // Initialize favourites on current render
       $('.card').each(function () {
         const title = $(this).data('name') || '';
         if (favourites.includes(title)) {
@@ -176,7 +179,7 @@
         }
       });
 
-      // Fav toggle (stop link)
+      // Toggle favourite
       $('.fav-btn').off('click').on('click', function (e) {
         e.preventDefault(); e.stopPropagation();
         const card = $(this).closest('.card');
@@ -191,7 +194,7 @@
           $(this).addClass('active')
             .find('i').removeClass('fa-regular').addClass('fa-solid');
         }
-        localStorage.setItem('favourites', JSON.stringify(favourites));
+        localStorage.setItem(RES_FAV_KEY, JSON.stringify(favourites));
       });
     }
 
@@ -216,7 +219,7 @@
         document.getElementById('backToCategories').style.display = 'none';
       });
 
-      // Show favourites only
+      // Show Favourites only
       $('#ShowFavs').click(function () {
         if (!favourites.length) {
           $('.card').hide();

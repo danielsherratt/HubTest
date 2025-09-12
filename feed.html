@@ -7,6 +7,7 @@
 
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="assets/cesw.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
 
   <style>body{display:none}</style>
   <script>
@@ -39,6 +40,7 @@
 <body>
   <!-- NAV -->
   <div class="navbar">
+    <div class="nav-left"></div>
     <div class="nav-center">
       <div class="nav-links">
         <a class="nav-item" href="feed.html">Feed</a>
@@ -57,6 +59,7 @@
       <input type="text" id="searchBar" placeholder="Find a post">
       <select id="category-select">
         <option value="">All</option>
+        <option value="favourites">My Favourites</option>
         <option value="pinned">Pinned</option>
         <option value="general">General</option>
         <option value="faq">FAQ</option>
@@ -81,39 +84,88 @@
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
+    const FEED_FAV_KEY = 'feed_favourites';
+    let feedFavs = JSON.parse(localStorage.getItem(FEED_FAV_KEY) || '[]'); // store post IDs
+    let posts = [];
+
     async function loadPosts() {
       const res = await fetch('/api/posts', { credentials:'include' });
-      const posts = await res.json();
+      posts = await res.json();
 
-      const container = document.querySelector('.card-container');
-      container.innerHTML = '';
-
-      posts.forEach(p => {
-        const displayCat = (p.category || '').toLowerCase();
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.dataset.name = (p.title || '').toLowerCase();
-        div.dataset.category = displayCat;
-        div.innerHTML = `
-          <h1>${p.title}</h1>
-          <div>${p.body}</div>
-          <br><i>${new Date(p.created_at).toLocaleDateString('en-NZ')} ${p.category || ''}</i>
-        `;
-        container.append(div);
-      });
-
+      // Server already orders pinned + date; render long cards with star
+      renderCards(posts);
       filterCards();
     }
 
+    function renderCards(list) {
+      const container = document.querySelector('.card-container');
+      container.innerHTML = '';
+
+      list.forEach(p => {
+        const id = Number(p.id);
+        const favActive = feedFavs.includes(id);
+        const cat = (p.category || '').toLowerCase();
+
+        const div = document.createElement('div');
+        div.className = 'card';                        // long card style (70% width from CSS)
+        div.dataset.name = (p.title || '').toLowerCase();
+        div.dataset.category = cat;
+        div.dataset.id = id;
+
+        div.innerHTML = `
+          <button class="fav-btn" title="Favourite">
+            <i class="${favActive ? 'fa-solid' : 'fa-regular'} fa-star"></i>
+          </button>
+          <h1>${p.title || ''}</h1>
+          <div>${p.body || ''}</div>
+          <br><i>${new Date(p.created_at).toLocaleDateString('en-NZ')} ${p.category || ''}</i>
+        `;
+
+        container.append(div);
+      });
+
+      // Hook up star events
+      $('.fav-btn').off('click').on('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        const card = $(this).closest('.card');
+        const id = Number(card.data('id'));
+        const isFav = feedFavs.includes(id);
+        if (isFav) {
+          feedFavs = feedFavs.filter(x => x !== id);
+          $(this).removeClass('active').find('i').removeClass('fa-solid').addClass('fa-regular');
+        } else {
+          feedFavs.push(id);
+          $(this).addClass('active').find('i').removeClass('fa-regular').addClass('fa-solid');
+        }
+        localStorage.setItem(FEED_FAV_KEY, JSON.stringify(feedFavs));
+      });
+
+      // Initialize stars
+      $('.card').each(function () {
+        const id = Number($(this).data('id'));
+        if (feedFavs.includes(id)) {
+          $(this).find('.fav-btn').addClass('active')
+            .find('i').removeClass('fa-regular').addClass('fa-solid');
+        }
+      });
+    }
+
     function filterCards() {
-      let val = $('#searchBar').val().toLowerCase();
-      const cat = $('#category-select').val().toLowerCase();
+      const val = ($('#searchBar').val() || '').toLowerCase();
+      const cat = ($('#category-select').val() || '').toLowerCase();
       let shown = 0;
 
       $('.card').each(function() {
-        const name = $(this).data('name') || '';
-        const c    = $(this).data('category') || '';
-        const ok   = name.includes(val) && (!cat || c.includes(cat));
+        const name = ($(this).data('name') || '');
+        const c    = ($(this).data('category') || '');
+        const id   = Number($(this).data('id'));
+        let ok = name.includes(val);
+
+        if (ok && cat) {
+          if (cat === 'favourites') ok = feedFavs.includes(id);
+          else ok = c.includes(cat);
+        }
+
         $(this).toggle(ok);
         if (ok) shown++;
       });
@@ -123,6 +175,7 @@
 
     $(document).ready(function() {
       loadPosts();
+
       $('#searchBar')
         .focus()
         .on('keyup input', filterCards)
@@ -131,6 +184,7 @@
           const self=this; $.data(this,'timer', setTimeout(()=>$(self).blur(), 10000));
         })
         .on('keydown', function(){ clearTimeout($.data(this,'timer')); });
+
       $('#category-select').on('change', filterCards);
 
       $(window).on('scroll', () => {

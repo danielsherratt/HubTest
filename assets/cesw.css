@@ -1,33 +1,34 @@
-/* === External libs (kept so your pages keep working the same) === */
+/* === Google Fonts === */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;600&display=swap');
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css');
-/* Quill (admin editor) */
-@import url('https://cdn.quilljs.com/1.3.6/quill.core.css');
-@import url('https://cdn.quilljs.com/1.3.6/quill.snow.css');
 
-/* === Base / resets (from your existing files) === */
+/* === Base / resets === */
 :root{
   --brand: #00625f;
   --brand-700: #004a47;
   --text: #0f1f20;
 }
+
 html { overflow-y: scroll; }
 * { box-sizing: border-box; line-height: 1.6; margin: 0; padding: 0; }
+
 body {
   font-family: 'Noto Sans', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text);
   text-align: center;
+  background: #fff;
 }
+
 h1, h2, h3 { padding: 10px 0; }
 .title { color: var(--brand); }
-a { text-decoration: none; color: #00625f; font-weight: bold; }
+a { text-decoration: none; color: var(--brand); font-weight: 600; }
 a:hover { text-decoration: underline; color: #333; }
 a.link-nochange,
-a.link-nochange:hover { font-weight: normal; text-decoration: none; color: #00625f; }
+a.link-nochange:hover { font-weight: normal; text-decoration: none; color: var(--brand); }
+
 img { padding-top: 10px; opacity: 0; transform: scale(.98); transition: opacity .6s ease, transform .6s ease; }
 img.loaded { opacity: 1; transform: scale(1); }
 
-/* Banner (unified path) */
+/* Banner */
 .banner {
   width: 100%;
   height: 170px;
@@ -36,41 +37,41 @@ img.loaded { opacity: 1; transform: scale(1); }
   cursor: default;
 }
 
-/* === NAVBAR (standardized) ===
-   Centered links; Admin + Sign out on the right (in .nav-right).
-   Keep hamburger behavior on small screens.
+/* === NAVBAR (centered) ===
+   Grid with left spacer, centered links, and right-side actions.
 */
 .navbar{
   display:grid;
   grid-template-columns: 1fr auto 1fr;
   align-items:center;
-  padding: 15px;
+  padding: 15px 16px;
   background: var(--brand);
   color:#fff;
   border-bottom: 1px solid #e6ecee;
   position: relative;
-  text-align: center;
 }
+.nav-left { justify-self: start; }
 .nav-center { justify-self: center; }
 .nav-right { justify-self: end; display: flex; align-items: center; gap: .5rem; }
 
 .nav-links { display:flex; gap:1rem; align-items:center; justify-content:center; }
 .nav-item{
   background: none; border: 0; padding: .35rem .6rem; cursor: pointer; border-radius: 6px;
-  text-decoration: none; color: #fff; font-weight: 600; font-size: 18px;
+  text-decoration: none; color: #fff; font-weight: 700; font-size: 18px;
 }
 .nav-item:hover{ background: rgba(255,255,255,.12); text-decoration: none; color:#fff; }
 #signOutBtn { color: #ffe2e2; }
 #signOutBtn:hover { background: rgba(255,255,255,.18); }
 
-/* Mobile menu icon (hamburger) – if you decide to re-add it on some pages */
+/* (Optional) hamburger – pages currently don't show it, safe to keep */
 .menu-icon {
   display: none;
   font-size: 24px; color: #fff; cursor: pointer;
   position: absolute; top: 50%; right: 20px; transform: translateY(-50%);
 }
+
 @media (max-width: 600px) {
-  .navbar { padding: 20px; }
+  .navbar { padding: 14px; }
   .menu-icon { display: block; }
   .nav-links {
     display: none; flex-direction: column; background: var(--brand);
@@ -81,9 +82,10 @@ img.loaded { opacity: 1; transform: scale(1); }
   .nav-links.active { display:flex; padding-bottom:10px; }
 }
 
-/* === Search bars / controls (used across pages) === */
+/* === Search bars / controls (shared) === */
 #searchBar {
-  width: 60%; padding: 10px; margin: 20px 0; height: 50px; font-size: 1rem;
+  width: 60%; max-width: 780px;
+  padding: 10px; margin: 20px 0; height: 50px; font-size: 1rem;
 }
 select { height: 50px; }
 #clearSearch, #ShowFavs, #ShowAll, #backToCategories {
@@ -93,34 +95,35 @@ select { height: 50px; }
 #clearSearch { border-radius: 25%; background-color: var(--brand); color:#fff; }
 #clearSearch:hover { background: var(--brand-700); }
 
-/* === Cards + layout (Feed + Resources) === */
+/* === Layout containers === */
 .card-container, #category-container { display:flex; flex-wrap:wrap; justify-content:center; gap: 12px; }
 
+/* === Card – default (Feed long card) === */
 .card {
   position: relative;
   display: flex; flex-direction: column;
   border: 1px solid #ccc; border-radius: 10px; padding: 30px; margin: 10px;
-  width: 70%; min-height: 300px; text-align: left;
+  width: 70%; min-width: 320px; max-width: 1100px; min-height: 300px; text-align: left;
   box-shadow: 2px 2px 10px rgba(0,0,0,0.1); transition: background-color .3s; background:#fff;
 }
-.card img { width: 150px; height: 150px; object-fit: cover; border-radius: 20px; }
 
-.category-card {
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  border:1px solid #ccc; border-radius:10px; padding:15px; margin:10px;
-  width:170px; height:170px; text-align:center; box-shadow: 2px 2px 10px rgba(0,0,0,.1);
-  transition: background-color .3s; cursor: pointer;
-}
-.category-card img { width:150px; height:150px; object-fit:cover; border-radius:20px; }
-
-.card:hover, .category-card:hover { background: rgba(0,0,0,.06); }
-
-/* Resource “tile” cards */
+/* Resource “tile” cards override inside resource grid */
 .card-container .card[data-name][data-category]{
   width: 220px; min-height: 260px; text-align:center; padding: 15px;
 }
 .card-container .card[data-name] p { margin: 0 0 .6rem; font-weight: 600; min-height: 2.5em; overflow: hidden; }
-.card-container .card[data-name] img { width: 100%; height: 150px; border-radius: 8px; }
+.card-container .card[data-name] img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; }
+
+/* Category tiles */
+.category-card {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border:1px solid #ccc; border-radius:10px; padding:15px; margin:10px;
+  width:170px; height:170px; text-align:center; box-shadow: 2px 2px 10px rgba(0,0,0,.1);
+  transition: background-color .3s; cursor: pointer; background:#fff;
+}
+.category-card img { width:150px; height:150px; object-fit:cover; border-radius:20px; }
+
+.card:hover, .category-card:hover { background: rgba(0,0,0,.06); }
 
 /* Favourites star */
 .fav-btn{
@@ -129,6 +132,7 @@ select { height: 50px; }
 }
 .fav-btn.active i { color: gold !important; }
 .fav-btn:hover { color: #bdbdbd !important; }
+.fa-solid { color:#000 !important; } /* keep your original emphasis */
 
 /* Back to top + contact */
 #backToTop, #contact, #one, #two {
@@ -143,7 +147,7 @@ select { height: 50px; }
 #noResults, #noFavourites { display:none; font-size: 18px; color: var(--brand); margin-top: 20px; }
 .hidden { display:none !important; }
 
-/* === Admin page bits (from your admin.css) === */
+/* === Admin page styles (merged) === */
 #new-post {
   background: #f4f6f8; padding: 1.5rem; border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 2rem;
@@ -152,35 +156,37 @@ select { height: 50px; }
 #resource-title, #resource-url, #search-resources, #search-posts,
 #um-email, #um-search, #um-password, #um-role, #um-first, #um-last {
   padding: .5rem; margin-bottom: .75rem; border: 1px solid #ccc;
-  border-radius: 4px; font-size: 1rem;
+  border-radius: 4px; font-size: 1rem; width: 100%;
 }
-#editor { height: 200px; border: 1px solid #ccc; margin-bottom: 1rem; }
+#editor { height: 200px; border: 1px solid #ccc; margin-bottom: 1rem; background:#fff; }
 #new-post-button, #new-upload-button, .calendarbutton {
   background: var(--brand); color: #fff; border: none; padding: .75rem 1.5rem;
   border-radius: 4px; cursor: pointer; font-size: 1rem;
 }
 #new-post-button:hover, #new-upload-button:hover, .calendarbutton:hover { background: var(--brand-700); }
 #resource-file { background: var(--brand); color: #fff; border: none; padding: 5px; border-radius: 4px; font-size: 1rem; cursor: pointer; }
-.calendarbutton { display:block; margin:auto; width:90px; text-align:center; text-decoration:none; }
-.star-checkbox { display:inline-flex; align-items:center; cursor:pointer; user-select:none; }
+.calendarbutton { display:block; margin:auto; width:110px; text-align:center; text-decoration:none; }
+
+.star-checkbox { display:inline-flex; align-items:center; cursor:pointer; user-select:none; gap:.4rem; }
 .star-checkbox input { position:absolute; opacity:0; width:0; height:0; }
 .star-checkbox .checked { display:none; color:#f0c420; }
 .star-checkbox .unchecked { display:inline-block; color:#bbb; }
 .star-checkbox input:checked ~ .checked { display:inline-block; }
 .star-checkbox input:checked ~ .unchecked { display:none; }
+
 .actions button { background:none; border:none; cursor:pointer; font-size:.9rem; margin-left:.5rem; display:inline-flex; align-items:center; }
 
-/* tables */
-table { width:100%; border-collapse: collapse; }
+/* Tables */
+table { width:100%; border-collapse: collapse; background:#fff; }
 th, td { padding: .6rem .5rem; border-bottom: 1px solid #eee; text-align:left; }
-th.sortable, th.um-sort { user-select:none; cursor:pointer; }
+th.sortable, th.um-sort { user-select:none; cursor:pointer; white-space:nowrap; }
 .chip { display:inline-block; padding:.15rem .5rem; border-radius:999px; background:#eef3f4; font-size:.85rem; }
 
-/* Hover colours for admin act buttons */
+/* Hover colours for admin action buttons */
 .delete-btn:hover, .deleteresource-btn:hover { color: red; }
 .pin-btn:hover, .pinresource-btn:hover { color: gold; }
 
-/* === Feed comments UI (from your feed page) === */
+/* === Comments UI (feed-ready) === */
 .comments { margin-top: .75rem; border-top: 1px solid #eaeaea; padding-top: .75rem; }
 .c-header { display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem; }
 .c-count { font-weight:700; }
@@ -195,10 +201,10 @@ th.sortable, th.um-sort { user-select:none; cursor:pointer; }
 .c-editor { display:flex; gap:.5rem; margin-top:.5rem; }
 .c-editor textarea { flex:1; min-height: 60px; resize: vertical; }
 
-/* === Login page accents (kept minimal; index has its own inline layout) === */
+/* === Login page accents === */
 .link { color: var(--brand); } .link:hover { color: var(--brand-700); }
 
-/* === Scrollbar (kept) === */
+/* === Scrollbar === */
 ::-webkit-scrollbar { width:4px; }
 ::-webkit-scrollbar-track { background: white; }
 ::-webkit-scrollbar-thumb { background: var(--brand); }
