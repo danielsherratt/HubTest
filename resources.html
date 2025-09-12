@@ -228,12 +228,12 @@
         $('#noResults').hide();
       });
 
-      // Show Favourites only (hide cards if empty)
+      // Show Favourites only
       $('#ShowFavs').click(function () {
         const container = document.querySelector('.card-container');
         const any = favourites.length > 0;
         if (!any) {
-          container.innerHTML = '';
+          container.innerHTML = ''; // hide cards
           $('#noFavourites').show();
           document.getElementById('category-container').style.display = 'none';
           document.getElementById('backToCategories').style.display = 'none';
@@ -247,7 +247,7 @@
         renderCards(subset);
       });
 
-      // Show All -> show all cards
+      // Show All -> show all cards (not categories)
       $('#ShowAll').click(function () {
         $('#searchBar').val('');
         $('#noFavourites').hide();

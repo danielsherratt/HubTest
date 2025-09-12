@@ -125,10 +125,10 @@
 
           <div class="comments" data-post-id="${id}">
             <div class="c-header">
-              <span class="c-count" data-count>Comments</span>
-              <button class="c-toggle" type="button" data-toggle>Show comments</button>
+              <span class="c-count">Comments</span>
+              <button class="c-toggle" type="button">Show comments</button>
             </div>
-            <div class="c-list hidden" data-list></div>
+            <div class="c-list hidden"></div>
             <div class="c-editor">
               <textarea placeholder="Write a comment…"></textarea>
               <button class="c-send" type="button"><i class="fa-solid fa-paper-plane"></i> Post</button>
@@ -137,9 +137,6 @@
         `;
 
         container.append(div);
-
-        // Try to fetch initial comment count (optional; falls back to load on open)
-        updateCommentCountLazy(id, div.querySelector('[data-count]'), div.querySelector('[data-toggle]'));
       });
 
       // fav star handlers
@@ -170,10 +167,10 @@
       // comments toggle & post
       $('.c-toggle').off('click').on('click', async function(){
         const commentsRoot = $(this).closest('.comments');
-        const list = commentsRoot.find('[data-list]');
+        const list = commentsRoot.find('.c-list');
         const postId = Number(commentsRoot.data('post-id'));
         if (list.hasClass('hidden')) {
-          await loadComments(postId, list[0], commentsRoot[0]);
+          await loadComments(postId, list[0]);
           list.removeClass('hidden');
           this.textContent = 'Hide comments';
         } else {
@@ -191,10 +188,10 @@
         const ok = await apiCreateComment(postId, body);
         if (ok) {
           textarea.val('');
-          const list = root.find('[data-list]')[0];
-          await loadComments(postId, list, root[0]);   // reload & update count
-          root.find('[data-list]').removeClass('hidden');
-          root.find('[data-toggle]')[0].textContent = 'Hide comments';
+          const list = root.find('.c-list')[0];
+          await loadComments(postId, list);
+          root.find('.c-list').removeClass('hidden');
+          root.find('.c-toggle')[0].textContent = 'Hide comments';
         } else {
           alert('Failed to post comment (API not available).');
         }
@@ -232,42 +229,14 @@
       const r = await fetch(`/api/comments/${id}`, { method:'DELETE', credentials:'include' });
       return r.ok;
     }
-    async function apiCountComments(postId){
-      // Optional endpoints; return null if not available
-      let r = await fetch(`/api/comments/count?post_id=${postId}`, { credentials:'include' });
-      if (r.ok) { const j = await r.json().catch(()=>null); if (j && typeof j.count === 'number') return j.count; }
-      r = await fetch(`/api/posts/${postId}/comments/count`, { credentials:'include' });
-      if (r.ok) { const j = await r.json().catch(()=>null); if (j && typeof j.count === 'number') return j.count; }
-      return null;
-    }
 
-    function setCommentsUI(rootEl, count){
-      const countEl = rootEl.querySelector('[data-count]');
-      const toggleEl = rootEl.querySelector('[data-toggle]');
-      const n = (typeof count === 'number') ? count : null;
-      countEl.textContent = n === null ? 'Comments' : `Comments (${n})`;
-      if (toggleEl) {
-        const showing = !rootEl.querySelector('[data-list]').classList.contains('hidden');
-        toggleEl.textContent = (showing ? 'Hide comments' : 'Show comments') + (n === null ? '' : ` (${n})`);
-      }
-    }
-
-    async function updateCommentCountLazy(postId, countEl, toggleEl){
-      // Try to get count; if not available, leave as "Comments" until user opens
-      const count = await apiCountComments(postId);
-      if (countEl) countEl.textContent = (count === null) ? 'Comments' : `Comments (${count})`;
-      if (toggleEl) toggleEl.textContent = (count === null) ? 'Show comments' : `Show comments (${count})`;
-    }
-
-    async function loadComments(postId, listEl, commentsRoot){
+    async function loadComments(postId, listEl){
       const data = await apiGetComments(postId);
       if (data === null) {
         listEl.innerHTML = '<div class="comment"><em>Comments unavailable.</em></div>';
-        setCommentsUI(commentsRoot, null);
         return;
       }
       renderComments(listEl, data);
-      setCommentsUI(commentsRoot, Array.isArray(data) ? data.length : 0);
     }
 
     function renderComments(listEl, comments){
@@ -301,12 +270,8 @@
           const id = btn.getAttribute('data-id');
           if (!confirm('Delete this comment?')) return;
           const ok = await apiDeleteComment(id);
-          if (ok) {
-            btn.closest('.comment').remove();
-            // Let caller update count on next refresh; keep simple here
-          } else {
-            alert('Delete failed (API not available).');
-          }
+          if (ok) btn.closest('.comment').remove();
+          else alert('Delete failed (API not available).');
         };
       });
       listEl.querySelectorAll('.c-edit').forEach(btn => {
