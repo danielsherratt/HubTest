@@ -1,89 +1,77 @@
 // functions/api/auth/login.js
-import { pbkdf2Hash, signJWT } from '../../lib/auth.js';
 
-function cookieAttrs(request, maxAgeSec = 60 * 60 * 24 * 2) { // 2 days
-  const isHttps = new URL(request.url).protocol === 'https:';
-  return `Path=/; HttpOnly; ${isHttps ? 'Secure; ' : ''}SameSite=Lax; Max-Age=${maxAgeSec}`;
+function base64urlToUint8Array(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = 4 - (str.length % 4);
+  if (pad !== 4) str += '='.repeat(pad);
+  const raw = atob(str);
+  return new Uint8Array([...raw].map(ch => ch.charCodeAt(0)));
+}
+function base64url(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function importHmac(secret) {
+  return crypto.subtle.importKey('raw', new TextEncoder().encode(secret), {name:'HMAC', hash:'SHA-256'}, false, ['sign','verify']);
+}
+async function signJWT(payload, secret, maxAgeSec=172800) {
+  const header = { alg:'HS256', typ:'JWT' };
+  const iat = Math.floor(Date.now()/1000);
+  const exp = iat + maxAgeSec;
+  const key = await importHmac(secret);
+  const encH = base64url(new TextEncoder().encode(JSON.stringify(header)));
+  const encP = base64url(new TextEncoder().encode(JSON.stringify({...payload, iat, exp})));
+  const data = new TextEncoder().encode(`${encH}.${encP}`);
+  const sig  = await crypto.subtle.sign('HMAC', key, data);
+  const encS = base64url(sig);
+  return `${encH}.${encP}.${encS}`;
+}
+async function verifyJWT(token, secret) {
+  const [h,p,s] = token.split('.');
+  if (!h || !p || !s) return null;
+  const key = await importHmac(secret);
+  const ok = await crypto.subtle.verify('HMAC', key, base64urlToUint8Array(s), new TextEncoder().encode(`${h}.${p}`));
+  if (!ok) return null;
+  const payload = JSON.parse(new TextDecoder().decode(base64urlToUint8Array(p)));
+  if (payload.exp < Math.floor(Date.now()/1000)) return null;
+  return payload;
 }
 
-export async function onRequest({ request, env }) {
-  try {
-    if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
-    const db = env.POSTS_DB;
-    if (!db?.prepare) return new Response(JSON.stringify({ error: 'DB not configured.' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-    if (!env.JWT_SECRET) return new Response(JSON.stringify({ error: 'JWT secret not configured.' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+async function pbkdf2Hash(password, salt, iterations=100000) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveBits']);
+  const params = { name:'PBKDF2', salt: enc.encode(salt), iterations: Math.min(iterations, 100000), hash:'SHA-256' };
+  const bits = await crypto.subtle.deriveBits(params, key, 256);
+  return Array.from(new Uint8Array(bits)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function randomSalt(len=16){
+  const a = new Uint8Array(len); crypto.getRandomValues(a);
+  return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 
-    const body = await request.json().catch(() => ({}));
-    const email = String(body.email || '').trim().toLowerCase();
-    const password = String(body.password || '');
-    if (!email || !password) return new Response(JSON.stringify({ error: 'Email and password are required.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
 
-    const row = await db.prepare(`
-      SELECT id, email, password_algo, password_salt, password_hash, role,
-             failed_attempts, lockout_until
-        FROM users WHERE email = ?`).bind(email).first();
+export async function onRequestPost({ request, env }) {
+  const db = env.POSTS_DB;
+  let body = {}
+  try { body = await request.json(); } catch { return new Response('Bad JSON', { status:400 }); }
+  const { email, password } = body;
+  if(!email || !password) return new Response(JSON.stringify({ error:'Email and password required' }), {status:400, headers:{'Content-Type':'application/json'}});
 
-    if (!row) return new Response(JSON.stringify({ error: 'Invalid credentials.' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+  // Find user
+  const row = await db.prepare(`SELECT id, email, role, password_hash, password_salt, first_name, last_name FROM users WHERE email = ?`).bind(email.toLowerCase()).first();
+  if(!row) return new Response(JSON.stringify({ error:'Invalid credentials' }), { status:401, headers:{'Content-Type':'application/json'} });
 
-    const nowIso = new Date().toISOString();
-    if (row.lockout_until && row.lockout_until > nowIso) {
-      return new Response(JSON.stringify({ error: 'Account locked. Try again later.' }), { status: 423, headers: { 'Content-Type': 'application/json' } });
-    }
+  const hash = await pbkdf2Hash(password, row.password_salt, 100000);
+  if (hash !== row.password_hash) return new Response(JSON.stringify({ error:'Invalid credentials' }), { status:401, headers:{'Content-Type':'application/json'} });
 
-    if (row.password_algo !== 'pbkdf2-sha256') {
-      return new Response(JSON.stringify({ error: 'Unsupported password algorithm.' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-    }
+  // Update last_sign_in and IP
+  const ip = (new URL(request.url)).hostname; // best-effort; in production read CF-Connecting-IP
+  await db.prepare(`UPDATE users SET last_sign_in = datetime('now'), last_sign_ip = ? WHERE id = ?`).bind(ip, row.id).run();
 
-    const derived = await pbkdf2Hash(password, row.password_salt, 100000, 32);
-    const ok = derived === row.password_hash;
+  const token = await signJWT({ sub: row.id, role: row.role, email: row.email, first_name: row.first_name, last_name: row.last_name }, env.JWT_SECRET, 172800);
 
-    if (!ok) {
-      const attempts = (row.failed_attempts || 0) + 1;
-      if (attempts >= 5) {
-        const lockoutUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-        await db.prepare(`UPDATE users SET failed_attempts = 0, lockout_until = ? WHERE id = ?`).bind(lockoutUntil, row.id).run();
-        return new Response(JSON.stringify({ error: 'Too many attempts. Account locked for 15 minutes.' }), { status: 423, headers: { 'Content-Type': 'application/json' } });
-      } else {
-        await db.prepare(`UPDATE users SET failed_attempts = ? WHERE id = ?`).bind(attempts, row.id).run();
-        return new Response(JSON.stringify({ error: 'Invalid credentials.' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
-      }
-    }
-
-    // Success: reset attempts + update last sign-in
-    const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '';
-    await db.prepare(`
-      UPDATE users
-         SET failed_attempts = 0,
-             lockout_until   = NULL,
-             last_sign_in    = ?,
-             last_sign_ip    = ?
-       WHERE id = ?`).bind(nowIso, ip, row.id).run();
-
-    // (Optional) sign-in audit
-    try {
-      await db.prepare(`INSERT INTO user_signins (user_id, ip, at) VALUES (?, ?, ?)`).bind(row.id, ip, nowIso).run();
-      await db.prepare(`DELETE FROM user_signins WHERE at < datetime('now','-30 days')`).run();
-    } catch {}
-
-    // Create a DB-backed session (2 days)
-    const sid = crypto.randomUUID();
-    const expiresIso = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-    const ua = request.headers.get('User-Agent') || '';
-    await db.prepare(`
-      INSERT INTO sessions (id, user_id, created_at, expires_at, user_agent, ip)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(sid, row.id, nowIso, expiresIso, ua, ip).run();
-
-    // Issue JWT referencing the session (include exp too)
-    const exp = Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 2);
-    const token = await signJWT({ sub: row.email, role: row.role, sid, exp }, env.JWT_SECRET);
-
-    const res = new Response(JSON.stringify({ ok: true, role: row.role }), { headers: { 'Content-Type': 'application/json' } });
-    res.headers.append('Set-Cookie', `token=${token}; ${cookieAttrs(request, 60 * 60 * 24 * 2)}`);
-    return res;
-
-  } catch (e) {
-    return new Response(JSON.stringify({ error: 'Server error.' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-  }
+  const res = new Response(JSON.stringify({ ok:true, role: row.role }), { status:200, headers:{'Content-Type':'application/json'} });
+  res.headers.set('Set-Cookie', `token=${token}; HttpOnly; Secure; Path=/; SameSite=Strict; Max-Age=172800`);
+  return res;
 }

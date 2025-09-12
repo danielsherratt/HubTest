@@ -1,4 +1,4 @@
-// functions/api/users/[id].js
+// functions/api/comments.js
 
 function base64urlToUint8Array(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -38,50 +38,41 @@ async function verifyJWT(token, secret) {
 }
 
 
-async function pbkdf2Hash(password, salt, iterations=100000) {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey('raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveBits']);
-  const params = { name:'PBKDF2', salt: enc.encode(salt), iterations: Math.min(iterations, 100000), hash:'SHA-256' };
-  const bits = await crypto.subtle.deriveBits(params, key, 256);
-  return Array.from(new Uint8Array(bits)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-function randomSalt(len=16){
-  const a = new Uint8Array(len); crypto.getRandomValues(a);
-  return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-
-export async function onRequest({ request, env, params }) {
+export async function onRequest({ request, env }) {
   const db = env.POSTS_DB;
   const cookie = request.headers.get('Cookie') || '';
   const m = cookie.match(/(?:^|;\s*)token=([^;]+)/);
   const token = m && m[1];
   const me = token && await verifyJWT(token, env.JWT_SECRET);
-  if (!me || me.role !== 'admin') return new Response('Forbidden', { status:403 });
+  if (!me) return new Response('Unauthorized', { status:401 });
 
-  const id = params.id;
+  const url = new URL(request.url);
   const method = request.method;
 
-  if (method === 'PUT') {
-    const body = await request.json();
-    if (body.password) {
-      const salt = randomSalt(16);
-      const hash = await pbkdf2Hash(body.password, salt, 100000);
-      await db.prepare(`UPDATE users SET password_hash=?, password_salt=? WHERE id=?`).bind(hash, salt, id).run();
-    }
-    if (body.role) {
-      const role = body.role === 'admin' ? 'admin' : 'user';
-      await db.prepare(`UPDATE users SET role=? WHERE id=?`).bind(role, id).run();
-    }
-    if (body.first_name !== undefined || body.last_name !== undefined) {
-      await db.prepare(`UPDATE users SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name) WHERE id=?`).bind(body.first_name, body.last_name, id).run();
-    }
-    return new Response(null, { status:204 });
+  if (method === 'GET') {
+    const postId = Number(url.searchParams.get('post_id'));
+    if (!postId) return new Response('Bad Request', { status:400 });
+    const rows = await db.prepare(`
+      SELECT c.id, c.post_id, c.parent_id, c.body, c.created_at, c.deleted_at,
+             u.email as author_email, u.first_name, u.last_name
+        FROM comments c
+        JOIN users u ON u.id = c.user_id
+       WHERE c.post_id = ?
+       ORDER BY c.created_at ASC
+    `).bind(postId).all();
+    // Shape name
+    const items = rows.results.map(r => ({...r, author_name: (r.first_name||'').trim()+' '+(r.last_name||'').trim()}));
+    return new Response(JSON.stringify(items), { headers:{'Content-Type':'application/json'} });
   }
 
-  if (method === 'DELETE') {
-    await db.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
-    return new Response(null, { status:204 });
+  if (method === 'POST') {
+    const body = await request.json();
+    const postId = Number(body.post_id);
+    if (!postId || !body.body) return new Response('Bad Request', { status:400 });
+    const parent = body.parent_id ? Number(body.parent_id) : null;
+    await db.prepare(`INSERT INTO comments (post_id, parent_id, user_id, body, created_at) VALUES (?,?,?,?, datetime('now'))`)
+      .bind(postId, parent, me.sub, String(body.body)).run();
+    return new Response(JSON.stringify({ ok:true }), { status:201, headers:{'Content-Type':'application/json'} });
   }
 
   return new Response('Method Not Allowed', { status:405 });

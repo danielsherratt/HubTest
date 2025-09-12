@@ -4,129 +4,80 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CESW Hub - Admin</title>
-
-  <link rel="stylesheet" href="assets/admin.css">
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-
-  <style>
-    body { display: none; }
-
-    /* Navbar with center links & right actions */
-    .navbar {
-      display:grid; grid-template-columns: 1fr auto 1fr; align-items:center;
-      padding:.5rem 1rem; background:#fff; border-bottom:1px solid #e6ecee;
+<style>
+  body { display: none; }
+</style>
+     <script>
+(async () => {
+  try {
+    const res = await fetch('/api/auth/me', {
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('Not authorized');
+    const data = await res.json();
+    if (!['admin'].includes(data.role)) {
+      window.location.href = '/index.html';
     }
-    .nav-left  { justify-self:start;  display:flex; align-items:center; gap:.5rem; }
-    .nav-center{ justify-self:center; }
-    .nav-right { justify-self:end;    display:flex; align-items:center; gap:.5rem; }
+    document.body.style.display = 'block';
+    // Optional: if you only want users here, but not admin:
+    // if (data.role !== 'user') window.location.href = '/secure.html';
+  } catch (err) {
+    window.location.href = '/index.html';
+  }
+})();
+</script>
 
-    .menu-icon { cursor:pointer; font-size:1.25rem; }
-    .nav-links, .nav-right { display:flex; gap:1rem; align-items:center; }
-    .nav-item {
-      background:none; border:0; padding:.35rem .6rem; cursor:pointer; border-radius:6px;
-      text-decoration:none; color:#0f1f20; font-weight:600;
-    }
-    .nav-item:hover { background:#f2f5f6; }
-    #signOutBtn { color:#b00020; }
 
-    .chip { display:inline-block; padding:.15rem .5rem; border-radius:999px; background:#eef3f4; font-size:.85rem; }
-    table#um-table th { user-select:none; cursor:pointer; }
-    table#um-table th i { margin-left:.25rem; }
-    .upload-section label { display:inline-flex; align-items:center; gap:.4rem; }
-  </style>
-
-  <!-- Gate: admin-only via /api/auth/me + build right-side nav -->
-  <script>
-    async function signOut(){
-      try { await fetch('/api/auth/logout',{method:'POST',credentials:'include'}); }
-      finally { location.href='/index.html'; }
-    }
-
-    (async () => {
-      try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        if (!res.ok) throw new Error('Not authorized');
-        const me = await res.json();
-        if (!me || me.role !== 'admin') { window.location.href = '/index.html'; return; }
-        document.body.style.display = 'block';
-
-        // Right-side actions
-        const right = document.querySelector('.nav-right');
-        if (!right.querySelector('a[href="secure.html"]')) {
-          const a = document.createElement('a'); a.className='nav-item'; a.href='secure.html'; a.textContent='Admin'; right.appendChild(a);
-        }
-        if (!document.getElementById('signOutBtn')) {
-          const b = document.createElement('button'); b.id='signOutBtn'; b.className='nav-item'; b.textContent='Sign out'; b.onclick=signOut; right.appendChild(b);
-        }
-      } catch {
-        window.location.href = '/index.html';
-      }
-    })();
-  </script>
+  <link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
-  <!-- Navbar -->
-  <div class="navbar">
-    <div class="nav-left">
-      <span class="menu-icon">&#9776;</span>
-    </div>
-    <div class="nav-center">
-      <div class="nav-links">
-        <a class="nav-item" href="feed.html">Feed</a>
-        <a class="nav-item" href="resources.html">Resources</a>
-        <a class="nav-item" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">Calendar</a>
-      </div>
-    </div>
-    <div class="nav-right"><!-- Admin + Sign out injected --></div>
-  </div>
-
   <div class="banner"></div>
-
-  <main style="max-width: 1000px; margin: auto;">
+  <main style="max-width: 800px; margin: auto;">
     <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub - Admin</h1>
 
-    <a class="calendarbutton" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">
-      <i class="fa fa-calendar"></i> Calendar
-    </a>
+    <a class="calendarbutton" href="https://calendar.online/852ff24234751e548d10"><i class="fa fa-calendar"></i> Calendar</a>
 
-    <!-- Add Resource -->
-    <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
-    <form id="upload-form" class="upload-section" enctype="multipart/form-data">
-      <input type="file" id="resource-file" />
-      <input type="url" id="resource-url" placeholder="Or paste a link instead"><br>
+    <!-- Upload Resource -->
+   <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
+<form id="upload-form" class="upload-section" enctype="multipart/form-data">
 
-      <select id="resource-type" required>
-        <option value="">Select resource type</option>
-        <option value="file">File</option>
-        <option value="website">Website</option>
-        <option value="video">Video</option>
-      </select><br>
+    <!-- Either File or URL -->
+  <input type="file" id="resource-file" />
+  <input type="url" id="resource-url" placeholder="Or paste a link instead"><br>
+    <!-- Type dropdown -->
+  <select id="resource-type">
+    <option value="">Select resource type</option>
+    <option value="file">File</option>
+    <option value="website">Website</option>
+    <option value="video">Video</option>
+  </select><br>
 
-      <select id="resource-category" required>
-        <option value="" disabled selected>Select category</option>
-        <option value="general">General</option>
-        <option value="resources">Resources</option>
-        <option value="onlineresources">Online Resources</option>
-        <option value="faq">FAQ</option>
-      </select><br>
+  <select id="resource-category" required>
+    <option value="" disabled selected>Select category</option>
+    <option value="general">General</option>
+    <option value="resources">Resources</option>
+    <option value="onlineresources">Online Resources</option>
+    <option value="faq">FAQ</option>
+  </select><br>
+  <input type="text" id="resource-title" placeholder="Resource title" required /><br>
+  
 
-      <input type="text" id="resource-title" placeholder="Resource title" required /><br>
 
-      <label class="star-checkbox">
-        <input type="checkbox" id="resource-pinned" />
-        <i class="fa-regular fa-star unchecked"></i>
-        <i class="fa-solid fa-star checked"></i>
-        Pin this resource
-      </label><br>
+  <!-- Pinned checkbox -->
+  <label class="star-checkbox">
+    <input type="checkbox" id="resource-pinned" />
+    <i class="fa-regular fa-star unchecked"></i>
+    <i class="fa-solid fa-star checked"></i>
+    Pin this resource
+  </label><br>
 
-      <button type="submit" id="new-upload-button">Add Resource</button>
-    </form>
+  <button type="submit" id="new-upload-button">Add Resource</button>
+</form>
 
     <!-- Manage Resources -->
     <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Resources</h2>
-    <a href="resources.html" target="_blank" rel="noopener" alt="View Resources"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
+    <a href="resources.html" target="_blank" alt="View Resources"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
     <input type="text" id="search-resources" class="search-bar" placeholder="Search resources...">
     <table id="resources-table">
       <thead>
@@ -143,6 +94,7 @@
     <i>Latest 10 are shown, search for the exact one you want</i>
     <div style="margin-bottom:1em;"></div>
 
+
     <!-- Add Post -->
     <h2 class="title"><i class="fa-solid fa-plus"></i> Add to Feed</h2>
     <form id="new-post">
@@ -154,7 +106,7 @@
         <option value="onlineresources">Online Resources</option>
         <option value="faq">FAQ</option>
       </select>
-      <label class="star-checkbox">
+     <label class="star-checkbox">
         <input type="checkbox" name="pinned" />
         <i class="fa-regular fa-star unchecked"></i>
         <i class="fa-solid fa-star checked"></i>
@@ -166,7 +118,7 @@
 
     <!-- Manage Posts -->
     <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Feed</h2>
-    <a href="feed.html" target="_blank" rel="noopener" alt="View Feed"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
+    <a href="feed.html" target="_blank" alt="View Feed"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
     <input type="text" id="search-posts" class="search-bar" placeholder="Search posts...">
     <table id="posts-table">
       <thead>
@@ -186,89 +138,24 @@
       <i class="fa-solid fa-life-ring"></i> Help
     </a>
 
-    <!-- User Management -->
-    <h2 class="title" style="margin-top:2rem;"><i class="fa-solid fa-users-gear"></i> User Management</h2>
-
-    <input id="um-search" type="search" placeholder="Search users by email…" class="search-bar" style="margin:.25rem 0 1rem 0; width:100%;">
-
-    <section class="upload-section" style="padding:1rem;border:1px solid #e8ecee;border-radius:10px;margin-bottom:1rem;">
-      <form id="um-create-form" autocomplete="off">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.5rem;align-items:end;">
-          <div>
-            <label for="um-email">Email</label>
-            <input id="um-email" type="email" placeholder="user@example.com" required />
-          </div>
-          <div>
-            <label for="um-password">Password</label>
-            <input id="um-password" type="password" placeholder="Set a password" required />
-          </div>
-          <div>
-            <label for="um-role">Role</label>
-            <select id="um-role">
-              <option value="user">user</option>
-              <option value="admin">admin</option>
-            </select>
-          </div>
-          <div>
-            <button type="submit" class="pinresource-btn"><i class="fa-solid fa-user-plus"></i> Create</button>
-          </div>
-        </div>
-        <div id="um-create-msg" style="margin-top:.5rem;"></div>
-      </form>
-    </section>
-
-    <table id="um-table">
-      <thead>
-        <tr>
-          <th class="um-sort" data-sort="email">Email <i class="fa-solid fa-sort"></i></th>
-          <th class="um-sort" data-sort="role">Role <i class="fa-solid fa-sort"></i></th>
-          <th class="um-sort" data-sort="last_sign_in">Last sign in <i class="fa-solid fa-sort"></i></th>
-          <th class="um-sort" data-sort="created_at">Created <i class="fa-solid fa-sort"></i></th>
-          <th>IP / Alerts</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="um-rows">
-        <tr><td colspan="6">Loading…</td></tr>
-      </tbody>
-    </table>
   </main>
 
-  <!-- Avoid noisy DOM mutation listeners -->
-  <script>
-    (function() {
-      const originalAddEventListener = EventTarget.prototype.addEventListener;
-      EventTarget.prototype.addEventListener = function(type, listener, options) {
-        if (type === 'DOMNodeInserted' || type === 'DOMNodeRemoved') return;
-        return originalAddEventListener.call(this, type, listener, options);
-      };
-    })();
-  </script>
-
-  <!-- PDF.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';</script>
-
-  <!-- Quill -->
+<script>
+  (function() {
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener = function(type, listener, options) {
+      if (type === 'DOMNodeInserted' || type === 'DOMNodeRemoved') return;
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  })();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+</script>
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-
   <script>
-    /* ========== Utils ========== */
-    function nzDateTime(value, { withTime = true } = {}) {
-      if (!value) return '';
-      const d = new Date(value);
-      if (Number.isNaN(d.getTime())) return String(value);
-      const opts = withTime
-        ? { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }
-        : { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'short', day: '2-digit' };
-      return d.toLocaleString('en-NZ', opts).replace(',', '');
-    }
-    function esc(s){
-      return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
-    }
-
-    /* ========== Quill ========== */
-    const quill = new Quill('#editor', {
+const quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
         toolbar: [
@@ -280,13 +167,13 @@
       }
     });
 
-    // Set resource type automatically when file chosen
     document.getElementById('resource-file').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) document.getElementById('resource-type').value = 'file';
-    });
+  const file = e.target.files[0];
+  if (file) {
+    document.getElementById('resource-type').value = 'file';
+  }
+});
 
-    /* ========== Posts & Resources Management ========== */
     let posts = [];
     let resources = [];
     let postSort = { key: 'created_at', asc: false };
@@ -298,12 +185,84 @@
       posts = await res.json();
       renderPosts();
     }
+
     async function fetchResources() {
       const res = await fetch('/api/resourcespull', { credentials: 'include' });
-      if (res.status === 401) return location.href = '/index.html';
+      if (res.status === 401) return location.href = '/login.html';
       resources = await res.json();
       renderResources();
     }
+
+function renderPosts() {
+  const tbody = document.querySelector('#posts-table tbody');
+  const emptyMsg = document.getElementById('posts-empty');
+  const search = document.getElementById('search-posts').value.toLowerCase();
+
+  const filtered = posts
+    .filter(p => p.title.toLowerCase().includes(search))
+    .sort(sortBy(postSort.key, postSort.asc))
+    .slice(0, 10);
+
+  tbody.innerHTML = '';
+
+  if (filtered.length === 0) {
+    emptyMsg.style.display = 'block';
+    return;
+  } else {
+    emptyMsg.style.display = 'none';
+  }
+
+  for (const p of filtered) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${p.title}</td>
+      <td>${new Date(p.created_at).toLocaleDateString()}</td>
+      <td>${p.category}</td>
+      <td>
+        <button class="pin-btn" onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
+          <i class="${p.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${p.pinned ? 'Unpin' : 'Pin'}
+        </button>
+        <button class="delete-btn" onclick="deletePost(${p.id})"><i class="fa fa-trash"></i> Delete</button>
+      </td>`;
+    tbody.appendChild(row);
+  }
+}
+
+
+    function renderResources() {
+  const tbody = document.querySelector('#resources-table tbody');
+  const emptyMsg = document.getElementById('resources-empty');
+  const search = document.getElementById('search-resources').value.toLowerCase();
+
+  const filtered = resources
+    .filter(r => r.title.toLowerCase().includes(search))
+    .sort(sortBy(resourceSort.key, resourceSort.asc))
+    .slice(0, 10);
+
+  tbody.innerHTML = '';
+
+  if (filtered.length === 0) {
+    emptyMsg.style.display = 'block';
+    return;
+  } else {
+    emptyMsg.style.display = 'none';
+  }
+
+  for (const r of filtered) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><a href="${r.url}" class="link-nochange" target="_blank">${r.title}</a></td>
+      <td>${new Date(r.created_date).toLocaleDateString()}</td>
+      <td>${r.category}</td>
+      <td>
+        <button class="pinresource-btn" onclick="togglePinResource(${r.id}, ${r.pinned})">
+          <i class="${r.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${r.pinned ? 'Unpin' : 'Pin'}
+        </button>
+        <button class="deleteresource-btn" onclick="deleteResource(${r.id})"><i class="fa fa-trash"></i> Delete</button>
+      </td>`;
+    tbody.appendChild(row);
+  }
+}
 
     function sortBy(key, asc) {
       return (a, b) => {
@@ -315,69 +274,6 @@
       };
     }
 
-    function renderPosts() {
-      const tbody = document.querySelector('#posts-table tbody');
-      const emptyMsg = document.getElementById('posts-empty');
-      const search = document.getElementById('search-posts').value.toLowerCase();
-
-      const filtered = posts
-        .filter(p => (p.title || '').toLowerCase().includes(search))
-        .sort(sortBy(postSort.key, postSort.asc))
-        .slice(0, 10);
-
-      tbody.innerHTML = '';
-
-      if (!filtered.length) { emptyMsg.style.display = 'block'; return; }
-      emptyMsg.style.display = 'none';
-
-      for (const p of filtered) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${esc(p.title)}</td>
-          <td>${esc(nzDateTime(p.created_at))}</td>
-          <td>${esc(p.category)}</td>
-          <td>
-            <button class="pin-btn" onclick="togglePinPost(${p.id}, '${p.category}', ${p.pinned})">
-              <i class="${p.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${p.pinned ? 'Unpin' : 'Pin'}
-            </button>
-            <button class="delete-btn" onclick="deletePost(${p.id})"><i class="fa fa-trash"></i> Delete</button>
-          </td>`;
-        tbody.appendChild(row);
-      }
-    }
-
-    function renderResources() {
-      const tbody = document.querySelector('#resources-table tbody');
-      const emptyMsg = document.getElementById('resources-empty');
-      const search = document.getElementById('search-resources').value.toLowerCase();
-
-      const filtered = resources
-        .filter(r => (r.title || '').toLowerCase().includes(search))
-        .sort(sortBy(resourceSort.key, resourceSort.asc))
-        .slice(0, 10);
-
-      tbody.innerHTML = '';
-
-      if (!filtered.length) { emptyMsg.style.display = 'block'; return; }
-      emptyMsg.style.display = 'none';
-
-      for (const r of filtered) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td><a href="${r.url}" class="link-nochange" target="_blank" rel="noopener">${esc(r.title)}</a></td>
-          <td>${esc(nzDateTime(r.created_date, { withTime:false }))}</td>
-          <td>${esc(r.category)}</td>
-          <td>
-            <button class="pinresource-btn" onclick="togglePinResource(${r.id}, ${r.pinned})">
-              <i class="${r.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i> ${r.pinned ? 'Unpin' : 'Pin'}
-            </button>
-            <button class="deleteresource-btn" onclick="deleteResource(${r.id})"><i class="fa fa-trash"></i> Delete</button>
-          </td>`;
-        tbody.appendChild(row);
-      }
-    }
-
-    // Post actions
     window.togglePinPost = async (id, category, pinned) => {
       const newCat = pinned ? category.replace(/^pinned\s*/i, '') : `pinned ${category}`;
       await fetch(`/api/posts/${id}`, {
@@ -388,6 +284,7 @@
       });
       fetchPosts();
     };
+
     window.deletePost = async (id) => {
       if (confirm('Delete this post?')) {
         await fetch(`/api/posts/${id}`, { method: 'DELETE', credentials: 'include' });
@@ -395,7 +292,6 @@
       }
     };
 
-    // Resource actions
     window.togglePinResource = async (id, pinned) => {
       await fetch(`/api/resources/${id}`, {
         method: 'PUT',
@@ -405,6 +301,7 @@
       });
       fetchResources();
     };
+
     window.deleteResource = async (id) => {
       if (confirm('Delete this resource?')) {
         await fetch(`/api/resources/${id}`, { method: 'DELETE', credentials: 'include' });
@@ -412,7 +309,6 @@
       }
     };
 
-    // New post
     document.getElementById('new-post').addEventListener('submit', async e => {
       e.preventDefault();
       const form = e.target;
@@ -425,256 +321,120 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, category: pinned ? `pinned ${category}` : category, body: quill.root.innerHTML, pinned })
       });
-      form.reset();
-      quill.setContents([]);
-      fetchPosts();
+      form.reset(); quill.setContents([]); fetchPosts();
     });
 
-    // Upload resource
-    document.getElementById('upload-form').addEventListener('submit', async e => {
-      e.preventDefault();
+   document.getElementById('upload-form').addEventListener('submit', async e => {
+    e.preventDefault();
 
-      const file = document.getElementById('resource-file').files[0];
-      const urlInput = document.getElementById('resource-url').value.trim();
-      const title = document.getElementById('resource-title').value.trim();
-      const pinned = document.getElementById('resource-pinned').checked;
-      const type = document.getElementById('resource-type').value;
-      const category = document.getElementById('resource-category').value.trim();
+    const file = document.getElementById('resource-file').files[0];
+    const urlInput = document.getElementById('resource-url').value.trim();
+    const title = document.getElementById('resource-title').value.trim();
+    const pinned = document.getElementById('resource-pinned').checked;
+    const type = document.getElementById('resource-type').value;
+    const category = document.getElementById('resource-category').value.trim();
 
-      if (!file && !urlInput) return alert("Please provide a file or a URL.");
-      if (!title || !type) return alert("Title and type are required.");
 
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('pinned', pinned);
-      formData.append('type', type);
-      formData.append('category', category);
+    if (!file && !urlInput) return alert("Please provide a file or a URL.");
+    if (!title || !type) return alert("Title and type are required.");
 
-      if (file) {
-        formData.append('file', file);
-        if (file.type === "application/pdf") {
-          const pdfThumb = await generatePdfThumbnail(file);
-          if (pdfThumb) formData.append('thumbnail', pdfThumb);
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('pinned', pinned);
+    formData.append('type', type);
+    formData.append('category', category);
+
+    if (file) {
+      formData.append('file', file);
+
+      if (file.type === "application/pdf") {
+        // Generate thumbnail from PDF
+        const pdfThumb = await generatePdfThumbnail(file);
+        if (pdfThumb) {
+          formData.append('thumbnail', pdfThumb);
         }
-      } else {
-        formData.append('url', urlInput);
-        // Attempt a Microlink screenshot thumbnail
-        const thumbnailUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
-        try {
-          const response = await fetch(thumbnailUrl);
-          const data = await response.json();
-          const imgUrl = data?.data?.screenshot?.url;
-          if (imgUrl) {
-            const imageBlob = await fetch(imgUrl).then(r => r.blob());
-            const base64 = await blobToBase64(imageBlob);
-            formData.append('thumbnail', base64);
-          }
-        } catch (err) { console.warn("Microlink thumbnail failed:", err); }
       }
 
-      await fetch('/api/resources/upload', { method: 'POST', body: formData });
-      location.reload();
+    } else {
+      formData.append('url', urlInput);
+
+      // Generate thumbnail using Microlink
+      const thumbnailUrl = `https://api.microlink.io/?url=${encodeURIComponent(urlInput)}&screenshot=true&meta=false`;
+      try {
+        const response = await fetch(thumbnailUrl);
+        const data = await response.json();
+        const imgUrl = data?.data?.screenshot?.url;
+        if (imgUrl) {
+          const imageBlob = await fetch(imgUrl).then(r => r.blob());
+          const base64 = await blobToBase64(imageBlob);
+          formData.append('thumbnail', base64);
+        }
+      } catch (err) {
+        console.warn("Microlink thumbnail failed:", err);
+      }
+    }
+
+    // Submit the form
+    await fetch('/api/resources/upload', {
+      method: 'POST',
+      body: formData
     });
 
-    async function generatePdfThumbnail(file) {
-      try {
-        const pdfData = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 1 });
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
-        canvas.width = viewport.width; canvas.height = viewport.height;
-        await page.render({ canvasContext: context, viewport }).promise;
-        return canvas.toDataURL("image/png");
-      } catch (err) { console.error("PDF thumbnail generation failed:", err); return null; }
+    location.reload();
+  });
+
+  async function generatePdfThumbnail(file) {
+    try {
+      const pdfData = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 1 });
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: context, viewport }).promise;
+      return canvas.toDataURL("image/png");
+    } catch (err) {
+      console.error("PDF thumbnail generation failed:", err);
+      return null;
     }
-    function blobToBase64(blob) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
 
     document.getElementById('search-posts').addEventListener('input', renderPosts);
     document.getElementById('search-resources').addEventListener('input', renderResources);
+
     document.querySelectorAll('#posts-table th.sortable').forEach(th =>
       th.addEventListener('click', () => {
         const key = th.dataset.key;
         postSort.asc = key === postSort.key ? !postSort.asc : true;
         postSort.key = key;
         renderPosts();
-      })
-    );
+      }));
+
     document.querySelectorAll('#resources-table th.sortable').forEach(th =>
       th.addEventListener('click', () => {
         const key = th.dataset.key;
         resourceSort.asc = key === resourceSort.key ? !resourceSort.asc : true;
         resourceSort.key = key;
         renderResources();
-      })
-    );
+      }));
 
-    /* ========== User Management ========== */
-    const umRows = document.getElementById('um-rows');
-    const umForm = document.getElementById('um-create-form');
-    const umMsg  = document.getElementById('um-create-msg');
-    const umSearch = document.getElementById('um-search');
-    const umSortHeaders = document.querySelectorAll('.um-sort');
-
-    let umSortKey = 'created_at';
-    let umSortAsc = false;
-
-    function umSortIcon(th, active, asc) {
-      const i = th.querySelector('i');
-      if (!i) return;
-      if (!active) { i.className = 'fa-solid fa-sort'; return; }
-      i.className = asc ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
-    }
-
-    async function umLoadUsers(){
-      const q = umSearch.value.trim();
-      const params = new URLSearchParams({ q, sort: umSortKey, dir: umSortAsc ? 'asc' : 'desc' });
-      try{
-        const r = await fetch('/api/users?' + params.toString(), { credentials:'include' });
-        if(!r.ok){ umRows.innerHTML = '<tr><td colspan="6">Failed to load users.</td></tr>'; return; }
-        let data = await r.json();
-        if (!Array.isArray(data)) data = [];
-        // Only show the 10 most recent (expect backend sort to match; otherwise this slice still caps list)
-        data = data.slice(0, 10);
-
-        if(!data.length){ umRows.innerHTML = '<tr><td colspan="6">No users.</td></tr>'; return; }
-
-        umRows.innerHTML = data.map(u => {
-          const multiIp = Number(u.distinct_ips_24h || 0);
-          const alert = (multiIp >= 3)
-            ? `<span class="chip" title="Signed in from ${multiIp} IPs in last 24h" style="background:#fff3cd;color:#8a6d3b"><i class="fa-solid fa-triangle-exclamation"></i> multi-IP</span>`
-            : '';
-          return `
-            <tr data-id="${u.id}">
-              <td>${esc(u.email)}</td>
-              <td><span class="chip">${esc(u.role)}</span></td>
-              <td>${esc(nzDateTime(u.last_sign_in))}</td>
-              <td>${esc(nzDateTime(u.created_at))}</td>
-              <td>
-                <div>${esc(u.last_sign_ip || '')}</div>
-                ${alert}
-              </td>
-              <td style="display:flex; gap:.35rem; flex-wrap:wrap;">
-                <button class="pinresource-btn" data-reset="${u.id}">
-                  <i class="fa-solid fa-key"></i> Reset Password
-                </button>
-                <button class="deleteresource-btn" data-logout="${u.id}">
-                  <i class="fa-solid fa-right-from-bracket"></i> Force sign-out
-                </button>
-                <button class="deleteresource-btn" data-del="${u.id}">
-                  <i class="fa-solid fa-user-xmark"></i> Delete
-                </button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      } catch (e) {
-        umRows.innerHTML = '<tr><td colspan="6">Error loading users.</td></tr>';
-      }
-      umSortHeaders.forEach(th => { umSortIcon(th, th.dataset.sort === umSortKey, umSortAsc); });
-    }
-
-    // Create user
-    umForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      umMsg.textContent = '';
-      const email = (document.getElementById('um-email').value || '').trim();
-      const password = document.getElementById('um-password').value;
-      const role = document.getElementById('um-role').value || 'user';
-      if (!email || !password) { umMsg.textContent = 'Email and password required.'; return; }
-      try {
-        const r = await fetch('/api/users', {
-          method: 'POST', credentials:'include',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ email, password, role })
-        });
-        if (r.ok) {
-          umMsg.textContent = 'User created.';
-          e.target.reset();
-          umLoadUsers();
-        } else {
-          const data = await r.json().catch(()=>({}));
-          umMsg.textContent = 'Create failed: ' + (data?.error || r.status);
-        }
-      } catch {
-        umMsg.textContent = 'Network error creating user.';
-      }
-    });
-
-    // Table interactions: reset password / force logout / delete
-    umRows.addEventListener('click', async (e)=>{
-      const logoutBtn = e.target.closest('button[data-logout]');
-      const delBtn    = e.target.closest('button[data-del]');
-      const resetBtn  = e.target.closest('button[data-reset]');
-
-      if (logoutBtn) {
-        const id = logoutBtn.dataset.logout;
-        if (!confirm('Force sign-out this user from all devices?')) return;
-        try {
-          const r = await fetch('/api/users/' + id + '/logout', { method:'POST', credentials:'include' });
-          if (r.ok) alert('User sessions revoked. They will be signed out on next request.');
-          else alert('Failed to revoke sessions.');
-        } catch { alert('Network error.'); }
-        return;
-      }
-
-      if (resetBtn) {
-        const id = resetBtn.dataset.reset;
-        const row = resetBtn.closest('tr');
-        const email = row?.children?.[0]?.textContent?.trim() || '';
-        const p1 = prompt(`Set new password for ${email}:`);
-        if (!p1) return;
-        const p2 = prompt('Confirm new password:');
-        if (p1 !== p2) { alert('Passwords do not match.'); return; }
-        if (p1.length < 6) { alert('Password must be at least 6 characters.'); return; }
-        try{
-          const r = await fetch('/api/users/' + id, {
-            method:'PUT',
-            headers: { 'Content-Type':'application/json' },
-            credentials:'include',
-            body: JSON.stringify({ password: p1 })
-          });
-          if (r.ok) alert('Password updated.');
-          else { const data = await r.json().catch(()=>({})); alert('Reset failed: ' + (data?.error || r.status)); }
-        }catch{ alert('Network error while resetting password.'); }
-        return;
-      }
-
-      if (delBtn) {
-        const id = delBtn.dataset.del;
-        if(!confirm('Delete this user? This cannot be undone.')) return;
-        try{
-          const r = await fetch('/api/users/'+id, { method:'DELETE', credentials:'include' });
-          if(r.status === 204){ umLoadUsers(); return; }
-          const t = await r.text();
-          alert('Delete failed: ' + t);
-        }catch{ alert('Delete error'); }
-        return;
-      }
-    });
-
-    // Sorting, searching
-    document.getElementById('um-search').addEventListener('input', () => umLoadUsers());
-    document.querySelectorAll('.um-sort').forEach(th => th.addEventListener('click', () => {
-      const key = th.dataset.sort;
-      if (key === umSortKey) umSortAsc = !umSortAsc; else { umSortKey = key; umSortAsc = true; }
-      umLoadUsers();
-    }));
-
-    /* ========== Init loads ========== */
     document.addEventListener('DOMContentLoaded', () => {
       fetchPosts();
       fetchResources();
-      umLoadUsers();
     });
+
+    
   </script>
 </body>
 </html>

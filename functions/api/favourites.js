@@ -1,4 +1,4 @@
-// functions/api/users/[id].js
+// functions/api/favourites.js
 
 function base64urlToUint8Array(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -38,49 +38,35 @@ async function verifyJWT(token, secret) {
 }
 
 
-async function pbkdf2Hash(password, salt, iterations=100000) {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey('raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveBits']);
-  const params = { name:'PBKDF2', salt: enc.encode(salt), iterations: Math.min(iterations, 100000), hash:'SHA-256' };
-  const bits = await crypto.subtle.deriveBits(params, key, 256);
-  return Array.from(new Uint8Array(bits)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-function randomSalt(len=16){
-  const a = new Uint8Array(len); crypto.getRandomValues(a);
-  return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-
-export async function onRequest({ request, env, params }) {
+export async function onRequest({ request, env }) {
   const db = env.POSTS_DB;
   const cookie = request.headers.get('Cookie') || '';
   const m = cookie.match(/(?:^|;\s*)token=([^;]+)/);
   const token = m && m[1];
   const me = token && await verifyJWT(token, env.JWT_SECRET);
-  if (!me || me.role !== 'admin') return new Response('Forbidden', { status:403 });
+  if (!me) return new Response('Unauthorized', { status:401 });
 
-  const id = params.id;
+  const url = new URL(request.url);
   const method = request.method;
 
-  if (method === 'PUT') {
-    const body = await request.json();
-    if (body.password) {
-      const salt = randomSalt(16);
-      const hash = await pbkdf2Hash(body.password, salt, 100000);
-      await db.prepare(`UPDATE users SET password_hash=?, password_salt=? WHERE id=?`).bind(hash, salt, id).run();
-    }
-    if (body.role) {
-      const role = body.role === 'admin' ? 'admin' : 'user';
-      await db.prepare(`UPDATE users SET role=? WHERE id=?`).bind(role, id).run();
-    }
-    if (body.first_name !== undefined || body.last_name !== undefined) {
-      await db.prepare(`UPDATE users SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name) WHERE id=?`).bind(body.first_name, body.last_name, id).run();
-    }
-    return new Response(null, { status:204 });
+  if (method === 'GET') {
+    const t = (url.searchParams.get('type') || '').toLowerCase();
+    if (!['post','resource'].includes(t)) return new Response('Bad Request', { status:400 });
+    const rows = await db.prepare(`SELECT entity_id FROM favourites WHERE user_id=? AND entity_type=?`).bind(me.sub, t).all();
+    return new Response(JSON.stringify(rows.results.map(r=>r.entity_id)), { headers:{'Content-Type':'application/json'} });
   }
 
-  if (method === 'DELETE') {
-    await db.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
+  if (method === 'POST') {
+    const b = await request.json();
+    const t = (b.entity_type || '').toLowerCase();
+    const id = Number(b.entity_id);
+    const on = !!b.on;
+    if (!['post','resource'].includes(t) || !id) return new Response('Bad Request', { status:400 });
+    if (on) {
+      await db.prepare(`INSERT OR IGNORE INTO favourites (user_id, entity_type, entity_id) VALUES (?,?,?)`).bind(me.sub, t, id).run();
+    } else {
+      await db.prepare(`DELETE FROM favourites WHERE user_id=? AND entity_type=? AND entity_id=?`).bind(me.sub, t, id).run();
+    }
     return new Response(null, { status:204 });
   }
 
