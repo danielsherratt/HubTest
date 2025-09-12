@@ -1,5 +1,5 @@
 // functions/api/users/[id]/logout.js
-import { verifyJWT } from '../../lib/auth.js';
+import { verifyJWT } from '../../../lib/auth.js';
 
 export async function onRequest({ request, env, params }) {
   if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
