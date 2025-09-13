@@ -57,7 +57,7 @@ body{
 /* ---------- Banner ---------- */
 .banner{
   height:180px;
-  background:url('assets/banner.jpg') center/cover no-repeat;
+  background-image: ('assets/banner.jpg') center/cover no-repeat;
   margin:0; /* remove any gap below nav */
 }
 
