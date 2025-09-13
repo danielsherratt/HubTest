@@ -12,12 +12,17 @@
   --shadow:0 10px 25px rgba(0,0,0,.08);
 }
 
-*{ box-sizing:border-box }
-html,body{ height:100% }
-html{
-  /* Keep layout centered even when scrollbars appear */
-  scrollbar-gutter: stable both-edges;
+html {
+    overflow-y: scroll;
 }
+
+* {
+    box-sizing: border-box;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
 
 /* Subtle, slim scrollbar (WebKit) */
 *::-webkit-scrollbar{ width:10px; height:10px }
@@ -123,7 +128,7 @@ button:hover,.btn:hover{ background:var(--brand-700); }
 /* Feed card (long/original style) */
 .feed-card{
   position:relative;
-  width:100%; max-width:900px; text-align:left; height:auto;
+  width:400px; text-align:left; height:auto;
   padding:16px 18px 12px; border:1px solid #e5e9ec; border-radius:10px; background:#fff; box-shadow:var(--shadow);
 }
 
