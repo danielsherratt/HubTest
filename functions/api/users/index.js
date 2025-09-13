@@ -1,29 +1,87 @@
-// functions/api/users/index.js
-// Cloudflare Pages Functions / Workers style
+// Cloudflare Pages Functions / Workers — Users API
+// Supports:
+//   GET    /api/users[?with_signin_stats=1]
+//   POST   /api/users
+//   DELETE /api/users/:id[?hard=1]
 
-const COOKIE_NAME = 'session'; // change if your auth cookie is named differently
+const COOKIE_NAME = 'session'; // change if your auth cookie name differs
 
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
-  const pathname = url.pathname;
+  const { pathname, searchParams } = url;
   const method = request.method;
 
   try {
-    // ----- GET /api/users -----
+    // ---------- GET /api/users ----------
     if (method === 'GET' && pathname === '/api/users') {
       await requireAdmin(request, env);
 
+      const wantStats = searchParams.get('with_signin_stats') === '1';
+      const limit = Math.max(1, Math.min(Number(searchParams.get('limit') || 100), 1000));
+
+      if (!wantStats) {
+        const rows = await env.DB.prepare(`
+          SELECT id, email, role, first_name, last_name, last_sign_in, last_ip, created_at
+          FROM users
+          ORDER BY COALESCE(last_sign_in, created_at) DESC
+          LIMIT ?
+        `).bind(limit).all();
+        return json(rows.results || []);
+      }
+
+      // with_signin_stats=1 → try to include aggregated info from user_signins
+      // If the table doesn't exist, we will gracefully fall back.
+      const hasSignins = await tableExists(env.DB, 'user_signins');
+
+      if (!hasSignins) {
+        const rows = await env.DB.prepare(`
+          SELECT id, email, role, first_name, last_name, last_sign_in, last_ip, created_at
+          FROM users
+          ORDER BY COALESCE(last_sign_in, created_at) DESC
+          LIMIT ?
+        `).bind(limit).all();
+
+        const out = (rows.results || []).map(r => ({
+          ...r,
+          signin_count: 0,
+          unique_ips: 0,
+          ips_7d: 0,
+          signins_7d: 0
+        }));
+        return json(out);
+      }
+
+      // Aggregate stats (SQLite/D1)
+      // - total signins
+      // - unique IPs overall
+      // - signins in last 7 days
+      // - unique IPs in last 7 days
       const rows = await env.DB.prepare(`
-        SELECT id, email, role, first_name, last_name, last_sign_in, last_ip, created_at
-        FROM users
-        ORDER BY COALESCE(last_sign_in, created_at) DESC
-      `).all();
+        SELECT
+          u.id,
+          u.email,
+          u.role,
+          u.first_name,
+          u.last_name,
+          u.last_sign_in,
+          u.last_ip,
+          u.created_at,
+          COUNT(s.id) AS signin_count,
+          COUNT(DISTINCT s.ip) AS unique_ips,
+          SUM(CASE WHEN s.at >= datetime('now','-7 days') THEN 1 ELSE 0 END) AS signins_7d,
+          COUNT(DISTINCT CASE WHEN s.at >= datetime('now','-7 days') THEN s.ip END) AS ips_7d
+        FROM users u
+        LEFT JOIN user_signins s ON s.user_id = u.id
+        GROUP BY u.id
+        ORDER BY COALESCE(u.last_sign_in, u.created_at) DESC
+        LIMIT ?
+      `).bind(limit).all();
 
       return json(rows.results || []);
     }
 
-    // ----- POST /api/users -----
+    // ---------- POST /api/users ----------
     if (method === 'POST' && pathname === '/api/users') {
       await requireAdmin(request, env);
 
@@ -51,7 +109,7 @@ export async function onRequest(context) {
       return json({ ok:true, id: res.lastRowId, first_name, last_name, email, role });
     }
 
-    // ----- DELETE /api/users/:id -----
+    // ---------- DELETE /api/users/:id ----------
     const delMatch = pathname.match(/^\/api\/users\/(\d+)$/);
     if (method === 'DELETE' && delMatch) {
       await requireAdmin(request, env);
@@ -61,45 +119,56 @@ export async function onRequest(context) {
 
       const hard = url.searchParams.get('hard') === '1';
 
-      // Ensure FK enforcement is on (D1/SQLite)
+      // Make sure FK enforcement is on (D1/SQLite)
       await env.DB.prepare('PRAGMA foreign_keys = ON').run();
 
-      // SOFT DELETE (default): disable account + revoke sessions
       if (!hard) {
+        // SOFT delete: revoke sessions + mark user disabled (and deleted_at if column exists)
         try {
-          await env.DB.batch([
-            env.DB.prepare('BEGIN'),
-            // Revoke all sessions for this user (adjust table name if needed)
-            env.DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(id),
-            // Mark user disabled; add deleted_at if you have that column
-            // If you don't have these columns yet, you can change this to a hard delete
-            env.DB.prepare(`
-              UPDATE users
-              SET disabled = 1,
-                  deleted_at = COALESCE(deleted_at, ?)
-              WHERE id = ?
-            `).bind(new Date().toISOString(), id),
-            env.DB.prepare('COMMIT'),
-          ]);
+          const hasDisabled = await columnExists(env.DB, 'users', 'disabled');
+          const hasDeletedAt = await columnExists(env.DB, 'users', 'deleted_at');
+
+          const updates = [];
+          updates.push(env.DB.prepare('BEGIN'));
+          updates.push(env.DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(id));
+
+          if (hasDisabled || hasDeletedAt) {
+            const parts = [];
+            const binds = [];
+            if (hasDisabled) { parts.push('disabled = 1'); }
+            if (hasDeletedAt) { parts.push('deleted_at = COALESCE(deleted_at, ?)'); binds.push(new Date().toISOString()); }
+            const sql = `UPDATE users SET ${parts.join(', ')} WHERE id = ?`;
+            binds.push(id);
+            updates.push(env.DB.prepare(sql).bind(...binds));
+          }
+
+          updates.push(env.DB.prepare('COMMIT'));
+          await env.DB.batch(updates);
         } catch (e) {
           try { await env.DB.prepare('ROLLBACK').run(); } catch {}
           return json({ ok:false, error: e.message || 'Delete failed' }, 500);
         }
-
         return json({ ok:true, id, soft:true });
       }
 
-      // HARD DELETE (optional via ?hard=1): remove dependents first, then the user.
+      // HARD delete: remove dependents first, then the user
       try {
-        await env.DB.batch([
-          env.DB.prepare('BEGIN'),
-          // Adjust these table/column names to match your schema.
-          env.DB.prepare('DELETE FROM comments      WHERE user_id = ?').bind(id),
-          env.DB.prepare('DELETE FROM user_signins  WHERE user_id = ?').bind(id),
-          env.DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(id),
-          env.DB.prepare('DELETE FROM users         WHERE id = ?').bind(id),
-          env.DB.prepare('COMMIT'),
-        ]);
+        const ops = [env.DB.prepare('BEGIN')];
+
+        // conditionally delete from tables if they exist, to avoid "no such table" 500s
+        if (await tableExists(env.DB, 'comments')) {
+          ops.push(env.DB.prepare('DELETE FROM comments WHERE user_id = ?').bind(id));
+        }
+        if (await tableExists(env.DB, 'user_signins')) {
+          ops.push(env.DB.prepare('DELETE FROM user_signins WHERE user_id = ?').bind(id));
+        }
+        if (await tableExists(env.DB, 'user_sessions')) {
+          ops.push(env.DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(id));
+        }
+
+        ops.push(env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id));
+        ops.push(env.DB.prepare('COMMIT'));
+        await env.DB.batch(ops);
       } catch (e) {
         try { await env.DB.prepare('ROLLBACK').run(); } catch {}
         return json({ ok:false, error: e.message || 'Delete failed' }, 500);
@@ -127,6 +196,19 @@ async function safeJson(request) {
   try { return await request.json(); } catch { return {}; }
 }
 
+async function tableExists(DB, name) {
+  const row = await DB.prepare(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name = ?"
+  ).bind(name).first();
+  return !!row;
+}
+
+async function columnExists(DB, table, column) {
+  const res = await DB.prepare(`PRAGMA table_info(${table})`).all();
+  const cols = (res.results || []).map(r => (r.name || r.cid_name || r.column || '').toString().toLowerCase());
+  return cols.includes(column.toLowerCase());
+}
+
 // --- Minimal admin check using a JWT in cookie "session" (HS256) ---
 async function requireAdmin(request, env) {
   const rawCookie = request.headers.get('Cookie') || '';
@@ -136,10 +218,8 @@ async function requireAdmin(request, env) {
   const payload = await verifyJWT(token, env.JWT_SECRET);
   if (!payload) throw new Error('Unauthorized');
 
-  // If the token already carries the role:
   if (payload.role === 'admin') return payload;
 
-  // Otherwise look up user by id from payload
   const uid = Number(payload.sub || payload.user_id || payload.id);
   if (!Number.isFinite(uid)) throw new Error('Unauthorized');
   const row = await env.DB.prepare('SELECT id, role FROM users WHERE id = ?').bind(uid).first();
