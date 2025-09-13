@@ -33,9 +33,9 @@
       <div class="nav-left"></div>
       <div class="nav-center">
         <div class="nav-links">
-          <a class="nav-item" href="feed.html">Feed</a>
-          <a class="nav-item" href="resources.html">Resources</a>
-          <a class="nav-item" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">Calendar</a>
+          <a class="nav-item" href="feed.html"><i class="fa-solid fa-list-ul"></i> Feed</a>
+          <a class="nav-item" href="resources.html"><i class="fa-solid fa-file"></i> Resources</a>
+          <a class="nav-item" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener"><i class="fa-solid fa-calendar"></i> Calendar</a>
         </div>
       </div>
       <div class="nav-right"></div>
@@ -56,34 +56,35 @@
     <section class="upload-section" style="margin:1.5rem 0 2rem;">
       <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
       <form id="upload-form" enctype="multipart/form-data">
-        <input type="file" id="resource-file"/>
-        <input type="url" id="resource-url" placeholder="Or paste a link instead"><br>
-
-        <select id="resource-type" required>
-          <option value="">Select resource type</option>
-          <option value="file">File</option>
-          <option value="website">Website</option>
-          <option value="video">Video</option>
-        </select><br>
-
-        <select id="resource-category" required>
-          <option value="" disabled selected>Select category</option>
-          <option value="general">General</option>
-          <option value="resources">Resources</option>
-          <option value="onlineresources">Online Resources</option>
-          <option value="faq">FAQ</option>
-        </select><br>
-
-        <input type="text" id="resource-title" placeholder="Resource title" required/><br>
-
-        <label class="star-checkbox">
-          <input type="checkbox" id="resource-pinned"/>
-          <i class="fa-regular fa-star unchecked"></i>
-          <i class="fa-solid fa-star checked"></i>
-          Pin this resource
-        </label><br>
-
-        <button type="submit" id="new-upload-button" class="btn"><i class="fa-solid fa-plus"></i> Add Resource</button>
+        <div class="um-grid" style="grid-template-columns: 1.6fr 1.6fr 1fr;">
+          <input type="file" id="resource-file"/>
+          <input type="url" id="resource-url" placeholder="Or paste a link instead">
+          <select id="resource-type" required>
+            <option value="">Select resource type</option>
+            <option value="file">File</option>
+            <option value="website">Website</option>
+            <option value="video">Video</option>
+          </select>
+        </div>
+        <div class="um-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+          <select id="resource-category" required>
+            <option value="" disabled selected>Select category</option>
+            <option value="general">General</option>
+            <option value="resources">Resources</option>
+            <option value="onlineresources">Online Resources</option>
+            <option value="faq">FAQ</option>
+          </select>
+          <input type="text" id="resource-title" placeholder="Resource title" required/>
+          <label class="star-checkbox">
+            <input type="checkbox" id="resource-pinned"/>
+            <i class="fa-regular fa-star unchecked"></i>
+            <i class="fa-solid fa-star checked"></i>
+            Pin this resource
+          </label>
+        </div>
+        <div style="margin-top:.75rem;">
+          <button type="submit" id="new-upload-button" class="btn"><i class="fa-solid fa-plus"></i> Add Resource</button>
+        </div>
       </form>
     </section>
 
@@ -111,20 +112,22 @@
     <section class="upload-section" style="margin:1.5rem 0 2rem;">
       <h2 class="title"><i class="fa-solid fa-plus"></i> Add to Feed</h2>
       <form id="new-post">
-        <input name="title" id="new-post-input" class="search-bar" placeholder="Title" required/>
-        <select name="category" id="new-post-select" class="search-bar" required style="max-width:280px;">
-          <option value="" disabled selected>Select category</option>
-          <option value="general">General</option>
-          <option value="resources">Resources</option>
-          <option value="onlineresources">Online Resources</option>
-          <option value="faq">FAQ</option>
-        </select>
-        <label class="star-checkbox">
-          <input type="checkbox" name="pinned"/>
-          <i class="fa-regular fa-star unchecked"></i>
-          <i class="fa-solid fa-star checked"></i>
-          Pin this post
-        </label>
+        <div class="um-grid" style="grid-template-columns: 2fr 1fr auto;">
+          <input name="title" id="new-post-input" class="search-bar" placeholder="Title" required/>
+          <select name="category" id="new-post-select" class="search-bar" required>
+            <option value="" disabled selected>Select category</option>
+            <option value="general">General</option>
+            <option value="resources">Resources</option>
+            <option value="onlineresources">Online Resources</option>
+            <option value="faq">FAQ</option>
+          </select>
+          <label class="star-checkbox">
+            <input type="checkbox" name="pinned"/>
+            <i class="fa-regular fa-star unchecked"></i>
+            <i class="fa-solid fa-star checked"></i>
+            Pin
+          </label>
+        </div>
         <div id="editor" style="background:#fff;border:1px solid var(--border);border-radius:10px; margin:.5rem 0;"></div>
         <button type="submit" id="new-post-button" class="btn">Create Post</button>
       </form>
@@ -158,7 +161,7 @@
 
       <section class="upload-section" style="margin-bottom:1rem;">
         <form id="um-create-form" autocomplete="off">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1.4fr 1fr 1fr auto;gap:.5rem;align-items:end;">
+          <div class="um-grid">
             <div>
               <label for="um-first">First name</label>
               <input id="um-first" class="search-bar" type="text" placeholder="Jane" required/>
@@ -258,7 +261,7 @@
       for(const r of list){
         const tr=document.createElement('tr');
         tr.innerHTML=`
-          <td><a href="${r.url}" target="_blank" rel="noopener" class="link-nochange">${esc(r.title)}</a></td>
+          <td><a href="${r.url}" target="_blank" rel="noopener" class="link-green">${esc(r.title)}</a></td>
           <td>${esc(new Date(r.created_date).toLocaleDateString('en-NZ'))}</td>
           <td>${esc(r.category||'')}</td>
           <td>
@@ -354,7 +357,10 @@
       if(logoutBtn){
         const id=logoutBtn.dataset.logout;
         if(!confirm('Force sign-out this user from all devices?')) return;
-        try{ const r=await fetch('/api/users/'+id+'/logout',{method:'POST',credentials:'include'}); alert(r.ok?'User sessions revoked.':'Failed to revoke sessions.'); }catch{ alert('Network error.'); }
+        try{
+          let r=await fetch('/api/users/'+id+'/logout',{method:'POST',credentials:'include'});
+          alert(r.ok?'User sessions revoked.':'Failed to revoke sessions.');
+        }catch{ alert('Network error.'); }
         return;
       }
       if(resetBtn){
@@ -363,15 +369,22 @@
         const p1=prompt(`Set new password for ${who}:`); if(!p1) return;
         const p2=prompt('Confirm new password:'); if(p1!==p2){ alert('Passwords do not match.'); return; }
         if(p1.length<6){ alert('Password must be at least 6 characters.'); return; }
-        try{ const r=await fetch('/api/users/'+id,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})}); alert(r.ok?'Password updated.':'Reset failed.'); }catch{ alert('Network error.'); }
+        try{
+          const r=await fetch('/api/users/'+id,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})});
+          alert(r.ok?'Password updated.':'Reset failed.');
+        }catch{ alert('Network error.'); }
         return;
       }
       if(delBtn){
         const id=delBtn.dataset.del;
         if(!confirm('Delete this user? This cannot be undone.')) return;
         try{
-          const r=await fetch('/api/users/'+id,{method:'DELETE',credentials:'include'});
-          if(r.status===204){ umLoadUsers(); return; }
+          // Try DELETE first
+          let r=await fetch('/api/users/'+id,{method:'DELETE',credentials:'include'});
+          if(r.status===204 || r.ok){ umLoadUsers(); return; }
+          // Fallback route if your backend expects a POST
+          r=await fetch('/api/users/'+id+'/delete',{method:'POST',credentials:'include'});
+          if(r.ok){ umLoadUsers(); return; }
           const t=await r.text(); alert('Delete failed: '+t);
         }catch{ alert('Delete error'); }
         return;

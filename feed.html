@@ -31,9 +31,9 @@
       <div class="nav-left"></div>
       <div class="nav-center">
         <div class="nav-links">
-          <a class="nav-item" href="feed.html">Feed</a>
-          <a class="nav-item" href="resources.html">Resources</a>
-          <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener">Calendar</a>
+          <a class="nav-item" href="feed.html"><i class="fa-solid fa-list-ul"></i> Feed</a>
+          <a class="nav-item" href="resources.html"><i class="fa-solid fa-file"></i> Resources</a>
+          <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener"><i class="fa-solid fa-calendar"></i> Calendar</a>
         </div>
       </div>
       <div class="nav-right"></div>
@@ -62,9 +62,6 @@
     <div id="noResults">Mmm no post found <i class="fa-solid fa-face-sad-tear"></i> Please change your search or try a different category</div>
     <div class="card-container"></div>
 
-    <a href="mailto:ITSupport@kotakureo.school.nz" id="contact" class="link-nochange">
-      <i class="fa fa-envelope"></i> Contact
-    </a>
     <button id="backToTop" class="btn"><i class="fa-solid fa-angle-up"></i> Back to Top</button>
   </main>
 
@@ -100,7 +97,7 @@
 
           <div class="comments" data-post-id="${id}">
             <div class="c-header">
-              <span class="c-count" data-count>Comments</span>
+              <span class="c-count" data-count>Comments (…)</span>
               <button class="c-toggle btn-ghost" type="button" data-toggle>Show comments</button>
             </div>
             <div class="c-list hidden" data-list></div>
@@ -112,7 +109,7 @@
         `;
         container.appendChild(div);
 
-        // lazy count
+        // Ensure count shows on initial load
         updateCommentCountLazy(id, div.querySelector('[data-count]'), div.querySelector('[data-toggle]'));
       });
 
@@ -129,15 +126,27 @@
       // comments
       $('.c-toggle').off('click').on('click', async function(){
         const root=$(this).closest('.comments'); const list=root.find('[data-list]'); const pid=Number(root.data('post-id'));
-        if(list.hasClass('hidden')){ await loadComments(pid, list[0], root[0]); list.removeClass('hidden'); this.textContent='Hide comments'; }
-        else { list.addClass('hidden'); this.textContent='Show comments'; }
+        if(list.hasClass('hidden')){ await loadComments(pid, list[0], root[0]); list.removeClass('hidden'); }
+        else { list.addClass('hidden'); }
+        // Always refresh toggle label with count
+        const c=await apiCountComments(pid);
+        this.textContent=(list.hasClass('hidden')?'Show comments':'Hide comments') + (typeof c==='number' ? ` (${c})` : '');
+        setCommentsCount(root[0], c);
       });
+
       $('.c-send').off('click').on('click', async function(){
         const root=$(this).closest('.comments'); const pid=Number(root.data('post-id'));
         const textarea=root.find('textarea'); const body=(textarea.val()||'').trim(); if(!body) return;
         const ok=await apiCreateComment(pid, body);
-        if(ok){ textarea.val(''); const list=root.find('[data-list]')[0]; await loadComments(pid, list, root[0]); root.find('[data-list]').removeClass('hidden'); root.find('[data-toggle]')[0].textContent='Hide comments'; }
-        else alert('Failed to post comment.');
+        if(ok){
+          textarea.val('');
+          const list=root.find('[data-list]')[0];
+          await loadComments(pid, list, root[0]);
+          root.find('[data-list]').removeClass('hidden');
+          const c=await apiCountComments(pid);
+          root.find('[data-toggle]')[0].textContent='Hide comments' + (typeof c==='number'?` (${c})`:'');
+          setCommentsCount(root[0], c);
+        } else alert('Failed to post comment.');
       });
     }
 
@@ -158,30 +167,25 @@
       const r=await fetch(`/api/comments/${id}`,{method:'DELETE',credentials:'include'}); return r.ok;
     }
     async function apiCountComments(postId){
-      let r=await fetch(`/api/comments/count?post_id=${postId}`,{credentials:'include'}); if(r.ok){ const j=await r.json().catch(()=>null); if(j && typeof j.count==='number') return j.count; }
-      r=await fetch(`/api/posts/${postId}/comments/count`,{credentials:'include'}); if(r.ok){ const j=await r.json().catch(()=>null); if(j && typeof j.count==='number') return j.count; }
+      let r=await fetch(`/api/comments/count?post_id=${postId}`,{credentials:'include'}); if(r.ok){ const j=await r.json().catch(()=>null); if(j&&typeof j.count==='number') return j.count; }
+      r=await fetch(`/api/posts/${postId}/comments/count`,{credentials:'include'}); if(r.ok){ const j=await r.json().catch(()=>null); if(j&&typeof j.count==='number') return j.count; }
       return null;
     }
-    function setCommentsUI(rootEl,count){
+    function setCommentsCount(rootEl, count){
       const n=(typeof count==='number')?count:null;
       const countEl=rootEl.querySelector('[data-count]');
-      const toggleEl=rootEl.querySelector('[data-toggle]');
-      if(countEl) countEl.textContent=n===null?'Comments':`Comments (${n})`;
-      if(toggleEl){
-        const showing=!rootEl.querySelector('[data-list]').classList.contains('hidden');
-        toggleEl.textContent=(showing?'Hide comments':'Show comments')+(n===null?'':` (${n})`);
-      }
+      if(countEl) countEl.textContent = (n===null)?'Comments':`Comments (${n})`;
     }
     async function updateCommentCountLazy(postId,countEl,toggleEl){
       const c=await apiCountComments(postId);
-      if(countEl) countEl.textContent=(c===null)?'Comments':`Comments (${c})`;
-      if(toggleEl) toggleEl.textContent=(c===null)?'Show comments':`Show comments (${c})`;
+      if(countEl) countEl.textContent = (c===null)?'Comments':`Comments (${c})`;
+      if(toggleEl) toggleEl.textContent = (c===null)?'Show comments':`Show comments (${c})`;
     }
     async function loadComments(postId,listEl,rootEl){
       const data=await apiGetComments(postId);
-      if(data===null){ listEl.innerHTML='<div class="comment"><em>Comments unavailable.</em></div>'; setCommentsUI(rootEl,null); return; }
+      if(data===null){ listEl.innerHTML='<div class="comment"><em>Comments unavailable.</em></div>'; setCommentsCount(rootEl,null); return; }
       listEl.innerHTML='';
-      if(!Array.isArray(data)||!data.length){ listEl.innerHTML='<div class="comment"><em>No comments yet.</em></div>'; setCommentsUI(rootEl,0); return; }
+      if(!Array.isArray(data)||!data.length){ listEl.innerHTML='<div class="comment"><em>No comments yet.</em></div>'; setCommentsCount(rootEl,0); return; }
       data.forEach(c=>{
         const name=(c.author&&(c.author.first_name||c.author.last_name))?`${c.author.first_name||''} ${c.author.last_name||''}`.trim():'User';
         const when=c.created_at?new Date(c.created_at).toLocaleString('en-NZ',{timeZone:'Pacific/Auckland'}):'';
@@ -198,7 +202,7 @@
       });
       listEl.querySelectorAll('.c-del').forEach(btn=>{ btn.onclick=async()=>{ if(!confirm('Delete this comment?')) return; const ok=await apiDeleteComment(btn.dataset.id); if(ok) btn.closest('.comment').remove(); else alert('Delete failed.'); };});
       listEl.querySelectorAll('.c-edit').forEach(btn=>{ btn.onclick=async()=>{ const bodyEl=btn.closest('.comment').querySelector('.c-body'); const cur=bodyEl.textContent; const next=prompt('Edit comment:',cur); if(next==null||!next.trim())return; const ok=await apiUpdateComment(btn.dataset.id,next.trim()); if(ok) bodyEl.textContent=next.trim(); else alert('Update failed.'); };});
-      setCommentsUI(rootEl, data.length);
+      setCommentsCount(rootEl, data.length);
     }
 
     function filterCards(){
@@ -220,7 +224,7 @@
         .on('keydown',function(){ clearTimeout($.data(this,'timer')); });
       $('#category-select').on('change', filterCards);
 
-      $(window).on('scroll',()=>{ const sc=$(window).scrollTop()>100; $('#backToTop,#contact').toggle(sc); });
+      $(window).on('scroll',()=>{ const sc=$(window).scrollTop()>100; $('#backToTop').toggle(sc); });
       $('#backToTop').on('click',()=> $('html, body').animate({scrollTop:0}, 'fast'));
     });
   </script>

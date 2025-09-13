@@ -14,6 +14,22 @@
 
 *{ box-sizing:border-box }
 html,body{ height:100% }
+html{
+  /* Keep layout centered even when scrollbars appear */
+  scrollbar-gutter: stable both-edges;
+}
+
+/* Subtle, slim scrollbar (WebKit) */
+*::-webkit-scrollbar{ width:10px; height:10px }
+*::-webkit-scrollbar-track{ background:transparent }
+*::-webkit-scrollbar-thumb{
+  background: rgba(0,98,95,.35);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover{ background: rgba(0,98,95,.55) }
+
 body{
   margin:0;
   font-family:"Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
@@ -66,6 +82,14 @@ main{ max-width:1000px; margin:0 auto; padding:1rem; }
   background:#fff; border-radius:8px;
 }
 
+/* Unify control heights in search bars */
+#search-container .btn,
+#search-container .search-bar{
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+}
+
 /* Buttons */
 button,.btn{
   background:var(--brand); color:#fff; border:0; border-radius:8px;
@@ -98,6 +122,7 @@ button:hover,.btn:hover{ background:var(--brand-700); }
 
 /* Feed card (long/original style) */
 .feed-card{
+  position:relative;
   width:100%; max-width:900px; text-align:left; height:auto;
   padding:16px 18px 12px; border:1px solid #e5e9ec; border-radius:10px; background:#fff; box-shadow:var(--shadow);
 }
@@ -112,13 +137,16 @@ button:hover,.btn:hover{ background:var(--brand-700); }
 .feed-card .fa-solid, .feed-card .fa-regular { color:#0d6f6c; }
 
 /* ---------- Comments ---------- */
-.comments{ border:1px solid #e2e6e9; border-radius:8px; margin-top:12px; background:#fff; }
+.comments{
+  border:1px solid #e2e6e9; border-radius:8px; margin-top:12px; background:#fff;
+}
+.feed-card .comments{ margin-left:-8px; margin-right:-8px; } /* make comments area feel wider */
 .c-header{ display:flex; justify-content:space-between; align-items:center; padding:.5rem .65rem; border-bottom:1px solid #eef2f4; }
 .c-list{ padding:.5rem .65rem; max-height:420px; overflow:auto; }
 .c-list.hidden{ display:none; }
 .c-editor{ border-top:1px solid #eef2f4; padding:.6rem .65rem; display:grid; grid-template-columns:1fr auto; gap:.5rem; }
 .c-editor textarea{
-  width:100%; min-height:60px; resize:vertical;
+  width:100%; min-height:90px; resize:vertical;
   border:1px solid var(--border); border-radius:8px; padding:.5rem .6rem;
   font:inherit; font-size:.95rem;
 }
@@ -142,6 +170,14 @@ th.sortable i,.um-sort i{ margin-left:.35rem; color:#6a7; }
 
 /* Admin blocks */
 .upload-section{ background:#fff; border:1px solid #e8ecee; border-radius:10px; padding:1rem; }
+.upload-section input[type="text"],
+.upload-section input[type="url"],
+.upload-section input[type="file"],
+.upload-section input[type="email"],
+.upload-section input[type="password"],
+.upload-section select{
+  width:100%; border:1px solid var(--border); border-radius:8px; padding:.55rem .65rem; background:#fff;
+}
 .star-checkbox{ display:inline-flex; align-items:center; gap:.4rem; }
 .pin-btn,.pinresource-btn{ background:var(--brand); color:#fff; }
 .delete-btn,.deleteresource-btn{ background:#fff; color:var(--brand); border:1px solid var(--border); }
@@ -156,14 +192,29 @@ th.sortable i,.um-sort i{ margin-left:.35rem; color:#6a7; }
 .calendarbutton:hover{ background:var(--brand-700); }
 
 /* Resources: category tiles & centered Back button */
-#category-container{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin:1em 0; }
+#category-container{ display:flex; flex-wrap:wrap; gap:14px; justify-content:center; margin:1em 0; }
 .category-card{
-  width:200px; height:120px; border-radius:10px; overflow:hidden;
+  width:240px; height:150px; /* larger tiles */
+  border-radius:10px; overflow:hidden;
   box-shadow:var(--shadow); background:#fff; border:1px solid #e5e9ec; cursor:pointer;
   display:flex; align-items:center; justify-content:center;
 }
 .category-card img{ width:100%; height:100%; object-fit:cover; }
 .center-row{ display:flex; justify-content:center; }
+
+/* Resource table links green */
+table a.link-green{ color:var(--brand); text-decoration:none; }
+table a.link-green:hover{ text-decoration:underline; }
+
+/* Quill editor bigger */
+.ql-container.ql-snow{ border-radius:8px; }
+.ql-editor{ min-height:220px; }
+
+/* User management create grid (wider) */
+.um-grid{
+  display:grid; grid-template-columns:1.2fr 1.2fr 1.8fr 1.2fr 1.1fr auto;
+  gap:.5rem; align-items:end;
+}
 
 /* Utilities */
 .link-nochange{ color:inherit; text-decoration:none; }
@@ -173,10 +224,12 @@ th.sortable i,.um-sort i{ margin-left:.35rem; color:#6a7; }
 #contact{ bottom:54px; }
 
 /* Mobile */
+@media (max-width: 900px){
+  .um-grid{ grid-template-columns:1fr 1fr; }
+}
 @media (max-width: 700px){
   .nav-inner{ grid-template-columns: 1fr; }
   .nav-center{ justify-self:center; }
   .nav-right{ justify-self:center; }
   .feed-card{ max-width:100%; }
 }
-    
