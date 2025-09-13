@@ -8,43 +8,15 @@
   <meta name="color-scheme" content="light only" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-  <style>
-    :root { --brand:#00625f; --brand-700:#00514e; --bg:#f6f7f8; --text:#1f2d2e; --muted:#6b7c80; --border:#d0d6d9; --error:#b00020; --ok:#0a7a51; --radius:10px; --shadow:0 10px 25px rgba(0,0,0,.08); }
-    *{ box-sizing:border-box; } html,body{ height:100%; }
-    body{ margin:0; font-family:"Noto Sans",system-ui; color:var(--text); background:var(--bg); display:flex; flex-direction:column; min-height:100vh; }
-    .banner{ width:100%; height:170px; background:url('assets/banner.jpg') center/cover no-repeat; }
-    .wrap{ flex:1; display:grid; place-items:start center; padding:2rem 1rem 3rem; }
-    .card{ width:100%; max-width:380px; background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); padding:1.25rem 1.25rem 1.5rem; animation:floatIn .25s ease-out; }
-    @keyframes floatIn{ from{ transform:translateY(8px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
-    h1{ font-size:1.25rem; margin:0 0 .25rem; color:var(--brand); text-align:center; font-weight:700;}
-    .sub{ text-align:center; color:var(--muted); font-size:.95rem; margin-bottom:1rem; }
-    form > * + *{ margin-top:.9rem; }
-    .field{ display:grid; grid-template-columns:1fr auto; align-items:center; gap:.5rem; border:1px solid var(--border); border-radius:8px; padding:.2rem .5rem .2rem .6rem; background:#fff; }
-    .field input{ border:0; outline:0; padding:.7rem .2rem; font-size:1rem; width:100%; background:transparent; }
-    .icon-btn{ border:0; background:transparent; cursor:pointer; padding:.4rem .5rem; border-radius:6px; }
-    .icon-btn:focus-visible{ outline:2px solid var(--brand); outline-offset:2px; }
-    .btn{ width:100%; border:0; border-radius:8px; padding:.8rem 1rem; font-size:1rem; font-weight:600; cursor:pointer; background:var(--brand); color:#fff; }
-    .btn:hover{ background:var(--brand-700); } .btn[disabled]{ opacity:.6; cursor:not-allowed; }
-    .msg{ text-align:center; min-height:1.25rem; font-size:.95rem; }
-    .msg.error{ color:var(--error);} .msg.ok{ color:var(--ok);}
-    .muted{ color:var(--muted); font-size:.9rem; text-align:center; margin-top:.25rem;}
-    .links{ display:flex; justify-content:space-between; margin-top:.25rem; font-size:.9rem; }
-    .links a{ color:var(--brand); text-decoration:none; font-weight:600; } .links a:hover{ text-decoration:underline; }
-    .req{ font-size:.9rem; margin:.25rem 0 0; padding:0; list-style:none; }
-    .req li{ display:flex; align-items:center; gap:.45rem; color:#666; }
-    .req li.ok{ color:var(--ok); } .req li .icon{ width:1.1rem; text-align:center; }
-    .match{ font-size:.9rem; margin-top:.25rem; color:#666; } .match.ok{ color:var(--ok); } .match.err{ color:var(--error); }
-    footer{ color:var(--muted); text-align:center; font-size:.85rem; padding:1rem 0 1.25rem; }
-  </style>
+  <link rel="stylesheet" href="assets/auth.css">
 </head>
 <body>
   <div class="banner" role="img" aria-label="CESW banner"></div>
 
   <main class="wrap">
     <section class="card" role="region" aria-labelledby="reset-title">
-     <h1><i class="fa-solid fa-people-group"></i> CESW Hub - Reset Password</h1>
-    <br>
-
+      <h1 id="reset-title"><i class="fa-solid fa-people-group"></i> CESW Hub - Reset Password</h1>
+      <p class="sub">Choose a strong password you haven’t used elsewhere.</p>
 
       <form id="reset-form" novalidate>
         <div class="field">
@@ -75,8 +47,6 @@
 
         <button class="btn" id="submitBtn" type="submit" disabled>Set Password</button>
         <div id="msg" class="msg" role="status" aria-live="polite"></div>
-
-
       </form>
     </section>
   </main>
@@ -84,7 +54,7 @@
   <footer>&copy; <span id="year"></span> CESW Hub</footer>
 
   <script>
-    // Run after DOM is ready to avoid "null textContent" errors
+    // (same logic you had, kept intact)
     document.addEventListener('DOMContentLoaded', () => {
       const $ = (id) => document.getElementById(id) || null;
       const safeText = (id, text) => { const el = $(id); if (el) el.textContent = text; };
@@ -96,20 +66,12 @@
       const form = $('reset-form');
       const msg = $('msg');
       const btn = $('submitBtn');
-      const tokenStatus = $('tokenStatus');
       const pwd1 = $('pwd1'), pwd2 = $('pwd2');
       const togglePwd1 = $('togglePwd1'), togglePwd2 = $('togglePwd2');
       const pwdIcon1 = $('pwdIcon1'), pwdIcon2 = $('pwdIcon2');
       const reqLen = $('reqLen'), reqUpper = $('reqUpper'), reqNum = $('reqNum'), matchMsg = $('matchMsg');
 
-      // footer year (guarded)
       safeText('year', new Date().getFullYear());
-
-      // token hint (server still validates)
-      if (tokenStatus) {
-        if (!token) { tokenStatus.textContent = 'Missing or invalid link.'; tokenStatus.style.color = '#b00020'; }
-        else tokenStatus.textContent = 'Link present (expires after 3 hours).';
-      }
       if (btn && !token) btn.disabled = true;
 
       function setMsg(text, ok=false){
@@ -148,16 +110,13 @@
         if (btn) btn.disabled = !(okPolicy && okMatch && !!token);
       }
 
-      // Hook up listeners if nodes exist
       if (togglePwd1 && pwd1 && pwdIcon1) togglePwd1.addEventListener('click', () => toggleField(pwd1, pwdIcon1, togglePwd1));
       if (togglePwd2 && pwd2 && pwdIcon2) togglePwd2.addEventListener('click', () => toggleField(pwd2, pwdIcon2, togglePwd2));
       if (pwd1) pwd1.addEventListener('input', evaluate);
       if (pwd2) pwd2.addEventListener('input', evaluate);
 
-      // Initial evaluation
       evaluate();
 
-      // Submit handler
       if (form) form.addEventListener('submit', async (e) => {
         e.preventDefault();
         setMsg('');
@@ -175,14 +134,12 @@
             body: JSON.stringify({ token, password: newPass })
           });
 
-          // Try to parse JSON safely
           let data = null;
-          try { data = await r.json(); } catch { data = null; }
+          try { data = await r.json(); } catch {}
 
           if (!r.ok) {
             setMsg((data && data.error) || 'Reset failed.');
           } else {
-            // Auto-login using returned email, if provided by the API
             const email = data && data.email;
             if (email) {
               const login = await fetch('/api/auth/login', {
@@ -197,7 +154,6 @@
                 return;
               }
             }
-            // Fallback if auto-login not available
             setMsg('Password updated! Please sign in.', true);
             setTimeout(() => location.href = '/index.html', 1100);
           }
