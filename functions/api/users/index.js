@@ -1,10 +1,10 @@
 // Cloudflare Pages Functions — Users API
 // Routes:
-//   GET    /api/users[?with_signin_stats=1&limit=N&__probe=1]
+//   GET    /api/users[?with_signin_stats=1&limit=N&__probe=1&__diag=1]
 //   POST   /api/users
 //   DELETE /api/users/:id[?hard=1]
 
-const COOKIE_NAMES = ['session', 'JWT_Token', 'jwt', 'token']; // accept common cookie names
+const COOKIE_NAMES = ['session', 'JWT_Token', 'jwt', 'token']; // common cookie names
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -12,22 +12,35 @@ export async function onRequest(context) {
   const { pathname, searchParams } = url;
   const method = request.method;
 
+  // Acquire a D1 binding regardless of how it's named in your project
+  let DB;
   try {
-    // ---- PROBE: verifies this exact file is being executed
+    DB = getDB(env);
+  } catch (e) {
+    // Helpful error instead of throwing an internal TypeError
+    return json({ ok: false, error: e.message }, 500);
+  }
+
+  try {
+    // ---- PROBE: verifies this file is executing
     if (method === 'GET' && pathname === '/api/users' && searchParams.get('__probe') === '1') {
       return json({ ok: true, route: 'functions/api/users/index.js' });
+    }
+    // ---- DIAG: shows which binding name we selected
+    if (method === 'GET' && pathname === '/api/users' && searchParams.get('__diag') === '1') {
+      return json({ ok: true, selectedBinding: DB.__name || '(anonymous)', candidates: listD1Bindings(env) });
     }
 
     // ---------- GET /api/users ----------
     if (method === 'GET' && pathname === '/api/users') {
-      try { await requireAdmin(request, env); }
+      try { await requireAdmin(request, env, DB); }
       catch (e) { return authError(e); }
 
       const wantStats = searchParams.get('with_signin_stats') === '1';
       const limit = Math.max(1, Math.min(Number(searchParams.get('limit') || 100), 1000));
 
-      // Build a SELECT that tolerates missing columns
-      const uc = await usersColumns(env.DB); // what columns exist
+      // Build tolerant SELECT based on existing columns
+      const uc = await usersColumns(DB);
       const selectCols = [
         'id',
         'email',
@@ -43,7 +56,7 @@ export async function onRequest(context) {
         ? `COALESCE(${uc.last_sign_in ? 'last_sign_in' : 'NULL'}, ${uc.created_at ? 'created_at' : 'NULL'}) DESC`
         : 'id DESC';
 
-      const baseRows = await env.DB.prepare(`
+      const baseRows = await DB.prepare(`
         SELECT ${selectCols}
         FROM users
         ORDER BY ${orderExpr}
@@ -53,8 +66,8 @@ export async function onRequest(context) {
       const users = baseRows.results || [];
       if (!wantStats) return json(users);
 
-      // If user_signins table doesn't exist, return zeros for stats (no 500)
-      if (!(await tableExists(env.DB, 'user_signins'))) {
+      // If signins table missing, return zeros but don't crash
+      if (!(await tableExists(DB, 'user_signins'))) {
         return json(users.map(u => ({
           ...u,
           signin_count: 0,
@@ -70,25 +83,11 @@ export async function onRequest(context) {
       for (const u of users) {
         const uid = u.id;
 
-        const total = await env.DB.prepare(
-          'SELECT COUNT(*) AS c FROM user_signins WHERE user_id = ?'
-        ).bind(uid).first();
-
-        const uniqAll = await env.DB.prepare(
-          'SELECT COUNT(DISTINCT ip) AS c FROM user_signins WHERE user_id = ?'
-        ).bind(uid).first();
-
-        const total7 = await env.DB.prepare(
-          "SELECT COUNT(*) AS c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-7 days')"
-        ).bind(uid).first();
-
-        const uniq7 = await env.DB.prepare(
-          "SELECT COUNT(DISTINCT ip) AS c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-7 days')"
-        ).bind(uid).first();
-
-        const uniq24 = await env.DB.prepare(
-          "SELECT COUNT(DISTINCT ip) AS c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-1 day')"
-        ).bind(uid).first();
+        const total   = await DB.prepare('SELECT COUNT(*) AS c FROM user_signins WHERE user_id = ?').bind(uid).first();
+        const uniqAll = await DB.prepare('SELECT COUNT(DISTINCT ip) AS c FROM user_signins WHERE user_id = ?').bind(uid).first();
+        const total7  = await DB.prepare("SELECT COUNT(*) AS c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-7 days')").bind(uid).first();
+        const uniq7   = await DB.prepare("SELECT COUNT(DISTINCT ip) AS c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-7 days')").bind(uid).first();
+        const uniq24  = await DB.prepare("SELECT COUNT(DISTINCT ip) AS c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-1 day')").bind(uid).first();
 
         out.push({
           ...u,
@@ -104,7 +103,7 @@ export async function onRequest(context) {
 
     // ---------- POST /api/users ----------
     if (method === 'POST' && pathname === '/api/users') {
-      try { await requireAdmin(request, env); }
+      try { await requireAdmin(request, env, DB); }
       catch (e) { return authError(e); }
 
       const body = await safeJson(request);
@@ -117,12 +116,12 @@ export async function onRequest(context) {
         return json({ ok:false, error:'Missing required fields' }, 400);
       }
 
-      const exists = await env.DB.prepare('SELECT id FROM users WHERE email = ?')
+      const exists = await DB.prepare('SELECT id FROM users WHERE email = ?')
         .bind(email).first();
       if (exists) return json({ ok:false, error:'Email already exists' }, 400);
 
       const now = new Date().toISOString();
-      const res = await env.DB.prepare(`
+      const res = await DB.prepare(`
         INSERT INTO users (first_name, last_name, email, role, created_at)
         VALUES (?, ?, ?, ?, ?)
       `).bind(first_name, last_name, email, role, now).run();
@@ -133,24 +132,24 @@ export async function onRequest(context) {
     // ---------- DELETE /api/users/:id ----------
     const delMatch = pathname.match(/^\/api\/users\/(\d+)$/);
     if (method === 'DELETE' && delMatch) {
-      try { await requireAdmin(request, env); }
+      try { await requireAdmin(request, env, DB); }
       catch (e) { return authError(e); }
 
       const id = Number(delMatch[1]);
       if (!Number.isFinite(id)) return json({ ok:false, error:'Bad user id' }, 400);
 
       const hard = url.searchParams.get('hard') === '1';
-      await env.DB.prepare('PRAGMA foreign_keys = ON').run();
+      await DB.prepare('PRAGMA foreign_keys = ON').run();
 
       if (!hard) {
         // Soft delete: revoke sessions + mark disabled/deleted_at if columns exist
         try {
-          const hasDisabled  = await columnExists(env.DB, 'users', 'disabled');
-          const hasDeletedAt = await columnExists(env.DB, 'users', 'deleted_at');
-          const ops = [ env.DB.prepare('BEGIN') ];
+          const hasDisabled  = await columnExists(DB, 'users', 'disabled');
+          const hasDeletedAt = await columnExists(DB, 'users', 'deleted_at');
+          const ops = [ DB.prepare('BEGIN') ];
 
-          if (await tableExists(env.DB, 'user_sessions')) {
-            ops.push(env.DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(id));
+          if (await tableExists(DB, 'user_sessions')) {
+            ops.push(DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(id));
           }
 
           if (hasDisabled || hasDeletedAt) {
@@ -160,13 +159,13 @@ export async function onRequest(context) {
             if (hasDeletedAt) { sets.push('deleted_at = COALESCE(deleted_at, ?)'); binds.push(new Date().toISOString()); }
             const sql = `UPDATE users SET ${sets.join(', ')} WHERE id = ?`;
             binds.push(id);
-            ops.push(env.DB.prepare(sql).bind(...binds));
+            ops.push(DB.prepare(sql).bind(...binds));
           }
 
-          ops.push(env.DB.prepare('COMMIT'));
-          await env.DB.batch(ops);
+          ops.push(DB.prepare('COMMIT'));
+          await DB.batch(ops);
         } catch (e) {
-          try { await env.DB.prepare('ROLLBACK').run(); } catch {}
+          try { await DB.prepare('ROLLBACK').run(); } catch {}
           return json({ ok:false, error: e.message || 'Delete failed' }, 500);
         }
         return json({ ok:true, id, soft:true });
@@ -174,15 +173,15 @@ export async function onRequest(context) {
 
       // Hard delete: remove dependents first, then the user
       try {
-        const ops = [ env.DB.prepare('BEGIN') ];
-        if (await tableExists(env.DB, 'comments'))      ops.push(env.DB.prepare('DELETE FROM comments WHERE user_id = ?').bind(id));
-        if (await tableExists(env.DB, 'user_signins'))  ops.push(env.DB.prepare('DELETE FROM user_signins WHERE user_id = ?').bind(id));
-        if (await tableExists(env.DB, 'user_sessions')) ops.push(env.DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(id));
-        ops.push(env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id));
-        ops.push(env.DB.prepare('COMMIT'));
-        await env.DB.batch(ops);
+        const ops = [ DB.prepare('BEGIN') ];
+        if (await tableExists(DB, 'comments'))      ops.push(DB.prepare('DELETE FROM comments WHERE user_id = ?').bind(id));
+        if (await tableExists(DB, 'user_signins'))  ops.push(DB.prepare('DELETE FROM user_signins WHERE user_id = ?').bind(id));
+        if (await tableExists(DB, 'user_sessions')) ops.push(DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(id));
+        ops.push(DB.prepare('DELETE FROM users WHERE id = ?').bind(id));
+        ops.push(DB.prepare('COMMIT'));
+        await DB.batch(ops);
       } catch (e) {
-        try { await env.DB.prepare('ROLLBACK').run(); } catch {}
+        try { await DB.prepare('ROLLBACK').run(); } catch {}
         return json({ ok:false, error: e.message || 'Delete failed' }, 500);
       }
 
@@ -208,6 +207,28 @@ function json(obj, status = 200, headers = {}) {
 
 async function safeJson(request) {
   try { return await request.json(); } catch { return {}; }
+}
+
+function getDB(env) {
+  // Common names first
+  const preferred = ['DB', 'D1', 'DB_MAIN', 'DATABASE', 'CESW_DB'];
+  for (const k of preferred) {
+    const v = env[k];
+    if (v && typeof v.prepare === 'function') { v.__name = k; return v; }
+  }
+  // Fallback: scan env for any object that has a .prepare function
+  for (const [k, v] of Object.entries(env)) {
+    if (v && typeof v.prepare === 'function') { v.__name = k; return v; }
+  }
+  throw new Error('D1 binding not found. Add a D1 database binding in your Pages project settings (e.g. name it "DB") or update the code to use your binding name.');
+}
+
+function listD1Bindings(env) {
+  const out = [];
+  for (const [k, v] of Object.entries(env)) {
+    if (v && typeof v.prepare === 'function') out.push(k);
+  }
+  return out;
 }
 
 async function tableExists(DB, name) {
@@ -237,7 +258,7 @@ async function usersColumns(DB) {
 }
 
 /* -------- Admin check that works with JWT or opaque session -------- */
-async function requireAdmin(request, env) {
+async function requireAdmin(request, env, DB) {
   const cookies = parseCookies(request.headers.get('Cookie') || '');
 
   for (const name of COOKIE_NAMES) {
@@ -251,15 +272,15 @@ async function requireAdmin(request, env) {
         if (payload.role === 'admin') return payload;
         const uid = Number(payload.sub || payload.user_id || payload.id);
         if (!Number.isFinite(uid)) throw new Error('Unauthorized');
-        const row = await env.DB.prepare('SELECT id, role FROM users WHERE id = ?').bind(uid).first();
+        const row = await DB.prepare('SELECT id, role FROM users WHERE id = ?').bind(uid).first();
         if (row && row.role === 'admin') return row;
         throw new Error('Forbidden');
       }
     }
 
     // Opaque session id via user_sessions
-    if (await tableExists(env.DB, 'user_sessions')) {
-      let row = await env.DB.prepare(`
+    if (await tableExists(DB, 'user_sessions')) {
+      let row = await DB.prepare(`
         SELECT u.id, u.role
         FROM user_sessions s
         JOIN users u ON u.id = s.user_id
@@ -268,7 +289,7 @@ async function requireAdmin(request, env) {
       `).bind(val).first();
 
       if (!row) {
-        row = await env.DB.prepare(`
+        row = await DB.prepare(`
           SELECT u.id, u.role
           FROM user_sessions s
           JOIN users u ON u.id = s.user_id

@@ -217,15 +217,12 @@
   <script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';</script>
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
   <script>
-    /* Utils */
     function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]))}
     function sortBy(key,asc){return(a,b)=>{const A=a[key]?.toLowerCase?.()||a[key],B=b[key]?.toLowerCase?.()||b[key];if(A<B)return asc?-1:1;if(A>B)return asc?1:-1;return 0}}
     function nzDateTime(v){ if(!v) return ''; const d=new Date(v); if(Number.isNaN(d.getTime())) return String(v); return d.toLocaleString('en-NZ',{timeZone:'Pacific/Auckland',year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(',','') }
 
-    /* Quill */
     const quill=new Quill('#editor',{ theme:'snow', modules:{ toolbar:[['bold','italic'],[{header:[1,2,3,false]}],[{list:'ordered'},{list:'bullet'}],['image']] } });
 
-    /* Posts */
     let posts=[]; let postSort={key:'created_at',asc:false};
     async function fetchPosts(){ const r=await fetch('/api/posts?admin=true',{credentials:'include'}); if(r.status===401) return location.href='/index.html'; posts=await r.json(); renderPosts(); }
     function renderPosts(){
@@ -252,7 +249,6 @@
     window.deletePost=async(id)=>{ if(!confirm('Delete this post?')) return; await fetch(`/api/posts/${id}`,{method:'DELETE',credentials:'include'}); fetchPosts(); }
     document.getElementById('new-post').addEventListener('submit',async e=>{ e.preventDefault(); const f=e.target; const title=f.title.value; const category=f.category.value; const pinned=f.pinned.checked; await fetch('/api/posts',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,category:pinned?`pinned ${category}`:category,body:quill.root.innerHTML,pinned})}); f.reset(); quill.setContents([]); fetchPosts(); });
 
-    /* Resources */
     let resources=[]; let resourceSort={key:'created_date',asc:false};
     async function fetchResources(){ const r=await fetch('/api/resourcespull',{credentials:'include'}); if(r.status===401) return location.href='/index.html'; resources=await r.json(); renderResources(); }
     function renderResources(){
@@ -278,13 +274,11 @@
     window.togglePinResource=async(id,pinned)=>{ await fetch(`/api/resources/${id}`,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({pinned:!pinned})}); fetchResources(); }
     window.deleteResource=async(id)=>{ if(!confirm('Delete this resource?')) return; await fetch(`/api/resources/${id}`,{method:'DELETE',credentials:'include'}); fetchResources(); }
 
-    // Bind searches/sorts
     document.getElementById('search-posts').addEventListener('input', renderPosts);
     document.getElementById('search-resources').addEventListener('input', renderResources);
     document.querySelectorAll('#posts-table th.sortable').forEach(th=> th.addEventListener('click',()=>{ const k=th.dataset.key; postSort.asc=k===postSort.key?!postSort.asc:true; postSort.key=k; renderPosts(); }));
     document.querySelectorAll('#resources-table th.sortable').forEach(th=> th.addEventListener('click',()=>{ const k=th.dataset.key; resourceSort.asc=k===resourceSort.key?!resourceSort.asc:true; resourceSort.key=k; renderResources(); }));
 
-    /* User Management */
     const umRows=document.getElementById('um-rows');
     const umForm=document.getElementById('um-create-form');
     const umMsg=document.getElementById('um-create-msg');
@@ -392,10 +386,8 @@
         const id=delBtn.dataset.del;
         if(!confirm('Delete this user? This cannot be undone.')) return;
         try{
-          // Try DELETE first
           let r=await fetch('/api/users/'+id,{method:'DELETE',credentials:'include'});
           if(r.status===204 || r.ok){ umLoadUsers(); return; }
-          // Fallback route if backend expects a POST
           r=await fetch('/api/users/'+id+'/delete',{method:'POST',credentials:'include'});
           if(r.ok){ umLoadUsers(); return; }
           const t=await r.text(); alert('Delete failed: '+t);
@@ -413,10 +405,8 @@
       umLoadUsers();
     }));
 
-    // Init
     document.addEventListener('DOMContentLoaded',()=>{ fetchPosts(); fetchResources(); umLoadUsers(); });
 
-    // Resource upload helpers
     document.getElementById('resource-file').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) document.getElementById('resource-type').value='file'; });
     async function generatePdfThumbnail(file){
       try{
