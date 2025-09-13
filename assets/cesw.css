@@ -128,7 +128,7 @@ button:hover,.btn:hover{ background:var(--brand-700); }
 /* Feed card (long/original style) */
 .feed-card{
   position:relative;
-  width:400px; text-align:left; height:auto;
+  max-width:80%; text-align:left; height:auto;
   padding:16px 18px 12px; border:1px solid #e5e9ec; border-radius:10px; background:#fff; box-shadow:var(--shadow);
 }
 
