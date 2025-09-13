@@ -56,9 +56,12 @@
     <section class="upload-section" style="margin:1.5rem 0 2rem;">
       <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
       <form id="upload-form" enctype="multipart/form-data">
-        <div class="um-grid" style="grid-template-columns: 1.6fr 1.6fr 1fr;">
+        <div class="um-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+          <input type="text" id="resource-title" placeholder="Resource title" required/>
+          <br>
           <input type="file" id="resource-file"/>
           <input type="url" id="resource-url" placeholder="Or paste a link instead">
+          <br>
           <select id="resource-type" required>
             <option value="">Select resource type</option>
             <option value="file">File</option>
@@ -74,12 +77,10 @@
             <option value="onlineresources">Online Resources</option>
             <option value="faq">FAQ</option>
           </select>
-          <input type="text" id="resource-title" placeholder="Resource title" required/>
+
           <label class="star-checkbox">
             <input type="checkbox" id="resource-pinned"/>
-            <i class="fa-regular fa-star unchecked"></i>
-            <i class="fa-solid fa-star checked"></i>
-            Pin this resource
+            <i class="fa-solid fa-star checked"></i>Pin this resource
           </label>
         </div>
         <div style="margin-top:.75rem;">

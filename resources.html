@@ -187,7 +187,7 @@
         }
         $('#noFavourites').hide();
         document.getElementById('category-container').style.display='none';
-        document.getElementById('backToCategories').style.display='inline-block';
+        document.getElementById('backToCategories').style.display='none';
         const subset=allPosts.filter(p=>favourites.includes((p.title||'').toLowerCase()));
         renderCards(subset);
       });
@@ -196,7 +196,7 @@
       $('#ShowAll').click(function(){
         $('#searchBar').val('');
         $('#noFavourites').hide();
-        document.getElementById('backToCategories').style.display='inline-block';
+        document.getElementById('backToCategories').style.display='none';
         document.getElementById('category-container').style.display='none';
         renderCards(allPosts);
       });
