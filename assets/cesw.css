@@ -145,7 +145,7 @@ button:hover,.btn:hover{ background:var(--brand-700); }
 .comments{
   border:1px solid #e2e6e9; border-radius:8px; margin-top:12px; background:#fff;
 }
-.feed-card .comments{ margin-left:-8px; margin-right:-8px; } /* make comments area feel wider */
+.feed-card .comments{ margin-left:-8px; margin-right:-8px; min-width:70%; } /* make comments area feel wider */
 .c-header{ display:flex; justify-content:space-between; align-items:center; padding:.5rem .65rem; border-bottom:1px solid #eef2f4; }
 .c-list{ padding:.5rem .65rem; max-height:420px; overflow:auto; }
 .c-list.hidden{ display:none; }
