@@ -94,7 +94,7 @@
           <h1>${p.title||''}</h1>
           <div>${p.body||''}</div>
           <br><i>${createdNZ} ${p.category||''}</i>
-
+          <br>
           <div class="comments" data-post-id="${id}">
             <div class="c-header">
               <span class="c-count" data-count>Comments (…)</span>
@@ -150,15 +150,19 @@
       });
     }
 
-    // Comment APIs & count
+    // Comment APIs & count (robust — tries several shapes, then falls back)
     async function apiGetComments(postId){
-      let r=await fetch(`/api/comments?post_id=${postId}`,{credentials:'include'}); if(r.ok) return r.json();
-      r=await fetch(`/api/posts/${postId}/comments`,{credentials:'include'}); if(r.ok) return r.json();
+      const pid=Number(postId);
+      const opts={credentials:'include'};
+      let r=await fetch(`/api/comments?post_id=${encodeURIComponent(pid)}`,opts); if(r.ok) return r.json();
+      r=await fetch(`/api/posts/${pid}/comments`,opts); if(r.ok) return r.json();
       return null;
     }
     async function apiCreateComment(postId, body){
-      let r=await fetch('/api/comments',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:postId, body})}); if(r.ok) return true;
-      r=await fetch(`/api/posts/${postId}/comments`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})}); return r.ok;
+      const pid=Number(postId);
+      const opts={method:'POST',credentials:'include',headers:{'Content-Type':'application/json'}};
+      let r=await fetch('/api/comments',{...opts,body:JSON.stringify({post_id:pid, body})}); if(r.ok) return true;
+      r=await fetch(`/api/posts/${pid}/comments`,{...opts,body:JSON.stringify({body})}); return r.ok;
     }
     async function apiUpdateComment(id, body){
       const r=await fetch(`/api/comments/${id}`,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})}); return r.ok;
@@ -167,8 +171,26 @@
       const r=await fetch(`/api/comments/${id}`,{method:'DELETE',credentials:'include'}); return r.ok;
     }
     async function apiCountComments(postId){
-      let r=await fetch(`/api/comments/count?post_id=${postId}`,{credentials:'include'}); if(r.ok){ const j=await r.json().catch(()=>null); if(j&&typeof j.count==='number') return j.count; }
-      r=await fetch(`/api/posts/${postId}/comments/count`,{credentials:'include'}); if(r.ok){ const j=await r.json().catch(()=>null); if(j&&typeof j.count==='number') return j.count; }
+      const pid=Number(postId);
+      const opts={credentials:'include'};
+      try{
+        // 1) /api/comments/count?post_id=ID
+        let r=await fetch(`/api/comments/count?post_id=${encodeURIComponent(pid)}`,opts);
+        if(r.ok){ const j=await r.json().catch(()=>null); if(j&&Number.isFinite(j.count)) return j.count; }
+        // 2) /api/posts/ID/comments/count
+        r=await fetch(`/api/posts/${pid}/comments/count`,opts);
+        if(r.ok){ const j=await r.json().catch(()=>null); if(j&&Number.isFinite(j.count)) return j.count; }
+        // 3) /api/comments/count/ID
+        r=await fetch(`/api/comments/count/${pid}`,opts);
+        if(r.ok){ const j=await r.json().catch(()=>null); if(j&&Number.isFinite(j.count)) return j.count; }
+      }catch{}
+      // 4) Fallback: fetch list & count
+      try{
+        let r=await fetch(`/api/comments?post_id=${encodeURIComponent(pid)}`,opts);
+        if(r.ok){ const arr=await r.json().catch(()=>[]); if(Array.isArray(arr)) return arr.length; }
+        r=await fetch(`/api/posts/${pid}/comments`,opts);
+        if(r.ok){ const arr=await r.json().catch(()=>[]); if(Array.isArray(arr)) return arr.length; }
+      }catch{}
       return null;
     }
     function setCommentsCount(rootEl, count){
