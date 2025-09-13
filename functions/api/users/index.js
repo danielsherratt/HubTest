@@ -1,10 +1,10 @@
-// Cloudflare Pages Functions / Workers — Users API
+// Cloudflare Pages Functions — Users API
 // Routes:
-//   GET    /api/users[?with_signin_stats=1&limit=N]
+//   GET    /api/users[?with_signin_stats=1&limit=N&__probe=1]
 //   POST   /api/users
 //   DELETE /api/users/:id[?hard=1]
 
-const COOKIE_NAMES = ['session', 'JWT_Token', 'jwt', 'token']; // accept multiple cookie names
+const COOKIE_NAMES = ['session', 'JWT_Token', 'jwt', 'token']; // accepts common cookie names
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -13,6 +13,11 @@ export async function onRequest(context) {
   const method = request.method;
 
   try {
+    // ---- PROBE: quick check route is hitting THIS file ----
+    if (method === 'GET' && pathname === '/api/users' && searchParams.get('__probe') === '1') {
+      return json({ ok: true, route: 'functions/api/users/index.js' });
+    }
+
     // ---------- GET /api/users ----------
     if (method === 'GET' && pathname === '/api/users') {
       try { await requireAdmin(request, env); }
@@ -21,70 +26,73 @@ export async function onRequest(context) {
       const wantStats = searchParams.get('with_signin_stats') === '1';
       const limit = Math.max(1, Math.min(Number(searchParams.get('limit') || 100), 1000));
 
-      if (!wantStats) {
-        const rows = await env.DB.prepare(`
-          SELECT
-            id, email, role, first_name, last_name,
-            last_sign_in,
-            last_ip AS last_sign_ip,  -- alias for UI
-            created_at
-          FROM users
-          ORDER BY COALESCE(last_sign_in, created_at) DESC
-          LIMIT ?
-        `).bind(limit).all();
-        return json(rows.results || []);
-      }
+      // Basic list
+      const baseRows = await env.DB.prepare(`
+        SELECT
+          id,
+          email,
+          role,
+          first_name,
+          last_name,
+          last_sign_in,
+          last_ip AS last_sign_ip,
+          created_at
+        FROM users
+        ORDER BY COALESCE(last_sign_in, created_at) DESC
+        LIMIT ?
+      `).bind(limit).all();
+      const users = baseRows.results || [];
 
-      // with_signin_stats=1
-      const hasSignins = await tableExists(env.DB, 'user_signins');
+      if (!wantStats) return json(users);
 
-      if (!hasSignins) {
-        const rows = await env.DB.prepare(`
-          SELECT
-            id, email, role, first_name, last_name,
-            last_sign_in,
-            last_ip AS last_sign_ip,
-            created_at
-          FROM users
-          ORDER BY COALESCE(last_sign_in, created_at) DESC
-          LIMIT ?
-        `).bind(limit).all();
-
-        const out = (rows.results || []).map(r => ({
-          ...r,
+      // If user_signins table doesn't exist, return zeros for stats
+      if (!await tableExists(env.DB, 'user_signins')) {
+        return json(users.map(u => ({
+          ...u,
           signin_count: 0,
           unique_ips: 0,
           signins_7d: 0,
           ips_7d: 0,
-          distinct_ips_24h: 0
-        }));
-        return json(out);
+          distinct_ips_24h: 0,
+        })));
       }
 
-      // Aggregate with stats from user_signins
-      const rows = await env.DB.prepare(`
-        SELECT
-          u.id,
-          u.email,
-          u.role,
-          u.first_name,
-          u.last_name,
-          u.last_sign_in,
-          u.last_ip AS last_sign_ip,
-          u.created_at,
-          COUNT(s.id) AS signin_count,
-          COUNT(DISTINCT s.ip) AS unique_ips,
-          SUM(CASE WHEN s.at >= datetime('now','-7 days') THEN 1 ELSE 0 END) AS signins_7d,
-          COUNT(DISTINCT CASE WHEN s.at >= datetime('now','-7 days') THEN s.ip END) AS ips_7d,
-          COUNT(DISTINCT CASE WHEN s.at >= datetime('now','-1 day') THEN s.ip END) AS distinct_ips_24h
-        FROM users u
-        LEFT JOIN user_signins s ON s.user_id = u.id
-        GROUP BY u.id
-        ORDER BY COALESCE(u.last_sign_in, u.created_at) DESC
-        LIMIT ?
-      `).bind(limit).all();
+      // For reliability across SQLite versions, compute stats via subqueries
+      const out = [];
+      for (const u of users) {
+        const id = u.id;
 
-      return json(rows.results || []);
+        const total = await env.DB.prepare(
+          'SELECT COUNT(*) AS c FROM user_signins WHERE user_id = ?'
+        ).bind(id).first();
+
+        const uniqAll = await env.DB.prepare(
+          'SELECT COUNT(DISTINCT ip) AS c FROM user_signins WHERE user_id = ?'
+        ).bind(id).first();
+
+        const total7 = await env.DB.prepare(
+          "SELECT COUNT(*) AS c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-7 days')"
+        ).bind(id).first();
+
+        const uniq7 = await env.DB.prepare(
+          "SELECT COUNT(DISTINCT ip) AS c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-7 days')"
+        ).bind(id).first();
+
+        const uniq24 = await env.DB.prepare(
+          "SELECT COUNT(DISTINCT ip) AS c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-1 day')"
+        ).bind(id).first();
+
+        out.push({
+          ...u,
+          signin_count: Number(total?.c || 0),
+          unique_ips: Number(uniqAll?.c || 0),
+          signins_7d: Number(total7?.c || 0),
+          ips_7d: Number(uniq7?.c || 0),
+          distinct_ips_24h: Number(uniq24?.c || 0),
+        });
+      }
+
+      return json(out);
     }
 
     // ---------- POST /api/users ----------
@@ -102,8 +110,7 @@ export async function onRequest(context) {
         return json({ ok:false, error:'Missing required fields' }, 400);
       }
 
-      const exists = await env.DB
-        .prepare('SELECT id FROM users WHERE email = ?')
+      const exists = await env.DB.prepare('SELECT id FROM users WHERE email = ?')
         .bind(email).first();
       if (exists) return json({ ok:false, error:'Email already exists' }, 400);
 
@@ -129,7 +136,7 @@ export async function onRequest(context) {
       await env.DB.prepare('PRAGMA foreign_keys = ON').run();
 
       if (!hard) {
-        // SOFT delete: revoke sessions + mark disabled/deleted_at if columns exist
+        // Soft delete: revoke sessions + mark disabled/deleted_at if columns exist
         try {
           const hasDisabled  = await columnExists(env.DB, 'users', 'disabled');
           const hasDeletedAt = await columnExists(env.DB, 'users', 'deleted_at');
@@ -158,7 +165,7 @@ export async function onRequest(context) {
         return json({ ok:true, id, soft:true });
       }
 
-      // HARD delete: remove dependents first, then the user
+      // Hard delete: remove dependents first, then the user
       try {
         const ops = [ env.DB.prepare('BEGIN') ];
         if (await tableExists(env.DB, 'comments'))      ops.push(env.DB.prepare('DELETE FROM comments WHERE user_id = ?').bind(id));
@@ -177,7 +184,6 @@ export async function onRequest(context) {
 
     return json({ ok:false, error:'Method Not Allowed' }, 405);
   } catch (err) {
-    // Map common auth errors to correct codes; everything else is 500
     if (/unauthorized/i.test(err.message)) return json({ ok:false, error:'Unauthorized' }, 401);
     if (/forbidden/i.test(err.message))    return json({ ok:false, error:'Forbidden' }, 403);
     return json({ ok:false, error: err.message || 'Server error' }, 500);
@@ -198,12 +204,10 @@ async function safeJson(request) {
 }
 
 async function tableExists(DB, name) {
-  const row = await DB.prepare(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name = ?"
-  ).bind(name).first();
+  const row = await DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?")
+                      .bind(name).first();
   return !!row;
 }
-
 async function columnExists(DB, table, column) {
   const res = await DB.prepare(`PRAGMA table_info(${table})`).all();
   const cols = (res.results || []).map(r => (r.name || r.cid_name || r.column || '').toString().toLowerCase());
@@ -212,10 +216,8 @@ async function columnExists(DB, table, column) {
 
 /* -------- Admin check that works with JWT or opaque session -------- */
 async function requireAdmin(request, env) {
-  const cookieHeader = request.headers.get('Cookie') || '';
-  const cookies = parseCookies(cookieHeader);
+  const cookies = parseCookies(request.headers.get('Cookie') || '');
 
-  // Try each cookie name in order
   for (const name of COOKIE_NAMES) {
     const val = cookies[name];
     if (!val) continue;
@@ -233,8 +235,7 @@ async function requireAdmin(request, env) {
       }
     }
 
-    // Opaque session id?
-    // Try common schemas: user_sessions.session_id or user_sessions.token
+    // Opaque session id via user_sessions
     if (await tableExists(env.DB, 'user_sessions')) {
       let row = await env.DB.prepare(`
         SELECT u.id, u.role
@@ -278,8 +279,8 @@ async function verifyJWT(token, secret) {
   if (!secret) return null;
   const parts = token.split('.');
   if (parts.length !== 3) return null;
-
   const [h, p, s] = parts;
+
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
   const ok = await crypto.subtle.verify('HMAC', key, base64urlToBytes(s), enc.encode(`${h}.${p}`));
