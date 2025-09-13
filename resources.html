@@ -104,7 +104,7 @@
       document.getElementById('category-container').style.display='none';
       document.getElementById('backToCategories').style.display='inline-block';
       const filtered=allPosts.filter(p=>(p.category||'').toLowerCase()===(cat||'').toLowerCase());
-      renderCards(filtered);
+      renderCards(filtered, 'category');
     }
 
     document.getElementById('backToCategories').addEventListener('click', ()=>{
@@ -125,14 +125,27 @@
       }
       catCards.style.display='none';
       const matched=allPosts.filter(p=>(p.title||'').toLowerCase().includes(val));
-      renderCards(matched);
+      renderCards(matched, 'search');
     }
 
-    function renderCards(posts){
+    // add context param to control which empty-state to show
+    function renderCards(posts, context='default'){
       const container=document.querySelector('.card-container');
       container.innerHTML='';
-      if(!posts.length){ $('#noResults').show(); return; }
+
+      if(!posts.length){
+        if(context==='favourites'){
+          $('#noFavourites').show();
+          $('#noResults').hide();
+        }else{
+          $('#noResults').show();
+          $('#noFavourites').hide();
+        }
+        return;
+      }
+
       $('#noResults').hide();
+      $('#noFavourites').hide();
 
       posts.forEach(p=>{
         const titleKey=(p.title||'').toLowerCase();
@@ -178,18 +191,12 @@
       });
 
       $('#ShowFavs').click(function(){
-        const any=favourites.length>0; const container=document.querySelector('.card-container');
-        if(!any){
-          container.innerHTML=''; $('#noFavourites').show();
-          document.getElementById('category-container').style.display='none';
-          document.getElementById('backToCategories').style.display='none';
-          $('#noResults').hide(); return;
-        }
-        $('#noFavourites').hide();
+        const subset=allPosts.filter(p=>favourites.includes((p.title||'').toLowerCase()));
+        // Always hide categories when showing favourites
         document.getElementById('category-container').style.display='none';
         document.getElementById('backToCategories').style.display='none';
-        const subset=allPosts.filter(p=>favourites.includes((p.title||'').toLowerCase()));
-        renderCards(subset);
+        // Use 'favourites' context so empty state shows the correct banner
+        renderCards(subset, 'favourites');
       });
 
       // Show all -> show all cards (not categories)
@@ -198,7 +205,7 @@
         $('#noFavourites').hide();
         document.getElementById('backToCategories').style.display='none';
         document.getElementById('category-container').style.display='none';
-        renderCards(allPosts);
+        renderCards(allPosts, 'all');
       });
 
       $(window).on('scroll',()=>{ const sc=$(window).scrollTop()>100; $('#backToTop').toggle(sc); });

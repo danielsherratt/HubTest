@@ -8,7 +8,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="assets/cesw.css">
-  <style>body{display:none}</style>
+  <style>body{display:none}
+
+input {padding:10px;}
+
+  </style>
 
   <script>
     async function signOut(){ try{await fetch('/api/auth/logout',{method:'POST',credentials:'include'})}finally{location.href='/index.html'} }
@@ -56,12 +60,10 @@
     <section class="upload-section" style="margin:1.5rem 0 2rem;">
       <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
       <form id="upload-form" enctype="multipart/form-data">
+       <input type="text" id="resource-title" placeholder="Resource title" required/>
         <div class="um-grid" style="grid-template-columns: 1fr 1fr 1fr;">
-          <input type="text" id="resource-title" placeholder="Resource title" required/>
-          <br>
-          <input type="file" id="resource-file"/>
+        <input type="file" id="resource-file"/>
           <input type="url" id="resource-url" placeholder="Or paste a link instead">
-          <br>
           <select id="resource-type" required>
             <option value="">Select resource type</option>
             <option value="file">File</option>
@@ -69,7 +71,7 @@
             <option value="video">Video</option>
           </select>
         </div>
-        <div class="um-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+        <div class="um-grid" style="grid-template-columns: 1fr 1fr;">
           <select id="resource-category" required>
             <option value="" disabled selected>Select category</option>
             <option value="general">General</option>
@@ -77,7 +79,6 @@
             <option value="onlineresources">Online Resources</option>
             <option value="faq">FAQ</option>
           </select>
-
           <label class="star-checkbox">
             <input type="checkbox" id="resource-pinned"/>
             <i class="fa-solid fa-star checked"></i>Pin this resource
