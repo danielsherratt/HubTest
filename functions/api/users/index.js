@@ -1,154 +1,185 @@
 // functions/api/users/index.js
-import { verifyJWT, pbkdf2Hash } from '../../lib/auth.js';
-import { generateResetToken, sha256Base64Url } from '../../lib/tokens.js';
-import { sendEmail } from '../../lib/email.js';
-import { passwordPolicyError, generatePolicyPassword } from '../../lib/validators.js';
+// Cloudflare Pages Functions / Workers style
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
+const COOKIE_NAME = 'session'; // change if your auth cookie is named differently
+
+export async function onRequest(context) {
+  const { request, env } = context;
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+  const method = request.method;
+
+  try {
+    // ----- GET /api/users -----
+    if (method === 'GET' && pathname === '/api/users') {
+      await requireAdmin(request, env);
+
+      const rows = await env.DB.prepare(`
+        SELECT id, email, role, first_name, last_name, last_sign_in, last_ip, created_at
+        FROM users
+        ORDER BY COALESCE(last_sign_in, created_at) DESC
+      `).all();
+
+      return json(rows.results || []);
+    }
+
+    // ----- POST /api/users -----
+    if (method === 'POST' && pathname === '/api/users') {
+      await requireAdmin(request, env);
+
+      const body = await safeJson(request);
+      const first_name = (body.first_name || '').trim();
+      const last_name  = (body.last_name  || '').trim();
+      const email      = (body.email      || '').trim().toLowerCase();
+      const role       = (body.role       || 'user').trim();
+
+      if (!first_name || !last_name || !email || !role) {
+        return json({ ok:false, error:'Missing required fields' }, 400);
+      }
+
+      const exists = await env.DB.prepare(
+        'SELECT id FROM users WHERE email = ?'
+      ).bind(email).first();
+      if (exists) return json({ ok:false, error:'Email already exists' }, 400);
+
+      const now = new Date().toISOString();
+      const res = await env.DB.prepare(`
+        INSERT INTO users (first_name, last_name, email, role, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).bind(first_name, last_name, email, role, now).run();
+
+      return json({ ok:true, id: res.lastRowId, first_name, last_name, email, role });
+    }
+
+    // ----- DELETE /api/users/:id -----
+    const delMatch = pathname.match(/^\/api\/users\/(\d+)$/);
+    if (method === 'DELETE' && delMatch) {
+      await requireAdmin(request, env);
+
+      const id = Number(delMatch[1]);
+      if (!Number.isFinite(id)) return json({ ok:false, error:'Bad user id' }, 400);
+
+      const hard = url.searchParams.get('hard') === '1';
+
+      // Ensure FK enforcement is on (D1/SQLite)
+      await env.DB.prepare('PRAGMA foreign_keys = ON').run();
+
+      // SOFT DELETE (default): disable account + revoke sessions
+      if (!hard) {
+        try {
+          await env.DB.batch([
+            env.DB.prepare('BEGIN'),
+            // Revoke all sessions for this user (adjust table name if needed)
+            env.DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(id),
+            // Mark user disabled; add deleted_at if you have that column
+            // If you don't have these columns yet, you can change this to a hard delete
+            env.DB.prepare(`
+              UPDATE users
+              SET disabled = 1,
+                  deleted_at = COALESCE(deleted_at, ?)
+              WHERE id = ?
+            `).bind(new Date().toISOString(), id),
+            env.DB.prepare('COMMIT'),
+          ]);
+        } catch (e) {
+          try { await env.DB.prepare('ROLLBACK').run(); } catch {}
+          return json({ ok:false, error: e.message || 'Delete failed' }, 500);
+        }
+
+        return json({ ok:true, id, soft:true });
+      }
+
+      // HARD DELETE (optional via ?hard=1): remove dependents first, then the user.
+      try {
+        await env.DB.batch([
+          env.DB.prepare('BEGIN'),
+          // Adjust these table/column names to match your schema.
+          env.DB.prepare('DELETE FROM comments      WHERE user_id = ?').bind(id),
+          env.DB.prepare('DELETE FROM user_signins  WHERE user_id = ?').bind(id),
+          env.DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(id),
+          env.DB.prepare('DELETE FROM users         WHERE id = ?').bind(id),
+          env.DB.prepare('COMMIT'),
+        ]);
+      } catch (e) {
+        try { await env.DB.prepare('ROLLBACK').run(); } catch {}
+        return json({ ok:false, error: e.message || 'Delete failed' }, 500);
+      }
+
+      return json({ ok:true, id, soft:false });
+    }
+
+    return json({ ok:false, error:'Method Not Allowed' }, 405);
+  } catch (err) {
+    return json({ ok:false, error: err.message || 'Server error' }, 500);
+  }
+}
+
+/* ---------------- Utilities ---------------- */
+
+function json(obj, status = 200, headers = {}) {
+  return new Response(JSON.stringify(obj), {
     status,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'content-type': 'application/json', ...headers }
   });
 }
 
-function getTokenFromCookie(request) {
-  const cookie = request.headers.get('Cookie') || '';
-  const m = cookie.match(/(?:^|;\s*)token=([^;]+)/);
-  return m && m[1];
+async function safeJson(request) {
+  try { return await request.json(); } catch { return {}; }
 }
 
-export async function onRequest({ request, env }) {
-  const db = env.POSTS_DB;
-  if (!db || !db.prepare) return json({ error: 'Database not configured (POSTS_DB).' }, 500);
-  if (!env.JWT_SECRET) return json({ error: 'JWT secret not configured.' }, 500);
+// --- Minimal admin check using a JWT in cookie "session" (HS256) ---
+async function requireAdmin(request, env) {
+  const rawCookie = request.headers.get('Cookie') || '';
+  const token = getCookie(rawCookie, COOKIE_NAME);
+  if (!token) throw new Error('Unauthorized');
 
-  // Admin auth
-  const token = getTokenFromCookie(request);
-  const me = token && await verifyJWT(token, env.JWT_SECRET);
-  if (!me) return new Response('Unauthorized', { status: 401 });
-  if (me.role !== 'admin') return new Response('Forbidden', { status: 403 });
+  const payload = await verifyJWT(token, env.JWT_SECRET);
+  if (!payload) throw new Error('Unauthorized');
 
-  const { method } = request;
+  // If the token already carries the role:
+  if (payload.role === 'admin') return payload;
 
-  // GET: list/search/sort top 10 users (with optional distinct_ips_24h if table exists)
-  if (method === 'GET') {
-    const url = new URL(request.url);
-    const q   = (url.searchParams.get('q') || '').trim().toLowerCase();
-    const sortParam = (url.searchParams.get('sort') || 'created_at').toLowerCase();
-    const dirParam  = (url.searchParams.get('dir')  || 'desc').toLowerCase();
-    const dir = dirParam === 'asc' ? 'ASC' : 'DESC';
+  // Otherwise look up user by id from payload
+  const uid = Number(payload.sub || payload.user_id || payload.id);
+  if (!Number.isFinite(uid)) throw new Error('Unauthorized');
+  const row = await env.DB.prepare('SELECT id, role FROM users WHERE id = ?').bind(uid).first();
+  if (!row || row.role !== 'admin') throw new Error('Forbidden');
+  return row;
+}
 
-    const allowedSort = new Set(['email', 'role', 'last_sign_in', 'created_at']);
-    const orderCol = allowedSort.has(sortParam) ? sortParam : 'created_at';
-
-    let where = '';
-    let binds = [];
-    if (q) { where = 'WHERE LOWER(u.email) LIKE ?'; binds.push(`%${q}%`); }
-
-    const stmt = `
-      SELECT
-        u.id,
-        u.email,
-        u.role,
-        u.last_sign_in,
-        u.last_sign_ip,
-        u.created_at,
-        COALESCE((
-          SELECT COUNT(DISTINCT s.ip)
-          FROM user_signins s
-          WHERE s.user_id = u.id
-            AND s.at > datetime('now','-1 day')
-        ), 0) AS distinct_ips_24h
-      FROM users u
-      ${where}
-      ORDER BY ${orderCol} ${dir}
-      LIMIT 10
-    `;
-
-    const { results } = await db.prepare(stmt).bind(...binds).all();
-    return json(results || []);
+function getCookie(header, name) {
+  for (const part of header.split(/; */)) {
+    if (!part) continue;
+    const i = part.indexOf('=');
+    const k = i === -1 ? part : part.slice(0, i);
+    if (k === name) return decodeURIComponent(i === -1 ? '' : part.slice(i + 1));
   }
+  return null;
+}
 
-  // POST: create user, email temp password + 3h reset link
-  if (method === 'POST') {
-    const body = await request.json().catch(() => ({}));
-    const email = String(body.email || '').trim().toLowerCase();
-    let password = String(body.password || '');
-    const role = (String(body.role || 'user').trim().toLowerCase() === 'admin') ? 'admin' : 'user';
+async function verifyJWT(token, secret) {
+  const [h, p, s] = token.split('.');
+  if (!h || !p || !s) return null;
 
-    if (!email) return json({ error: 'Email is required.' }, 400);
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+  const ok = await crypto.subtle.verify('HMAC', key, base64urlToBytes(s), enc.encode(`${h}.${p}`));
+  if (!ok) return null;
 
-    if (!password) {
-      password = generatePolicyPassword(); // compliant random temp password
-    } else {
-      const perr = passwordPolicyError(password);
-      if (perr) return json({ error: perr }, 400);
-    }
+  let payload;
+  try { payload = JSON.parse(b64urlDecode(p)); } catch { return null; }
+  if (payload.exp && Date.now()/1000 > payload.exp) return null;
+  return payload;
+}
 
-    // Hash password
-    const salt = new Uint8Array(16); crypto.getRandomValues(salt);
-    const saltB64 = btoa(String.fromCharCode(...salt));
-    const hashB64 = await pbkdf2Hash(password, saltB64, 100000, 32);
-
-    try {
-      await db.prepare(`
-        INSERT INTO users (email, password_algo, password_salt, password_hash, role)
-        VALUES (?, 'pbkdf2-sha256', ?, ?, ?)
-      `).bind(email, saltB64, hashB64, role).run();
-    } catch (e) {
-      const msg = (e?.message || '').toLowerCase();
-      if (msg.includes('unique') || msg.includes('constraint')) {
-        return json({ error: 'Email already exists.' }, 409);
-      }
-      return json({ error: 'Failed to create user.' }, 500);
-    }
-
-    // Create 3-hour reset link & email user (temp password + link)
-    try {
-      const userRow = await db.prepare(`SELECT id FROM users WHERE email = ?`).bind(email).first();
-      if (userRow?.id) {
-        const token = generateResetToken();
-        const tokenHash = await sha256Base64Url(token);
-        const now = new Date();
-        const expires = new Date(now.getTime() + 3 * 60 * 60 * 1000);
-
-        // optional: invalidate previous tokens
-        // await db.prepare(`UPDATE password_resets SET used = 1 WHERE user_id = ? AND used = 0`).bind(userRow.id).run();
-
-        await db.prepare(`
-          INSERT INTO password_resets (user_id, token_hash, expires_at, used, created_at)
-          VALUES (?, ?, ?, 0, ?)
-        `).bind(userRow.id, tokenHash, expires.toISOString(), now.toISOString()).run();
-
-        const origin = new URL(request.url).origin;
-        const link = `${origin}/reset.html?token=${encodeURIComponent(token)}`;
-
-        const subject = 'Welcome to CESW Hub';
-        const text = `Welcome to CESW Hub.
-
-Your temporary password is: ${password}
-
-Please set your own password within 3 hours using this link:
-${link}
-
-If you didn’t expect this, you can ignore the email.`;
-        const html = `
-          <p>Welcome to CESW Hub.</p>
-          <p>Your temporary password is: <code>${password}</code></p>
-          <p>Please reset your password within <b>3 hours</b> using the link below:</p>
-          <p><a href="${link}" style="display:inline-block;padding:10px 14px;background:#00625f;color:#fff;border-radius:6px;text-decoration:none">Set a new password</a></p>
-      <br>
-      <p>Contact <a href="mailto:ITSupport@kotakureo.school.nz">ITSupport@kotakureo.school.nz</a> for assistance if required</p>
-        `;
-
-        await sendEmail({ env, to: email, subject, html, text });
-      }
-    } catch (e) {
-      console.error('Create user: email/reset link creation failed', e);
-    }
-
-    return json({ ok: true });
-  }
-
-  return new Response('Method Not Allowed', { status: 405 });
+function b64urlDecode(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = str.length % 4; if (pad) str += '='.repeat(4 - pad);
+  return atob(str);
+}
+function base64urlToBytes(str) {
+  const bin = b64urlDecode(str);
+  const out = new Uint8Array(bin.length);
+  for (let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
+  return out;
 }
