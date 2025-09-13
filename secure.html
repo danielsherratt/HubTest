@@ -8,31 +8,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="assets/cesw.css">
-  <style>body{display:none}</style>
+  <style>body{display:none}
+
+input {margin:10px;}
+
+  </style>
 
   <script>
-    // --- Auth + Nav ---
     async function signOut(){ try{await fetch('/api/auth/logout',{method:'POST',credentials:'include'})}finally{location.href='/index.html'} }
     (async()=>{
       try{
-        const r=await fetch('/api/auth/me',{credentials:'include'}); if(!r.ok) throw 0;
-        const me=await r.json(); if(me.role!=='admin') throw 0;
+        const r=await fetch('/api/auth/me',{credentials:'include'}); if(!r.ok) throw new Error('Not authorized');
+        const me=await r.json(); if(me.role!=='admin') throw new Error('Not admin');
         document.body.style.display='block';
-
-        // Right-aligned nav actions
         const right=document.querySelector('.nav-right');
-        const admin=document.createElement('a');
-        admin.className='nav-item'; admin.href='secure.html';
-        admin.innerHTML='<i class="fa-solid fa-gear"></i> Admin';
-        right.appendChild(admin);
-        const out=document.createElement('a');
-        out.className='nav-item'; out.href='#';
-        out.innerHTML='<i class="fa-solid fa-right-from-bracket"></i> Sign out';
-        out.onclick=e=>{e.preventDefault();signOut()};
-        right.appendChild(out);
-      }catch{ location.href='/index.html'; }
+        const admin=document.createElement('a'); admin.href='/secure.html'; admin.className='nav-item'; admin.innerHTML='<i class="fa-solid fa-gear"></i> Admin'; right.appendChild(admin);
+        const out=document.createElement('a'); out.href='#'; out.className='nav-item'; out.innerHTML='<i class="fa-solid fa-right-from-bracket"></i> Sign out'; out.addEventListener('click',e=>{e.preventDefault();signOut()}); right.appendChild(out);
+      }catch{ window.location.href='/index.html'; }
     })();
   </script>
+
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 </head>
 <body>
   <!-- NAV -->
@@ -43,7 +39,7 @@
         <div class="nav-links">
           <a class="nav-item" href="feed.html"><i class="fa-solid fa-list-ul"></i> Feed</a>
           <a class="nav-item" href="resources.html"><i class="fa-solid fa-file"></i> Resources</a>
-          <a class="nav-item" href="https://calendar.online/87060cd6717c9a3d9e8e" target="_blank" rel="noopener"><i class="fa-solid fa-calendar"></i> Calendar</a>
+          <a class="nav-item" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener"><i class="fa-solid fa-calendar"></i> Calendar</a>
         </div>
       </div>
       <div class="nav-right"></div>
@@ -53,197 +49,406 @@
   <!-- Banner -->
   <div class="banner" role="img" aria-label="CESW banner"></div>
 
-  <main class="admin-wrap">
-    <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub – Admin</h1>
+  <main>
+    <h1 class="title"><i class="fa-solid fa-gear"></i> CESW Hub - Admin</h1>
 
-    <!-- Per your earlier spec: distinct calendar button under heading -->
-    <div class="center-row" style="margin-bottom:1rem;">
-      <a class="btn btn-accent" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">
-        <i class="fa-solid fa-calendar"></i> Calendar
-      </a>
-    </div>
+    <a class="calendarbutton" href="https://calendar.online/852ff24234751e548d10" target="_blank" rel="noopener">
+      <i class="fa fa-calendar"></i> Calendar
+    </a>
 
-    <!-- ========== Users ========== -->
-    <section class="admin-section">
-      <h2 class="subtitle">User Management</h2>
-
-      <!-- Create user -->
-      <form id="um-create" class="grid gap" autocomplete="off" style="max-width:900px;margin:0 auto 1rem;">
-        <div class="grid2">
-          <input type="text" name="first_name" placeholder="First name" required>
-          <input type="text" name="last_name" placeholder="Last name" required>
+    <!-- Add Resource -->
+    <section class="upload-section" style="margin:1.5rem 0 2rem;">
+      <h2 class="title"><i class="fa-solid fa-plus"></i> Add Resource</h2>
+      <form id="upload-form" enctype="multipart/form-data">
+        <div class="um-grid" style="grid-template-columns: 1fr;">
+          <input type="text" id="resource-title" placeholder="Resource title" required/>
         </div>
-        <div class="grid2">
-          <input type="email" name="email" placeholder="Email address" required autocomplete="off">
-          <select name="role" required>
-            <option value="" disabled selected>Role</option>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
+        <div class="um-grid" style="grid-template-columns: 1fr 1fr 1fr;"></div>
+        <input type="file" id="resource-file"/>
+          <input type="url" id="resource-url" placeholder="Or paste a link instead">
+          <select id="resource-type" required>
+            <option value="">Select resource type</option>
+            <option value="file">File</option>
+            <option value="website">Website</option>
+            <option value="video">Video</option>
           </select>
         </div>
-        <div class="center-row">
-          <button class="btn" type="submit"><i class="fa-solid fa-user-plus"></i> Create User</button>
+        <div class="um-grid" style="grid-template-columns: 1fr 1fr;">
+          <select id="resource-category" required>
+            <option value="" disabled selected>Select category</option>
+            <option value="general">General</option>
+            <option value="resources">Resources</option>
+            <option value="onlineresources">Online Resources</option>
+            <option value="faq">FAQ</option>
+          </select>
+          <label class="star-checkbox">
+            <input type="checkbox" id="resource-pinned"/>
+            <i class="fa-solid fa-star checked"></i>Pin this resource
+          </label>
         </div>
-        <p class="muted center">A temporary password will be set server-side (or a reset email, depending on your backend).</p>
+        <div style="margin-top:.75rem;">
+          <button type="submit" id="new-upload-button" class="btn"><i class="fa-solid fa-plus"></i> Add Resource</button>
+        </div>
       </form>
-
-      <!-- Search + sort -->
-      <div class="grid2" style="max-width:900px;margin:0 auto 0.5rem;">
-        <input type="text" id="um-search" placeholder="Search users… (name or email)">
-        <select id="um-sort">
-          <option value="last_sign_in|desc" selected>Last sign-in (newest)</option>
-          <option value="created_at|desc">Created (newest)</option>
-          <option value="email|asc">Email (A–Z)</option>
-          <option value="first_name|asc">First name (A–Z)</option>
-          <option value="last_name|asc">Last name (A–Z)</option>
-          <option value="role|asc">Role (A–Z)</option>
-        </select>
-      </div>
-
-      <!-- Table -->
-      <div class="table-wrap" style="max-width:900px;margin:0 auto;">
-        <table class="admin-table" id="um-table">
-          <thead>
-            <tr>
-              <th>First</th>
-              <th>Last</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Last sign-in</th>
-              <th>IP</th>
-              <th style="width:120px;">Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-        <p id="um-empty" class="muted center" style="display:none;">No users match your search.</p>
-      </div>
-      <p class="muted center">Showing the 10 most recent users based on the selected sort.</p>
     </section>
 
-    <!-- (Other admin sections like Resources / Feed can remain below unchanged) -->
+    <!-- Manage Resources -->
+    <section style="margin:1.5rem 0 2rem;">
+      <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Resources</h2>
+      <a href="resources.html" target="_blank" rel="noopener" alt="View Resources"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
+      <input type="text" id="search-resources" class="search-bar" placeholder="Search resources...">
+      <table id="resources-table">
+        <thead>
+          <tr>
+            <th class="sortable" data-key="title">Title</th>
+            <th class="sortable" data-key="created_date">Date</th>
+            <th class="sortable" data-key="category">Category</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="resources-empty" style="display:none;">Mmm, no resource found <i class="fa-solid fa-face-sad-tear"></i>, Please change your search</p>
+      <i>Latest 10 are shown, search for the exact one you want</i>
+    </section>
+
+    <!-- Add to Feed -->
+    <section class="upload-section" style="margin:1.5rem 0 2rem;">
+      <h2 class="title"><i class="fa-solid fa-plus"></i> Add to Feed</h2>
+      <form id="new-post">
+        <div class="um-grid" style="grid-template-columns: 2fr 1fr auto;">
+          <input name="title" id="new-post-input" class="search-bar" placeholder="Title" required/>
+          <select name="category" id="new-post-select" class="search-bar" required>
+            <option value="" disabled selected>Select category</option>
+            <option value="general">General</option>
+            <option value="resources">Resources</option>
+            <option value="onlineresources">Online Resources</option>
+            <option value="faq">FAQ</option>
+          </select>
+          <label class="star-checkbox">
+            <input type="checkbox" name="pinned"/>
+            <i class="fa-regular fa-star unchecked"></i>
+            <i class="fa-solid fa-star checked"></i>
+            Pin
+          </label>
+        </div>
+        <div id="editor" style="background:#fff;border:1px solid var(--border);border-radius:10px; margin:.5rem 0;"></div>
+        <button type="submit" id="new-post-button" class="btn">Create Post</button>
+      </form>
+    </section>
+
+    <!-- Manage Feed -->
+    <section style="margin:1.5rem 0 2rem;">
+      <h2 class="title"><i class="fa-solid fa-list-ul"></i> Manage Feed</h2>
+      <a href="feed.html" target="_blank" rel="noopener" alt="View Feed"><h3 class="title"><i class="fa-solid fa-eye"></i></h3></a>
+      <input type="text" id="search-posts" class="search-bar" placeholder="Search posts...">
+      <table id="posts-table">
+        <thead>
+          <tr>
+            <th class="sortable" data-key="title">Title</th>
+            <th class="sortable" data-key="created_at">Date</th>
+            <th class="sortable" data-key="category">Category</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="posts-empty" style="display:none;">Mmm, no post found <i class="fa-solid fa-face-sad-tear"></i></p>
+      <i>Latest 10 are shown, search for the exact one you want</i>
+    </section>
+
+    <!-- User Management -->
+    <section style="margin:1.5rem 0 2rem;">
+      <h2 class="title"><i class="fa-solid fa-users-gear"></i> User Management</h2>
+
+      <input id="um-search" type="search" class="search-bar" placeholder="Search users..." style="margin:.25rem 0 1rem 0;">
+
+      <section class="upload-section" style="margin-bottom:1rem;">
+        <form id="um-create-form" autocomplete="off">
+          <div class="um-grid">
+            <div>
+              <label for="um-first">First name</label>
+              <input id="um-first" class="search-bar" type="text" placeholder="Jane" required/>
+            </div>
+            <div>
+              <label for="um-last">Last name</label>
+              <input id="um-last" class="search-bar" type="text" placeholder="Doe" required/>
+            </div>
+            <br><br>
+            <div>
+              <label for="um-email">Email</label>
+              <input id="um-email" class="search-bar" type="email" placeholder="user@example.com" required/>
+            </div>
+            <div>
+              <label for="um-password">Password</label>
+              <input id="um-password" class="search-bar" type="password" placeholder="Set a password" required/>
+            </div>
+            <div>
+              <label for="um-role">Role</label>
+              <select id="um-role" class="search-bar">
+                <option value="user">user</option>
+                <option value="admin">admin</option>
+              </select>
+            </div>
+            <div>
+              <button type="submit" class="btn"><i class="fa-solid fa-user-plus"></i> Create</button>
+            </div>
+          </div>
+          <div id="um-create-msg" style="margin-top:.5rem;"></div>
+        </form>
+      </section>
+
+      <table id="um-table">
+        <thead>
+          <tr>
+            <th class="um-sort" data-sort="name">Name <i class="fa-solid fa-sort"></i></th>
+            <th class="um-sort" data-sort="email">Email <i class="fa-solid fa-sort"></i></th>
+            <th class="um-sort" data-sort="role">Role <i class="fa-solid fa-sort"></i></th>
+            <th class="um-sort" data-sort="last_sign_in">Last sign in <i class="fa-solid fa-sort"></i></th>
+            <th>IP / Alerts</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="um-rows">
+          <tr><td colspan="6">Loading…</td></tr>
+        </tbody>
+      </table>
+    </section>
   </main>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';</script>
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
   <script>
-    // ====== Users UI logic ======
-    let umUsers = [];
-    let umSortKey = 'last_sign_in';
-    let umSortAsc = false;
+    /* Utils */
+    function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]))}
+    function sortBy(key,asc){return(a,b)=>{const A=a[key]?.toLowerCase?.()||a[key],B=b[key]?.toLowerCase?.()||b[key];if(A<B)return asc?-1:1;if(A>B)return asc?1:-1;return 0}}
+    function nzDateTime(v){ if(!v) return ''; const d=new Date(v); if(Number.isNaN(d.getTime())) return String(v); return d.toLocaleString('en-NZ',{timeZone:'Pacific/Auckland',year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(',','') }
 
-    function nzDateTime(s){
-      if(!s) return '';
-      try{
-        return new Date(s).toLocaleString('en-NZ',{ timeZone:'Pacific/Auckland' });
-      }catch{ return s; }
-    }
+    /* Quill */
+    const quill=new Quill('#editor',{ theme:'snow', modules:{ toolbar:[['bold','italic'],[{header:[1,2,3,false]}],[{list:'ordered'},{list:'bullet'}],['image']] } });
 
-    function doSort(arr){
-      const key = umSortKey;
-      const asc = umSortAsc;
-      const norm = (v) => (v ?? '');
-      return [...arr].sort((a,b)=>{
-        const A = norm(a[key]);
-        const B = norm(b[key]);
-        if (key.endsWith('_at') || key.includes('sign_in')) {
-          // date-ish
-          const dA = A ? new Date(A).getTime() : 0;
-          const dB = B ? new Date(B).getTime() : 0;
-          return asc ? (dA - dB) : (dB - dA);
-        }
-        if (A < B) return asc ? -1 : 1;
-        if (A > B) return asc ? 1 : -1;
-        return 0;
-      });
-    }
-
-    function renderUsers(){
-      const tbody = document.querySelector('#um-table tbody');
-      const empty = document.getElementById('um-empty');
-      const q = (document.getElementById('um-search').value || '').toLowerCase();
-
-      const filtered = umUsers.filter(u => {
-        const name = `${u.first_name||''} ${u.last_name||''}`.toLowerCase();
-        return name.includes(q) || (u.email||'').toLowerCase().includes(q);
-      });
-
-      const sorted = doSort(filtered).slice(0, 10);
-
-      tbody.innerHTML = '';
-      if (sorted.length === 0) { empty.style.display='block'; return; } else { empty.style.display='none'; }
-
-      for (const u of sorted){
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${u.first_name || ''}</td>
-          <td>${u.last_name || ''}</td>
-          <td>${u.email || ''}</td>
-          <td>${u.role || ''}</td>
-          <td>${nzDateTime(u.last_sign_in)}</td>
-          <td>${u.last_ip || ''}</td>
+    /* Posts */
+    let posts=[]; let postSort={key:'created_at',asc:false};
+    async function fetchPosts(){ const r=await fetch('/api/posts?admin=true',{credentials:'include'}); if(r.status===401) return location.href='/index.html'; posts=await r.json(); renderPosts(); }
+    function renderPosts(){
+      const tbody=document.querySelector('#posts-table tbody'); const empty=document.getElementById('posts-empty');
+      const q=(document.getElementById('search-posts').value||'').toLowerCase();
+      const rows=posts.filter(p=>(p.title||'').toLowerCase().includes(q)).sort(sortBy(postSort.key,postSort.asc)).slice(0,10);
+      tbody.innerHTML=''; empty.style.display=rows.length?'none':'block';
+      for(const p of rows){
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${esc(p.title)}</td>
+          <td>${esc(new Date(p.created_at).toLocaleDateString('en-NZ'))}</td>
+          <td>${esc(p.category||'')}</td>
           <td>
-            <button class="btn-ghost" data-del="${u.id}"><i class="fa-solid fa-trash"></i> Delete</button>
+            <button class="pin-btn" onclick="togglePinPost(${p.id}, '${esc(p.category||'')}', ${p.pinned})">
+              <i class="${p.pinned?'fa-solid fa-star':'fa-regular fa-star'}"></i> ${p.pinned?'Unpin':'Pin'}
+            </button>
+            <button class="delete-btn" onclick="deletePost(${p.id})"><i class="fa fa-trash"></i> Delete</button>
           </td>`;
         tbody.appendChild(tr);
       }
-
-      // bind delete
-      tbody.querySelectorAll('[data-del]').forEach(btn=>{
-        btn.onclick = () => deleteUser(btn.getAttribute('data-del'));
-      });
     }
+    window.togglePinPost=async(id,category,pinned)=>{ const newCat=pinned?(category||'').replace(/^pinned\s*/i,''):(`pinned ${category||''}`).trim(); await fetch(`/api/posts/${id}`,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({category:newCat,pinned:!pinned})}); fetchPosts(); }
+    window.deletePost=async(id)=>{ if(!confirm('Delete this post?')) return; await fetch(`/api/posts/${id}`,{method:'DELETE',credentials:'include'}); fetchPosts(); }
+    document.getElementById('new-post').addEventListener('submit',async e=>{ e.preventDefault(); const f=e.target; const title=f.title.value; const category=f.category.value; const pinned=f.pinned.checked; await fetch('/api/posts',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,category:pinned?`pinned ${category}`:category,body:quill.root.innerHTML,pinned})}); f.reset(); quill.setContents([]); fetchPosts(); });
 
-    async function loadUsers(){
-      const r = await fetch('/api/users', { credentials:'include' });
-      if (!r.ok) { alert('Failed to load users'); return; }
-      umUsers = await r.json();
-      renderUsers();
+    /* Resources */
+    let resources=[]; let resourceSort={key:'created_date',asc:false};
+    async function fetchResources(){ const r=await fetch('/api/resourcespull',{credentials:'include'}); if(r.status===401) return location.href='/index.html'; resources=await r.json(); renderResources(); }
+    function renderResources(){
+      const tbody=document.querySelector('#resources-table tbody'); const empty=document.getElementById('resources-empty');
+      const q=(document.getElementById('search-resources').value||'').toLowerCase();
+      const list=resources.filter(r=>(r.title||'').toLowerCase().includes(q)).sort(sortBy(resourceSort.key,resourceSort.asc)).slice(0,10);
+      tbody.innerHTML=''; empty.style.display=list.length?'none':'block';
+      for(const r of list){
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td><a href="${r.url}" target="_blank" rel="noopener" class="link-green">${esc(r.title)}</a></td>
+          <td>${esc(new Date(r.created_date).toLocaleDateString('en-NZ'))}</td>
+          <td>${esc(r.category||'')}</td>
+          <td>
+            <button class="pinresource-btn" onclick="togglePinResource(${r.id}, ${!!r.pinned})">
+              <i class="${r.pinned?'fa-solid fa-star':'fa-regular fa-star'}"></i> ${r.pinned?'Unpin':'Pin'}
+            </button>
+            <button class="deleteresource-btn" onclick="deleteResource(${r.id})"><i class="fa fa-trash"></i> Delete</button>
+          </td>`;
+        tbody.appendChild(tr);
+      }
     }
+    window.togglePinResource=async(id,pinned)=>{ await fetch(`/api/resources/${id}`,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({pinned:!pinned})}); fetchResources(); }
+    window.deleteResource=async(id)=>{ if(!confirm('Delete this resource?')) return; await fetch(`/api/resources/${id}`,{method:'DELETE',credentials:'include'}); fetchResources(); }
 
-    async function deleteUser(id){
-      if (!confirm('Delete this user? This will remove their sessions and comments.')) return;
+    // Bind searches/sorts
+    document.getElementById('search-posts').addEventListener('input', renderPosts);
+    document.getElementById('search-resources').addEventListener('input', renderResources);
+    document.querySelectorAll('#posts-table th.sortable').forEach(th=> th.addEventListener('click',()=>{ const k=th.dataset.key; postSort.asc=k===postSort.key?!postSort.asc:true; postSort.key=k; renderPosts(); }));
+    document.querySelectorAll('#resources-table th.sortable').forEach(th=> th.addEventListener('click',()=>{ const k=th.dataset.key; resourceSort.asc=k===resourceSort.key?!resourceSort.asc:true; resourceSort.key=k; renderResources(); }));
+
+    /* User Management */
+    const umRows=document.getElementById('um-rows');
+    const umForm=document.getElementById('um-create-form');
+    const umMsg=document.getElementById('um-create-msg');
+    const umSearch=document.getElementById('um-search');
+
+    let umSortKey='last_sign_in';
+    let umSortAsc=false;
+
+    async function umLoadUsers(){
+      const q=(umSearch.value||'').toLowerCase();
       try{
-        const res = await fetch(`/api/users/${id}`, { method:'DELETE', credentials:'include' });
-        const data = await res.json().catch(()=>({}));
-        if(!res.ok){ alert(data?.error || `Delete failed (HTTP ${res.status}).`); return; }
-        await loadUsers();
+        const r=await fetch('/api/users?with_signin_stats=1',{credentials:'include'});
+        if(!r.ok){ umRows.innerHTML='<tr><td colspan="6">Failed to load users.</td></tr>'; return; }
+        let data=await r.json(); if(!Array.isArray(data)) data=[];
+        if(q) data=data.filter(u=>[u.email||'',u.first_name||'',u.last_name||''].join(' ').toLowerCase().includes(q));
+
+        data.sort((a,b)=>{
+          const name=u=>((u.first_name||'')+' '+(u.last_name||'')).trim().toLowerCase();
+          let A,B;
+          if(umSortKey==='name'){ A=name(a); B=name(b); }
+          else if(umSortKey==='email'){ A=(a.email||'').toLowerCase(); B=(b.email||'').toLowerCase(); }
+          else if(umSortKey==='role'){ A=(a.role||'').toLowerCase(); B=(b.role||'').toLowerCase(); }
+          else { A=new Date(a.last_sign_in||0).getTime(); B=new Date(b.last_sign_in||0).getTime(); }
+          if(A<B) return umSortAsc?-1:1; if(A>B) return umSortAsc?1:-1; return 0;
+        });
+        data=data.slice(0,10);
+
+        if(!data.length){ umRows.innerHTML='<tr><td colspan="6">No users.</td></tr>'; return; }
+
+        umRows.innerHTML=data.map(u=>{
+          const full=((u.first_name||'')+' '+(u.last_name||'')).trim();
+          const multi=Number(u.distinct_ips_24h||0);
+          const alert=(multi>=3)?`<span class="chip" title="Signed in from ${multi} different IPs in the last 24 hours"><i class="fa-solid fa-triangle-exclamation"></i> multi-IP</span>`:'';
+          return `<tr data-id="${u.id}">
+            <td>${esc(full)}</td>
+            <td>${esc(u.email||'')}</td>
+            <td><span class="chip">${esc(u.role||'')}</span></td>
+            <td>${esc(nzDateTime(u.last_sign_in))}</td>
+            <td><div>${esc(u.last_sign_ip||'')}</div>${alert}</td>
+            <td style="display:flex;gap:.35rem;flex-wrap:wrap;">
+              <button class="pinresource-btn" data-reset="${u.id}"><i class="fa-solid fa-key"></i> Reset Password</button>
+              <button class="deleteresource-btn" data-logout="${u.id}"><i class="fa-solid fa-right-from-bracket"></i> Force sign-out</button>
+              <button class="deleteresource-btn" data-del="${u.id}"><i class="fa-solid fa-user-xmark"></i> Delete</button>
+            </td>
+          </tr>`;
+        }).join('');
       }catch{
-        alert('Network error while deleting user.');
+        umRows.innerHTML='<tr><td colspan="6">Error loading users.</td></tr>';
       }
     }
 
-    // Create user
-    document.getElementById('um-create').addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const payload = {
-        first_name: fd.get('first_name')?.trim(),
-        last_name:  fd.get('last_name')?.trim(),
-        email:      fd.get('email')?.trim(),
-        role:       fd.get('role')
-      };
-      if (!payload.first_name || !payload.last_name || !payload.email || !payload.role) {
-        alert('Please complete all fields.'); return;
+    umForm.addEventListener('submit',async e=>{
+      e.preventDefault(); umMsg.textContent='';
+      const first_name=document.getElementById('um-first').value.trim();
+      const last_name=document.getElementById('um-last').value.trim();
+      const email=document.getElementById('um-email').value.trim();
+      const password=document.getElementById('um-password').value;
+      const role=document.getElementById('um-role').value||'user';
+      if(!first_name||!last_name||!email||!password){ umMsg.textContent='First, last, email and password are required.'; return; }
+      try{
+        const r=await fetch('/api/users',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({first_name,last_name,email,password,role,send_welcome:false})});
+        if(r.ok){ umMsg.textContent='User created.'; e.target.reset(); umLoadUsers(); }
+        else{ const d=await r.json().catch(()=>({})); umMsg.textContent='Create failed: '+(d?.error||r.status); }
+      }catch{ umMsg.textContent='Network error creating user.'; }
+    });
+
+    document.getElementById('um-rows').addEventListener('click',async e=>{
+      const logoutBtn=e.target.closest('button[data-logout]');
+      const delBtn=e.target.closest('button[data-del]');
+      const resetBtn=e.target.closest('button[data-reset]');
+
+      if(logoutBtn){
+        const id=logoutBtn.dataset.logout;
+        if(!confirm('Force sign-out this user from all devices?')) return;
+        try{
+          let r=await fetch('/api/users/'+id+'/logout',{method:'POST',credentials:'include'});
+          alert(r.ok?'User sessions revoked.':'Failed to revoke sessions.');
+        }catch{ alert('Network error.'); }
+        return;
       }
-      const res = await fetch('/api/users', {
-        method:'POST', credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
-      });
-      const j = await res.json().catch(()=>({}));
-      if (!res.ok) { alert(j?.error || 'Create failed'); return; }
-      e.target.reset();
-      await loadUsers();
+      if(resetBtn){
+        const id=resetBtn.dataset.reset;
+        const row=resetBtn.closest('tr'); const who=row?.children?.[0]?.textContent?.trim()||'user';
+        const p1=prompt(`Set new password for ${who}:`); if(!p1) return;
+        const p2=prompt('Confirm new password:'); if(p1!==p2){ alert('Passwords do not match.'); return; }
+        if(p1.length<6){ alert('Password must be at least 6 characters.'); return; }
+        try{
+          const r=await fetch('/api/users/'+id,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})});
+          alert(r.ok?'Password updated.':'Reset failed.');
+        }catch{ alert('Network error.'); }
+        return;
+      }
+      if(delBtn){
+        const id=delBtn.dataset.del;
+        if(!confirm('Delete this user? This cannot be undone.')) return;
+        try{
+          // Try DELETE first
+          let r=await fetch('/api/users/'+id,{method:'DELETE',credentials:'include'});
+          if(r.status===204 || r.ok){ umLoadUsers(); return; }
+          // Fallback route if your backend expects a POST
+          r=await fetch('/api/users/'+id+'/delete',{method:'POST',credentials:'include'});
+          if(r.ok){ umLoadUsers(); return; }
+          const t=await r.text(); alert('Delete failed: '+t);
+        }catch{ alert('Delete error'); }
+        return;
+      }
     });
 
-    document.getElementById('um-search').addEventListener('input', renderUsers);
-    document.getElementById('um-sort').addEventListener('change', (e)=>{
-      const [k,dir] = e.target.value.split('|');
-      umSortKey = k;
-      umSortAsc = (dir==='asc');
-      renderUsers();
-    });
+    document.getElementById('um-search').addEventListener('input', umLoadUsers);
+    document.querySelectorAll('.um-sort').forEach(th=> th.addEventListener('click',()=>{
+      const key=th.dataset.sort;
+      if(key===umSortKey) umSortAsc=!umSortAsc; else { umSortKey=key; umSortAsc=true; }
+      document.querySelectorAll('.um-sort i').forEach(i=> i.className='fa-solid fa-sort');
+      const icon=th.querySelector('i'); if(icon) icon.className=umSortAsc?'fa-solid fa-sort-up':'fa-solid fa-sort-down';
+      umLoadUsers();
+    }));
 
-    document.addEventListener('DOMContentLoaded', loadUsers);
+    // Init
+    document.addEventListener('DOMContentLoaded',()=>{ fetchPosts(); fetchResources(); umLoadUsers(); });
+
+    // Resource upload helpers
+    document.getElementById('resource-file').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) document.getElementById('resource-type').value='file'; });
+    async function generatePdfThumbnail(file){
+      try{
+        const pdfData=await file.arrayBuffer(); const pdf=await pdfjsLib.getDocument({data:pdfData}).promise;
+        const page=await pdf.getPage(1); const viewport=page.getViewport({scale:1});
+        const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d'); canvas.width=viewport.width; canvas.height=viewport.height;
+        await page.render({canvasContext:ctx,viewport}).promise; return canvas.toDataURL('image/png');
+      }catch{return null}
+    }
+    function blobToBase64(blob){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onloadend=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(blob); }) }
+
+    document.getElementById('upload-form').addEventListener('submit',async e=>{
+      e.preventDefault();
+      const file=document.getElementById('resource-file').files[0];
+      const url=(document.getElementById('resource-url').value||'').trim();
+      const title=(document.getElementById('resource-title').value||'').trim();
+      const pinned=document.getElementById('resource-pinned').checked;
+      const type=document.getElementById('resource-type').value;
+      const category=(document.getElementById('resource-category').value||'').trim();
+      if(!file && !url) return alert('Please provide a file or a URL.');
+      if(!title || !type) return alert('Title and type are required.');
+
+      const fd=new FormData();
+      fd.append('title',title); fd.append('pinned',pinned); fd.append('type',type); fd.append('category',category);
+
+      if(file){
+        fd.append('file',file);
+        if(file.type==='application/pdf'){ const thumb=await generatePdfThumbnail(file); if(thumb) fd.append('thumbnail',thumb); }
+      }else{
+        fd.append('url',url);
+        try{
+          const response=await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false`);
+          const data=await response.json(); const imgUrl=data?.data?.screenshot?.url;
+          if(imgUrl){ const imgBlob=await fetch(imgUrl).then(r=>r.blob()); const base64=await blobToBase64(imgBlob); fd.append('thumbnail',base64); }
+        }catch{}
+      }
+
+      await fetch('/api/resources/upload',{method:'POST',body:fd});
+      location.reload();
+    });
   </script>
 </body>
 </html>
