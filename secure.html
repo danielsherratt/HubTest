@@ -8,11 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="assets/cesw.css">
-  <style>body{display:none}
-
-input {margin:10px;}
-
-  </style>
+  <style>body{display:none} input{margin:10px}</style>
 
   <script>
     async function signOut(){ try{await fetch('/api/auth/logout',{method:'POST',credentials:'include'})}finally{location.href='/index.html'} }
@@ -63,8 +59,8 @@ input {margin:10px;}
         <div class="um-grid" style="grid-template-columns: 1fr;">
           <input type="text" id="resource-title" placeholder="Resource title" required/>
         </div>
-        <div class="um-grid" style="grid-template-columns: 1fr 1fr 1fr;"></div>
-        <input type="file" id="resource-file"/>
+        <div class="um-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+          <input type="file" id="resource-file"/>
           <input type="url" id="resource-url" placeholder="Or paste a link instead">
           <select id="resource-type" required>
             <option value="">Select resource type</option>
@@ -213,6 +209,7 @@ input {margin:10px;}
           <tr><td colspan="6">Loading…</td></tr>
         </tbody>
       </table>
+      <div id="um-error" class="error" style="display:none; margin-top:.5rem;"></div>
     </section>
   </main>
 
@@ -292,15 +289,24 @@ input {margin:10px;}
     const umForm=document.getElementById('um-create-form');
     const umMsg=document.getElementById('um-create-msg');
     const umSearch=document.getElementById('um-search');
+    const umError=document.getElementById('um-error');
 
     let umSortKey='last_sign_in';
     let umSortAsc=false;
 
     async function umLoadUsers(){
       const q=(umSearch.value||'').toLowerCase();
+      umError.style.display='none'; umError.textContent='';
+
       try{
         const r=await fetch('/api/users?with_signin_stats=1',{credentials:'include'});
-        if(!r.ok){ umRows.innerHTML='<tr><td colspan="6">Failed to load users.</td></tr>'; return; }
+        if(!r.ok){
+          const t=await r.text();
+          umRows.innerHTML='<tr><td colspan="6">Failed to load users.</td></tr>';
+          umError.textContent='Users API error: '+t;
+          umError.style.display='block';
+          return;
+        }
         let data=await r.json(); if(!Array.isArray(data)) data=[];
         if(q) data=data.filter(u=>[u.email||'',u.first_name||'',u.last_name||''].join(' ').toLowerCase().includes(q));
 
@@ -334,8 +340,10 @@ input {margin:10px;}
             </td>
           </tr>`;
         }).join('');
-      }catch{
+      }catch(e){
         umRows.innerHTML='<tr><td colspan="6">Error loading users.</td></tr>';
+        umError.textContent='Network error loading users.';
+        umError.style.display='block';
       }
     }
 
@@ -387,7 +395,7 @@ input {margin:10px;}
           // Try DELETE first
           let r=await fetch('/api/users/'+id,{method:'DELETE',credentials:'include'});
           if(r.status===204 || r.ok){ umLoadUsers(); return; }
-          // Fallback route if your backend expects a POST
+          // Fallback route if backend expects a POST
           r=await fetch('/api/users/'+id+'/delete',{method:'POST',credentials:'include'});
           if(r.ok){ umLoadUsers(); return; }
           const t=await r.text(); alert('Delete failed: '+t);

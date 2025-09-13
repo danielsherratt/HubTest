@@ -4,7 +4,7 @@
 //   POST   /api/users
 //   DELETE /api/users/:id[?hard=1]
 
-const COOKIE_NAMES = ['session', 'JWT_Token', 'jwt', 'token']; // accepts common cookie names
+const COOKIE_NAMES = ['session', 'JWT_Token', 'jwt', 'token']; // accept common cookie names
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -13,7 +13,7 @@ export async function onRequest(context) {
   const method = request.method;
 
   try {
-    // ---- PROBE: quick check route is hitting THIS file ----
+    // ---- PROBE: verifies this exact file is being executed
     if (method === 'GET' && pathname === '/api/users' && searchParams.get('__probe') === '1') {
       return json({ ok: true, route: 'functions/api/users/index.js' });
     }
@@ -26,27 +26,35 @@ export async function onRequest(context) {
       const wantStats = searchParams.get('with_signin_stats') === '1';
       const limit = Math.max(1, Math.min(Number(searchParams.get('limit') || 100), 1000));
 
-      // Basic list
+      // Build a SELECT that tolerates missing columns
+      const uc = await usersColumns(env.DB); // what columns exist
+      const selectCols = [
+        'id',
+        'email',
+        'role',
+        uc.first_name ? 'first_name' : "NULL AS first_name",
+        uc.last_name  ? 'last_name'  : "NULL AS last_name",
+        uc.last_sign_in ? 'last_sign_in' : "NULL AS last_sign_in",
+        uc.last_ip    ? 'last_ip AS last_sign_ip' : "NULL AS last_sign_ip",
+        uc.created_at ? 'created_at' : "NULL AS created_at",
+      ].join(', ');
+
+      const orderExpr = (uc.last_sign_in || uc.created_at)
+        ? `COALESCE(${uc.last_sign_in ? 'last_sign_in' : 'NULL'}, ${uc.created_at ? 'created_at' : 'NULL'}) DESC`
+        : 'id DESC';
+
       const baseRows = await env.DB.prepare(`
-        SELECT
-          id,
-          email,
-          role,
-          first_name,
-          last_name,
-          last_sign_in,
-          last_ip AS last_sign_ip,
-          created_at
+        SELECT ${selectCols}
         FROM users
-        ORDER BY COALESCE(last_sign_in, created_at) DESC
+        ORDER BY ${orderExpr}
         LIMIT ?
       `).bind(limit).all();
-      const users = baseRows.results || [];
 
+      const users = baseRows.results || [];
       if (!wantStats) return json(users);
 
-      // If user_signins table doesn't exist, return zeros for stats
-      if (!await tableExists(env.DB, 'user_signins')) {
+      // If user_signins table doesn't exist, return zeros for stats (no 500)
+      if (!(await tableExists(env.DB, 'user_signins'))) {
         return json(users.map(u => ({
           ...u,
           signin_count: 0,
@@ -57,30 +65,30 @@ export async function onRequest(context) {
         })));
       }
 
-      // For reliability across SQLite versions, compute stats via subqueries
+      // Compute stats via subqueries (portable across SQLite/D1)
       const out = [];
       for (const u of users) {
-        const id = u.id;
+        const uid = u.id;
 
         const total = await env.DB.prepare(
           'SELECT COUNT(*) AS c FROM user_signins WHERE user_id = ?'
-        ).bind(id).first();
+        ).bind(uid).first();
 
         const uniqAll = await env.DB.prepare(
           'SELECT COUNT(DISTINCT ip) AS c FROM user_signins WHERE user_id = ?'
-        ).bind(id).first();
+        ).bind(uid).first();
 
         const total7 = await env.DB.prepare(
           "SELECT COUNT(*) AS c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-7 days')"
-        ).bind(id).first();
+        ).bind(uid).first();
 
         const uniq7 = await env.DB.prepare(
           "SELECT COUNT(DISTINCT ip) AS c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-7 days')"
-        ).bind(id).first();
+        ).bind(uid).first();
 
         const uniq24 = await env.DB.prepare(
           "SELECT COUNT(DISTINCT ip) AS c FROM user_signins WHERE user_id = ? AND at >= datetime('now','-1 day')"
-        ).bind(id).first();
+        ).bind(uid).first();
 
         out.push({
           ...u,
@@ -91,7 +99,6 @@ export async function onRequest(context) {
           distinct_ips_24h: Number(uniq24?.c || 0),
         });
       }
-
       return json(out);
     }
 
@@ -208,10 +215,25 @@ async function tableExists(DB, name) {
                       .bind(name).first();
   return !!row;
 }
+
 async function columnExists(DB, table, column) {
   const res = await DB.prepare(`PRAGMA table_info(${table})`).all();
   const cols = (res.results || []).map(r => (r.name || r.cid_name || r.column || '').toString().toLowerCase());
   return cols.includes(column.toLowerCase());
+}
+
+async function usersColumns(DB) {
+  const info = await DB.prepare(`PRAGMA table_info(users)`).all();
+  const names = new Set((info.results || []).map(r => (r.name || '').toString().toLowerCase()));
+  return {
+    first_name:  names.has('first_name'),
+    last_name:   names.has('last_name'),
+    last_sign_in:names.has('last_sign_in'),
+    last_ip:     names.has('last_ip'),
+    created_at:  names.has('created_at'),
+    disabled:    names.has('disabled'),
+    deleted_at:  names.has('deleted_at'),
+  };
 }
 
 /* -------- Admin check that works with JWT or opaque session -------- */
