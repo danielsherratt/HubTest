@@ -1,10 +1,10 @@
 // Cloudflare Pages Functions — Users API
 // Routes:
-//   GET    /api/users[?with_signin_stats=1&limit=N&__probe=1&__diag=1]
+//   GET    /api/users[?with_signin_stats=1&limit=N&__probe=1&__diag=1&__ping=1]
 //   POST   /api/users
 //   DELETE /api/users/:id[?hard=1]
 
-const COOKIE_NAMES = ['session', 'JWT_Token', 'jwt', 'token']; // common cookie names
+const COOKIE_NAMES = ['session', 'JWT_Token', 'jwt', 'token']; // accept common cookie names
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -12,23 +12,38 @@ export async function onRequest(context) {
   const { pathname, searchParams } = url;
   const method = request.method;
 
-  // Acquire a D1 binding regardless of how it's named in your project
+  // ---- Acquire D1 binding (prefer POSTS_DB as you mentioned) ----
   let DB;
   try {
     DB = getDB(env);
   } catch (e) {
-    // Helpful error instead of throwing an internal TypeError
-    return json({ ok: false, error: e.message }, 500);
+    // Give a helpful error instead of a generic 500
+    return json({ ok: false, error: e.message, candidates: listD1Candidates(env) }, 500);
   }
 
   try {
-    // ---- PROBE: verifies this file is executing
+    // ---- PROBE: verifies this specific file is running ----
     if (method === 'GET' && pathname === '/api/users' && searchParams.get('__probe') === '1') {
       return json({ ok: true, route: 'functions/api/users/index.js' });
     }
-    // ---- DIAG: shows which binding name we selected
+
+    // ---- DIAG: shows which binding name we selected ----
     if (method === 'GET' && pathname === '/api/users' && searchParams.get('__diag') === '1') {
-      return json({ ok: true, selectedBinding: DB.__name || '(anonymous)', candidates: listD1Bindings(env) });
+      return json({
+        ok: true,
+        selectedBinding: DB.__name || '(unknown)',
+        candidates: listD1Candidates(env)
+      });
+    }
+
+    // ---- PING: runs a trivial query to confirm D1 works ----
+    if (method === 'GET' && pathname === '/api/users' && searchParams.get('__ping') === '1') {
+      try {
+        const row = await DB.prepare('SELECT 1 AS ok').first();
+        return json({ ok: true, row, selectedBinding: DB.__name || '(unknown)' });
+      } catch (e) {
+        return json({ ok: false, error: String(e), selectedBinding: DB.__name || '(unknown)' }, 500);
+      }
     }
 
     // ---------- GET /api/users ----------
@@ -45,11 +60,11 @@ export async function onRequest(context) {
         'id',
         'email',
         'role',
-        uc.first_name ? 'first_name' : "NULL AS first_name",
-        uc.last_name  ? 'last_name'  : "NULL AS last_name",
-        uc.last_sign_in ? 'last_sign_in' : "NULL AS last_sign_in",
-        uc.last_ip    ? 'last_ip AS last_sign_ip' : "NULL AS last_sign_ip",
-        uc.created_at ? 'created_at' : "NULL AS created_at",
+        uc.first_name   ? 'first_name'                : "NULL AS first_name",
+        uc.last_name    ? 'last_name'                 : "NULL AS last_name",
+        uc.last_sign_in ? 'last_sign_in'              : "NULL AS last_sign_in",
+        uc.last_ip      ? 'last_ip AS last_sign_ip'   : "NULL AS last_sign_ip",
+        uc.created_at   ? 'created_at'                : "NULL AS created_at",
       ].join(', ');
 
       const orderExpr = (uc.last_sign_in || uc.created_at)
@@ -205,25 +220,31 @@ function json(obj, status = 200, headers = {}) {
   });
 }
 
-async function safeJson(request) {
-  try { return await request.json(); } catch { return {}; }
-}
+async function safeJson(request) { try { return await request.json(); } catch { return {}; } }
 
+// Prefer the binding you told me: POSTS_DB. Then fall back to common names.
+// If the chosen binding doesn't have .prepare, throw a clear error.
 function getDB(env) {
-  // Common names first
-  const preferred = ['DB', 'D1', 'DB_MAIN', 'DATABASE', 'CESW_DB'];
-  for (const k of preferred) {
-    const v = env[k];
-    if (v && typeof v.prepare === 'function') { v.__name = k; return v; }
+  const preferred = ['POSTS_DB', 'DB', 'D1', 'DB_MAIN', 'DATABASE', 'CESW_DB'];
+  for (const name of preferred) {
+    if (env[name]) {
+      const db = env[name];
+      if (typeof db.prepare !== 'function') {
+        throw new Error(`Binding "${name}" exists but does not look like a D1 database (missing .prepare). ` +
+          `Please ensure the binding type is "D1 Database" in Pages → Settings → Functions → D1 bindings.`);
+      }
+      db.__name = name;
+      return db;
+    }
   }
-  // Fallback: scan env for any object that has a .prepare function
-  for (const [k, v] of Object.entries(env)) {
-    if (v && typeof v.prepare === 'function') { v.__name = k; return v; }
+  // Fallback: scan for anything that quacks like D1
+  for (const [name, val] of Object.entries(env)) {
+    if (val && typeof val.prepare === 'function') { val.__name = name; return val; }
   }
-  throw new Error('D1 binding not found. Add a D1 database binding in your Pages project settings (e.g. name it "DB") or update the code to use your binding name.');
+  throw new Error('No D1 database binding found. Add one (e.g., named "POSTS_DB") in your project settings.');
 }
 
-function listD1Bindings(env) {
+function listD1Candidates(env) {
   const out = [];
   for (const [k, v] of Object.entries(env)) {
     if (v && typeof v.prepare === 'function') out.push(k);
@@ -232,14 +253,15 @@ function listD1Bindings(env) {
 }
 
 async function tableExists(DB, name) {
-  const row = await DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?")
-                      .bind(name).first();
+  const row = await DB.prepare(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name = ?"
+  ).bind(name).first();
   return !!row;
 }
 
 async function columnExists(DB, table, column) {
   const res = await DB.prepare(`PRAGMA table_info(${table})`).all();
-  const cols = (res.results || []).map(r => (r.name || r.cid_name || r.column || '').toString().toLowerCase());
+  const cols = (res.results || []).map(r => (r.name || '').toString().toLowerCase());
   return cols.includes(column.toLowerCase());
 }
 
@@ -247,17 +269,17 @@ async function usersColumns(DB) {
   const info = await DB.prepare(`PRAGMA table_info(users)`).all();
   const names = new Set((info.results || []).map(r => (r.name || '').toString().toLowerCase()));
   return {
-    first_name:  names.has('first_name'),
-    last_name:   names.has('last_name'),
-    last_sign_in:names.has('last_sign_in'),
-    last_ip:     names.has('last_ip'),
-    created_at:  names.has('created_at'),
-    disabled:    names.has('disabled'),
-    deleted_at:  names.has('deleted_at'),
+    first_name:   names.has('first_name'),
+    last_name:    names.has('last_name'),
+    last_sign_in: names.has('last_sign_in'),
+    last_ip:      names.has('last_ip'),
+    created_at:   names.has('created_at'),
+    disabled:     names.has('disabled'),
+    deleted_at:   names.has('deleted_at'),
   };
 }
 
-/* -------- Admin check that works with JWT or opaque session -------- */
+/* -------- Admin check (JWT or opaque session) -------- */
 async function requireAdmin(request, env, DB) {
   const cookies = parseCookies(request.headers.get('Cookie') || '');
 
